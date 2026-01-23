@@ -1,3 +1,5 @@
+[file name]: app.js
+[file content begin]
 /**
  * ZenGen - Bulletproof Edition
  * - Audio: Hardcoded High-Fidelity Library (No API Failures).
@@ -35,30 +37,83 @@ const STATIC_AUDIO_LIBRARY = {
     ]
 };
 
-// --- 2. AUDIO PLAYER ---
+// --- 2. IMPROVED AUDIO PLAYER ---
 class AudioPlayer {
     constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.ctx = null;
         this.sourceNode = null;
-        this.gainNode = this.ctx.createGain();
-        this.gainNode.connect(this.ctx.destination);
+        this.gainNode = null;
+        this.isInitialized = false;
+        this.audioElement = new Audio();
+        this.audioElement.loop = true;
     }
-    async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
+    
+    async init() {
+        if (this.isInitialized) return;
+        try {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.gainNode = this.ctx.createGain();
+            this.gainNode.connect(this.ctx.destination);
+            this.isInitialized = true;
+        } catch(e) {
+            console.warn("Web Audio API not available, falling back to HTML5 Audio");
+        }
+    }
+    
+    async resume() {
+        if (this.ctx && this.ctx.state === 'suspended') {
+            await this.ctx.resume();
+        }
+    }
+    
     stop() {
-        if (this.sourceNode) { try { this.sourceNode.stop(); } catch(e){} this.sourceNode.disconnect(); this.sourceNode = null; }
+        if (this.sourceNode) {
+            try { this.sourceNode.stop(); } catch(e){}
+            this.sourceNode.disconnect();
+            this.sourceNode = null;
+        }
+        this.audioElement.pause();
+        this.audioElement.currentTime = 0;
     }
+    
     async play(blobUrl) {
         this.stop();
-        try {
-            const response = await fetch(blobUrl);
-            const arrayBuffer = await response.arrayBuffer();
-            const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-            this.sourceNode = this.ctx.createBufferSource();
-            this.sourceNode.buffer = audioBuffer;
-            this.sourceNode.loop = true; 
-            this.sourceNode.connect(this.gainNode);
-            this.sourceNode.start(0);
-        } catch(e) { console.error("Audio Error", e); }
+        
+        // Use HTML5 Audio as primary - more reliable across browsers
+        this.audioElement.src = blobUrl;
+        this.audioElement.volume = 0.7;
+        
+        const playPromise = this.audioElement.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Audio autoplay prevented, will play after user interaction");
+            });
+        }
+        
+        // Also set up Web Audio for recording
+        if (this.isInitialized && blobUrl) {
+            try {
+                const response = await fetch(blobUrl);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                this.sourceNode = this.ctx.createBufferSource();
+                this.sourceNode.buffer = audioBuffer;
+                this.sourceNode.loop = true;
+                this.sourceNode.connect(this.gainNode);
+                this.sourceNode.start(0);
+            } catch(e) {
+                console.error("Web Audio playback failed:", e);
+            }
+        }
+    }
+    
+    getAudioStream() {
+        if (this.ctx && this.sourceNode) {
+            const dest = this.ctx.createMediaStreamDestination();
+            this.gainNode.connect(dest);
+            return dest.stream;
+        }
+        return null;
     }
 }
 const audioEngine = new AudioPlayer();
@@ -67,7 +122,7 @@ const audioEngine = new AudioPlayer();
 const playerA = document.getElementById('vid1');
 const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
-const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
+const statusText = statusPill;
 const recordBtn = document.getElementById('recordBtn');
 const playPauseBtn = document.getElementById('playPauseBtn');
 
@@ -78,15 +133,51 @@ let activePlayer = playerA;
 let sequenceInterval = null;
 let isPlaying = false;
 let audioLibraryCache = {};
+let keepAliveInterval = null;
 
 // --- 4. INIT ---
 async function initStudio() {
     try {
-        await audioEngine.resume();
+        // Initialize audio with user gesture
+        await audioEngine.init();
+        
+        // Start keep-alive for AudioContext
+        startAudioKeepAlive();
+        
         document.getElementById('startScreen').style.opacity = '0';
-        setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
-        loadAudioOptions();
-    } catch(e) { alert("Audio Engine Failed."); }
+        setTimeout(() => {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('workspace').style.display = 'flex';
+            // Pre-load some audio
+            loadAudioOptions();
+        }, 500);
+        
+    } catch(e) {
+        console.error("Initialization error:", e);
+        alert("Studio initialized with limited audio features");
+        document.getElementById('startScreen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('workspace').style.display = 'flex';
+        }, 500);
+    }
+}
+
+function startAudioKeepAlive() {
+    // Keep audio context alive by periodically playing silent sound
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    
+    keepAliveInterval = setInterval(async () => {
+        if (audioEngine.ctx && audioEngine.ctx.state === 'running') {
+            // Create a tiny silent buffer to keep context alive
+            const buffer = audioEngine.ctx.createBuffer(1, 1, 22050);
+            const source = audioEngine.ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioEngine.ctx.destination);
+            source.start();
+            source.stop(audioEngine.ctx.currentTime + 0.001);
+        }
+    }, 5000); // Every 5 seconds
 }
 
 function loadAudioOptions() {
@@ -94,10 +185,8 @@ function loadAudioOptions() {
     const variantSelect = document.getElementById('audioVariant');
     variantSelect.innerHTML = '';
     
-    // Load from Static Library
     const sounds = STATIC_AUDIO_LIBRARY[theme] || [];
     sounds.forEach(sound => {
-        // Cache URL
         audioLibraryCache[sound.id] = sound.url;
         
         const el = document.createElement('option');
@@ -105,14 +194,23 @@ function loadAudioOptions() {
         el.innerText = sound.name;
         variantSelect.appendChild(el);
     });
+    
+    // Enable record button after audio is loaded
+    recordBtn.disabled = false;
 }
 
 function togglePlay() {
     if (isPlaying) {
-        activePlayer.pause(); audioEngine.ctx.suspend();
+        activePlayer.pause();
+        audioEngine.audioElement.pause();
         playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     } else {
-        activePlayer.play(); audioEngine.ctx.resume();
+        // Resume audio context first
+        if (audioEngine.ctx) {
+            audioEngine.ctx.resume();
+        }
+        activePlayer.play().catch(e => console.log("Video play failed:", e));
+        audioEngine.audioElement.play().catch(e => console.log("Audio play failed:", e));
         playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     }
     isPlaying = !isPlaying;
@@ -122,42 +220,71 @@ function togglePlay() {
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     audioEngine.stop();
+    
     const theme = document.getElementById('themeSelect').value;
     const audioId = document.getElementById('audioVariant').value;
     
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Curating...';
+    statusPill.innerHTML = '<div class="dot"></div> Curating...';
     recordBtn.disabled = true;
 
-    // Fetch Video Playlist
-    const rawUrls = await fetchMontagePlaylist(theme, 4);
-    
-    if (rawUrls.length > 0) {
-        blobPlaylist = [];
-        for (let i = 0; i < rawUrls.length; i++) {
-            statusText.textContent = `Downloading Video ${i+1}/4...`;
-            const blob = await fetchBlob(rawUrls[i]);
-            if (blob) blobPlaylist.push(blob);
+    try {
+        // Fetch Video Playlist
+        const rawUrls = await fetchMontagePlaylist(theme, 4);
+        
+        if (rawUrls.length > 0) {
+            blobPlaylist = [];
+            for (let i = 0; i < Math.min(rawUrls.length, 4); i++) {
+                statusPill.innerHTML = `<div class="dot"></div> Downloading Video ${i+1}/4...`;
+                const blob = await fetchBlob(rawUrls[i]);
+                if (blob) blobPlaylist.push(blob);
+            }
+
+            statusPill.innerHTML = '<div class="dot"></div> Downloading Audio...';
+            const audioUrl = audioLibraryCache[audioId];
+            audioBlobUrl = await fetchBlob(audioUrl);
+
+            if (blobPlaylist.length > 0 && audioBlobUrl) {
+                // Ensure audio context is running
+                if (audioEngine.ctx) {
+                    await audioEngine.ctx.resume();
+                }
+                
+                // Play audio
+                await audioEngine.play(audioBlobUrl);
+                
+                // Show visualizer
+                document.getElementById('audioVisualizer').classList.add('active');
+                
+                // Generate SEO
+                generateViralSEO(theme);
+                
+                // Start video playback
+                currentPlaylistIndex = 0;
+                startPingPong();
+                isPlaying = true;
+                playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                
+                statusPill.className = 'status-pill active';
+                statusPill.innerHTML = '<div class="dot"></div> Live';
+                recordBtn.disabled = false;
+                
+            } else {
+                alert("Download failed. Please try again.");
+                statusPill.className = 'status-pill';
+                statusPill.innerHTML = '<div class="dot"></div> System Ready';
+            }
+        } else {
+            alert("No videos found for this theme.");
+            statusPill.className = 'status-pill';
+            statusPill.innerHTML = '<div class="dot"></div> System Ready';
         }
-
-        statusText.textContent = `Downloading Audio...`;
-        const audioUrl = audioLibraryCache[audioId];
-        audioBlobUrl = await fetchBlob(audioUrl);
-
-        if (blobPlaylist.length > 0 && audioBlobUrl) {
-            await audioEngine.resume();
-            audioEngine.play(audioBlobUrl);
-            
-            document.getElementById('audioVisualizer').classList.add('active');
-            generateViralSEO(theme);
-            
-            currentPlaylistIndex = 0;
-            startPingPong();
-            isPlaying = true;
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            
-        } else { alert("Download failed."); }
-    } else { alert("No videos found."); }
+    } catch (error) {
+        console.error("Generation error:", error);
+        alert("Error generating content. Please check your connection.");
+        statusPill.className = 'status-pill';
+        statusPill.innerHTML = '<div class="dot"></div> System Ready';
+    }
 }
 
 async function fetchBlob(url) {
@@ -165,60 +292,146 @@ async function fetchBlob(url) {
         const response = await fetch(url);
         const blob = await response.blob();
         return URL.createObjectURL(blob);
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error("Fetch blob error:", e);
+        return null;
+    }
 }
 
-// --- 6. SAFE VIDEO ENGINE ---
+// --- 6. IMPROVED VIDEO ENGINE ---
 function startPingPong() {
-    playerA.className = 'active'; playerB.className = 'standby';
+    // Reset players
+    playerA.pause();
+    playerB.pause();
+    playerA.currentTime = 0;
+    playerB.currentTime = 0;
+    
+    playerA.className = 'active';
+    playerB.className = 'standby';
     activePlayer = playerA;
-    playerA.src = blobPlaylist[0]; playerA.play();
-    if (blobPlaylist.length > 1) { playerB.src = blobPlaylist[1]; playerB.load(); }
-
-    statusText.textContent = 'Live';
-    recordBtn.disabled = false;
-
+    
+    // Load and play first video
+    playerA.src = blobPlaylist[0];
+    playerA.load();
+    
+    // Preload second video
+    if (blobPlaylist.length > 1) {
+        playerB.src = blobPlaylist[1];
+        playerB.load();
+    }
+    
+    // Play with user interaction
+    const playPromise = playerA.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Autoplay prevented, waiting for user interaction");
+        });
+    }
+    
+    // Start monitoring for end
     sequenceInterval = setInterval(() => {
         const active = playerA.classList.contains('active') ? playerA : playerB;
-        if (!active.duration) return;
-        if (active.duration - active.currentTime < 0.3) triggerSwap();
-    }, 100);
+        if (!active.duration || isNaN(active.duration)) return;
+        
+        // Check if video is ending (last 0.5 seconds)
+        if (active.duration - active.currentTime < 0.5) {
+            triggerSwap();
+        }
+    }, 250); // Check every 250ms
 }
 
 function triggerSwap() {
     const active = playerA.classList.contains('active') ? playerA : playerB;
     const next = active === playerA ? playerB : playerA;
-    next.play().then(() => {
-        active.className = 'standby'; next.className = 'active';
-        activePlayer = next;
-        currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-        const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-        active.src = blobPlaylist[nextIndex]; active.load();
-    });
+    
+    // Ensure next video is loaded
+    if (next.readyState < 2) {
+        console.log("Next video not ready yet, delaying swap");
+        setTimeout(triggerSwap, 100);
+        return;
+    }
+    
+    // Play next video
+    const playPromise = next.play();
+    
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            // Swap visibility
+            active.className = 'standby';
+            next.className = 'active';
+            activePlayer = next;
+            
+            // Update playlist index
+            currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+            const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+            
+            // Preload the video after next
+            active.src = blobPlaylist[nextIndex];
+            active.load();
+        }).catch(error => {
+            console.log("Swap play failed:", error);
+        });
+    }
 }
 
-// --- 7. SAFARI FRAME-STAMPING RECORDER ---
-function startRecording() {
-    audioEngine.resume();
-    if (activePlayer.paused) activePlayer.play();
-
-    // 1. Setup Canvas
+// --- 7. IMPROVED SAFARI RECORDER ---
+async function startRecording() {
+    // Ensure everything is playing
+    if (!isPlaying) {
+        togglePlay();
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Resume audio context
+    if (audioEngine.ctx) {
+        await audioEngine.ctx.resume();
+    }
+    
+    // Setup canvas for frame capture
     const canvas = document.createElement('canvas');
-    canvas.width = 1280; canvas.height = 720;
+    canvas.width = 1280;
+    canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    // 2. Stream Setup
-    const canvasStream = canvas.captureStream(30);
-    const audioDest = audioEngine.ctx.createMediaStreamDestination();
-    audioEngine.gainNode.connect(audioDest);
-    const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
+    // Setup audio stream
+    let audioStream;
+    if (audioEngine.ctx && audioEngine.getAudioStream()) {
+        audioStream = audioEngine.getAudioStream();
+    } else {
+        // Fallback: Create silent audio track
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const dst = oscillator.connect(audioContext.createMediaStreamDestination());
+        oscillator.start();
+        audioStream = dst.stream;
+    }
     
-    let options = { mimeType: 'video/webm; codecs=vp9' };
-    if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
-
+    // Setup video stream from canvas
+    const canvasStream = canvas.captureStream(30);
+    
+    // Combine streams
+    const combinedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioStream.getAudioTracks()
+    ]);
+    
+    // Setup recorder
+    let options = { mimeType: 'video/webm;codecs=vp9' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/mp4;codecs=avc1' };
+    }
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm' };
+    }
+    
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    
+    mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            chunks.push(event.data);
+        }
+    };
     
     mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: options.mimeType });
@@ -226,66 +439,128 @@ function startRecording() {
         const a = document.createElement('a');
         a.href = url;
         a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.mp4`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         
-        recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
-        recordBtn.disabled = false;
+        // Cleanup
+        URL.revokeObjectURL(url);
         clearInterval(frameInterval);
         clearInterval(timerInterval);
+        
+        // Reset UI
+        recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
+        recordBtn.disabled = false;
+        statusPill.className = 'status-pill active';
+        statusPill.innerHTML = '<div class="dot"></div> Live';
     };
-
-    // 3. FRAME STAMPER (The Safari Fix)
-    // We use a manual setInterval instead of requestAnimationFrame.
-    // This forces the canvas to update even if Safari tries to pause rendering.
+    
+    // Draw frames with buffer to prevent freezing
     const bufferCanvas = document.createElement('canvas');
-    bufferCanvas.width = 1280; bufferCanvas.height = 720;
+    bufferCanvas.width = 1280;
+    bufferCanvas.height = 720;
     const bufferCtx = bufferCanvas.getContext('2d');
-
+    
+    let lastFrameTime = 0;
     const frameInterval = setInterval(() => {
-        // Only grab new frame if player is healthy
-        if (activePlayer.readyState >= 2 && !activePlayer.paused && !activePlayer.seeking) {
-            bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
+        const currentTime = Date.now();
+        
+        // Only update at ~30fps
+        if (currentTime - lastFrameTime < 33) return;
+        
+        try {
+            // Draw video frame to buffer
+            if (activePlayer.readyState >= 2 && !activePlayer.paused) {
+                bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
+            }
+            
+            // Draw buffer to output canvas
+            ctx.drawImage(bufferCanvas, 0, 0);
+            lastFrameTime = currentTime;
+        } catch (e) {
+            console.log("Frame capture error:", e);
         }
-        // Always stamp the last good frame
-        ctx.drawImage(bufferCanvas, 0, 0);
-    }, 1000 / 30); // 30 FPS Lock
-
+    }, 33); // ~30 FPS
+    
+    // Timer
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
-        recordBtn.innerText = `Recording... ${timeLeft}s`;
-        if (timeLeft <= 0) clearInterval(timerInterval);
+        recordBtn.innerHTML = `<div class="rec-icon"></div> Recording... ${timeLeft}s`;
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+        }
     }, 1000);
-
-    mediaRecorder.start();
+    
+    // Update UI
     recordBtn.disabled = true;
-    setTimeout(() => mediaRecorder.stop(), 60000);
+    statusPill.className = 'status-pill recording';
+    statusPill.innerHTML = '<div class="dot"></div> Recording';
+    
+    // Start recording
+    mediaRecorder.start();
+    
+    // Stop after 60 seconds
+    setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+    }, 60000);
 }
 
 // --- 8. UTILS & VIRAL SEO ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
+    
+    // Try Pexels first
     try {
-        const page = Math.floor(Math.random() * 20) + 1;
-        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
+        const page = Math.floor(Math.random() * 5) + 1;
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10&page=${page}&orientation=landscape`, {
+            headers: { Authorization: PEXELS_KEY }
+        });
         const data = await res.json();
-        if (data.videos) {
-            const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
+        
+        if (data.videos && data.videos.length > 0) {
+            const fresh = data.videos
+                .filter(v => !seen.has(v.id))
+                .sort(() => 0.5 - Math.random())
+                .slice(0, count);
+            
             fresh.forEach(v => {
                 seen.add(v.id);
-                list.push(v.video_files.find(f=>f.width===1280)?.link || v.video_files[0].link);
+                // Try to get HD version first, fallback to any
+                const hdFile = v.video_files.find(f => f.width === 1280) ||
+                               v.video_files.find(f => f.width >= 1280) ||
+                               v.video_files[0];
+                if (hdFile) list.push(hdFile.link);
             });
+            
             localStorage.setItem('zenGen_seen', JSON.stringify([...seen]));
         }
-    } catch(e){}
+    } catch(e) {
+        console.warn("Pexels API failed:", e);
+    }
+    
+    // If we need more videos, try Pixabay
     if (list.length < count) {
         try {
-            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15`);
+            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&per_page=10`);
             const data = await res.json();
-            if(data.hits) data.hits.slice(0, count-list.length).forEach(v => list.push(v.videos.medium.url));
-        } catch(e){}
+            
+            if (data.hits && data.hits.length > 0) {
+                const needed = count - list.length;
+                data.hits.slice(0, needed).forEach(v => {
+                    if (v.videos && v.videos.medium) {
+                        list.push(v.videos.medium.url);
+                    }
+                });
+            }
+        } catch(e) {
+            console.warn("Pixabay API failed:", e);
+        }
     }
+    
     return list;
 }
 
@@ -295,8 +570,8 @@ function generateViralSEO(theme) {
     const hooks = ["Secret", "Enchanted", "Deep", "Cozy", "Midnight", "Ancient", "Dreamy", "Magical"];
     const benefits = ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Focus", "Stop Overthinking"];
     
-    const h = hooks[Math.floor(Math.random()*hooks.length)];
-    const b = benefits[Math.floor(Math.random()*benefits.length)];
+    const h = hooks[Math.floor(Math.random() * hooks.length)];
+    const b = benefits[Math.floor(Math.random() * benefits.length)];
     
     document.getElementById('videoTitle').value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
     document.getElementById('videoDesc').value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
@@ -308,4 +583,17 @@ function generateViralSEO(theme) {
     
     document.getElementById('videoTags').value = finalTags;
 }
-function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
+
+function copyToClip(id) {
+    const element = document.getElementById(id);
+    element.select();
+    element.setSelectionRange(0, 99999); // For mobile
+    document.execCommand("copy");
+    // Visual feedback
+    const original = element.style.backgroundColor;
+    element.style.backgroundColor = "#2a2a2a";
+    setTimeout(() => {
+        element.style.backgroundColor = original;
+    }, 200);
+}
+[file content end]
