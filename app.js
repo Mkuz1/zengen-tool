@@ -1,48 +1,15 @@
 /**
- * ZenGen - Studio Ultimate
- * - Video: Dual-Player with Cache-Busting (Fixes "Freeze" bug).
- * - Audio: Procedural Nature Engine (Infinite, Non-Repeating).
- * - SEO: Viral-style Title/Tag generator.
+ * ZenGen - "Blob Loader" Edition (Final Freeze Fix)
+ * - Video: Downloads full clips as Blobs to bypass CORS security redirects.
+ * - Audio: Procedural Nature Engine.
+ * - Recorder: Captures seamless montage from local Blob sources.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. VIRAL SEO ENGINE ---
-const SEO_ENGINE = {
-    forest: {
-        hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"],
-        benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Stop Overthinking", "Heal Your Mind"],
-        keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds", "#4k", "#naturehealing", "#greennoise"]
-    },
-    rain: {
-        hooks: ["Heavy", "Torrential", "Cozy", "Midnight", "Roof"],
-        benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia", "Brain Massage", "Sleep in 3 Minutes"],
-        keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm", "#pluviophile", "#sleeprain", "#darkscreen"]
-    },
-    ocean: {
-        hooks: ["Tropical", "Midnight", "Crystal Clear", "Deep Blue", "Isolated"],
-        benefits: ["Calm Your Nerves", "Drift Away", "Lucid Dreaming", "Theta Waves", "Deep Meditation"],
-        keywords: ["#oceanwaves", "#beachasmr", "#wavesounds", "#seascape", "#waternoise", "#tides", "#blue"]
-    },
-    fireplace: {
-        hooks: ["Crackling", "Roaring", "Warm", "Winter", "Log Cabin"],
-        benefits: ["Cozy Vibes", "Warm Your Soul", "Stress Relief", "Holiday Ambience", "Deep Relaxation"],
-        keywords: ["#fireplace", "#cracklingfire", "#firesounds", "#cozyambience", "#wintervibes", "#fireasmr", "#burningwood"]
-    },
-    snow: {
-        hooks: ["Arctic", "Blizzard", "Howling", "Frozen", "White"],
-        benefits: ["Cool Down", "Winter Sleep", "Focus Isolation", "Block Out Noise", "Deep Hibernation"],
-        keywords: ["#blizzard", "#snowstorm", "#arcticwind", "#winterambience", "#snowfall", "#coldwind", "#white"]
-    },
-    generic: {
-        suffixes: ["(No Talking)", "(Dark Screen)", "ASMR", "4K Ultra HD", "8D Audio", "Binaural Beats"],
-        tags: ["#shorts", "#fyp", "#viral", "#trending", "#sleep", "#meditation", "#satisfying", "#stressrelief"]
-    }
-};
-
-// --- 2. PROCEDURAL AUDIO ENGINE ---
+// --- 1. PROCEDURAL AUDIO ENGINE ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -59,7 +26,6 @@ class NatureSynth {
         this.activeNodes = [];
     }
     
-    // Generators
     playRain() { this.runNoise(0.8, 400 + Math.random()*800); }
     playSnow() { this.runNoise(0.5, 200 + Math.random()*300); }
     playForest() { this.runNoise(0.3, 500 + Math.random()*300); this.birdLoop(); }
@@ -89,7 +55,6 @@ class NatureSynth {
         this.activeNodes.push(noise, crackle);
     }
 
-    // Shared Helper
     runNoise(vol, freq) {
         this.stop();
         const noise = this.createPinkNoise(vol);
@@ -127,18 +92,18 @@ class NatureSynth {
 }
 const synth = new NatureSynth();
 
-// --- 3. GLOBAL STATE ---
+// --- 2. GLOBAL STATE ---
 const playerA = document.getElementById('vid1');
 const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
 const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
 
-let currentPlaylist = [];
+let blobPlaylist = []; // Stores local Blob URLs
 let currentIndex = 0;
 let currentPlayer = playerA;
 
-// --- 4. INIT ---
+// --- 3. INIT ---
 async function initStudio() {
     try {
         await synth.resume();
@@ -151,81 +116,99 @@ async function initStudio() {
     } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 5. GENERATE CONTENT ---
+// --- 4. GENERATE CONTENT (BLOB LOADER) ---
 async function generateContent() {
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
+    // UI
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Curating Viral Montage...';
+    statusText.textContent = 'Curating...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
-    // Fetch 4 Videos
-    currentPlaylist = await fetchMontagePlaylist(theme, 4);
+    // 1. Fetch URLs
+    const rawUrls = await fetchMontagePlaylist(theme, 4);
     
-    if (currentPlaylist.length > 0) {
-        synth.resume();
-        if(theme==='rain') synth.playRain();
-        else if(theme==='snow') synth.playSnow();
-        else if(theme==='ocean') synth.playOcean();
-        else if(theme==='fireplace') synth.playFire();
-        else if(theme==='forest') synth.playForest();
-        
-        document.getElementById('audioVisualizer').classList.add('active');
-        
-        // Generate NEW Viral SEO
-        generateViralSEO(theme);
-        
-        currentIndex = 0;
-        startVideoSequence();
-        
+    if (rawUrls.length > 0) {
+        // 2. Download Videos as Blobs (The Freeze Fix)
+        blobPlaylist = [];
+        for (let i = 0; i < rawUrls.length; i++) {
+            statusText.textContent = `Downloading Clip ${i+1}/4...`;
+            const blobUrl = await fetchVideoAsBlob(rawUrls[i]);
+            if (blobUrl) blobPlaylist.push(blobUrl);
+        }
+
+        if (blobPlaylist.length > 0) {
+            // Start Audio
+            synth.resume();
+            if(theme==='rain') synth.playRain();
+            else if(theme==='snow') synth.playSnow();
+            else if(theme==='ocean') synth.playOcean();
+            else if(theme==='fireplace') synth.playFire();
+            else if(theme==='forest') synth.playForest();
+            
+            document.getElementById('audioVisualizer').classList.add('active');
+            generateViralSEO(theme);
+            
+            currentIndex = 0;
+            startVideoSequence();
+        } else {
+            alert("Failed to download video clips. Please try again.");
+            statusText.textContent = 'Error';
+        }
     } else {
         alert("Not enough new videos found.");
     }
 }
 
-// --- 6. PING-PONG VIDEO ENGINE (Anti-Freeze) ---
+// Helper: Download Video to Memory
+async function fetchVideoAsBlob(url) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    } catch (e) {
+        console.warn("Blob fetch failed", e);
+        return null;
+    }
+}
+
+// --- 5. VIDEO SEQUENCE ---
 function startVideoSequence() {
     playerA.className = 'active';
     playerB.className = 'standby';
     currentPlayer = playerA;
 
-    loadClip(playerA, 0);
+    // Load Local Blob URL
+    playerA.src = blobPlaylist[0];
     playerA.play().then(() => {
         statusText.textContent = 'Live Sequence';
         recordBtn.disabled = false;
-    }).catch(e => console.log("Play interrupted"));
+    });
 
-    if (currentPlaylist.length > 1) loadClip(playerB, 1);
-}
-
-function loadClip(videoEl, index) {
-    const safeIndex = index % currentPlaylist.length;
-    // CRITICAL FIX: Add timestamp to force fresh CORS headers (prevents freezing)
-    const uniqueUrl = currentPlaylist[safeIndex] + (currentPlaylist[safeIndex].includes('?') ? '&' : '?') + `t=${Date.now()}`;
-    videoEl.src = uniqueUrl;
-    videoEl.load();
+    if (blobPlaylist.length > 1) {
+        playerB.src = blobPlaylist[1];
+    }
 }
 
 function swapPlayers(endingPlayer, nextPlayer) {
-    // 1. Play Next FIRST to ensure it's ready
     nextPlayer.play().then(() => {
-        // 2. Only swap if play succeeded
         endingPlayer.className = 'standby';
         nextPlayer.className = 'active';
         currentPlayer = nextPlayer;
         
-        // 3. Preload next
+        // Advance index
         currentIndex++;
-        loadClip(endingPlayer, currentIndex + 1);
-    }).catch(e => {
-        console.error("Swap failed, re-loading");
-        loadClip(nextPlayer, currentIndex + 1);
+        const nextBlobIndex = (currentIndex + 1) % blobPlaylist.length;
+        
+        // Load next blob into the player that just finished
+        endingPlayer.src = blobPlaylist[nextBlobIndex];
+        endingPlayer.load();
     });
 }
 
-// --- 7. SMART RECORDER ---
+// --- 6. RECORDER ---
 function startRecording() {
     synth.resume();
     if (currentPlayer.paused) currentPlayer.play();
@@ -262,7 +245,6 @@ function startRecording() {
         clearInterval(timerInterval);
     };
 
-    // Robust Draw Loop
     const drawInterval = setInterval(() => {
         if (currentPlayer.readyState >= 2) {
             ctx.drawImage(currentPlayer, 0, 0, canvas.width, canvas.height);
@@ -281,7 +263,7 @@ function startRecording() {
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 8. FETCHERS ---
+// --- 7. FETCHERS ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -290,7 +272,6 @@ async function fetchMontagePlaylist(query, count) {
         const page = Math.floor(Math.random() * 20) + 1;
         const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
         const data = await res.json();
-        
         if (data.videos) {
             const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
             fresh.forEach(v => {
@@ -311,39 +292,29 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-// --- 9. VIRAL SEO GENERATOR ---
+// --- 8. VIRAL SEO ENGINE ---
+const SEO_ENGINE = {
+    forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
+    rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
+    ocean: { hooks: ["Tropical", "Midnight", "Crystal Clear", "Deep Blue"], benefits: ["Calm Your Nerves", "Drift Away", "Theta Waves"], keywords: ["#oceanwaves", "#beachasmr", "#wavesounds", "#seascape"] },
+    fireplace: { hooks: ["Crackling", "Roaring", "Warm", "Winter"], benefits: ["Cozy Vibes", "Warm Your Soul", "Stress Relief"], keywords: ["#fireplace", "#cracklingfire", "#firesounds", "#cozyambience"] },
+    snow: { hooks: ["Arctic", "Blizzard", "Howling", "Frozen"], benefits: ["Cool Down", "Winter Sleep", "Focus Isolation"], keywords: ["#blizzard", "#snowstorm", "#arcticwind", "#winterambience"] },
+    generic: { suffixes: ["(No Talking)", "(Dark Screen)", "ASMR", "4K Ultra HD", "8D Audio"], tags: ["#shorts", "#fyp", "#viral", "#trending", "#sleep"] }
+};
+
 function generateViralSEO(theme) {
     const data = SEO_ENGINE[theme];
     const generic = SEO_ENGINE.generic;
     
-    // 1. Build Viral Title
     const hook = data.hooks[Math.floor(Math.random() * data.hooks.length)];
     const benefit = data.benefits[Math.floor(Math.random() * data.benefits.length)];
     const suffix = generic.suffixes[Math.floor(Math.random() * generic.suffixes.length)];
-    const title = `${hook} ${theme.toUpperCase()} Sounds ${benefit} ${suffix}`;
     
-    // 2. Build Description
-    const desc = `Experience the ${hook.toLowerCase()} power of ${theme} sounds. 
-This video is designed to help you ${benefit.toLowerCase()}. 
-Pure nature atmosphere with NO talking and NO loops.
-
-✅ Features:
-- ${suffix}
-- High Definition Audio
-- Natural Stress Relief
-
-👇 SUBSCRIBE for more ${theme} sounds!
-#${theme} #relax`;
-
-    // 3. Build Viral Tags (Mix specific + generic)
-    const specificTags = data.keywords;
-    const genericTags = generic.tags;
-    const pool = [...specificTags, ...genericTags];
-    const selectedTags = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
-
-    document.getElementById('videoTitle').value = title;
-    document.getElementById('videoDesc').value = desc;
-    document.getElementById('videoTags').value = selectedTags;
+    document.getElementById('videoTitle').value = `${hook} ${theme.toUpperCase()} Sounds ${benefit} ${suffix}`;
+    document.getElementById('videoDesc').value = `Experience the ${hook.toLowerCase()} power of ${theme} sounds.\nThis video is designed to help you ${benefit.toLowerCase()}.\nPure nature atmosphere with NO talking and NO loops.\n\n✅ Features:\n- ${suffix}\n- High Definition Audio\n- Natural Stress Relief\n\n#${theme} #relax`;
+    
+    const pool = [...data.keywords, ...generic.tags];
+    document.getElementById('videoTags').value = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
 }
 
 function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
