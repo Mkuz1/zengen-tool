@@ -1,8 +1,8 @@
 /**
- * ZenGen - "Blob Loader" Edition (Final Freeze Fix)
- * - Video: Downloads full clips as Blobs to bypass CORS security redirects.
+ * ZenGen - "Ironclad" Edition
+ * - Video: Single-player Blob Queue (Reduces complexity, eliminates freeze risks).
  * - Audio: Procedural Nature Engine.
- * - Recorder: Captures seamless montage from local Blob sources.
+ * - Recorder: Frame Guard protection to auto-skip stuck frames.
  */
 
 // --- CONFIGURATION ---
@@ -19,7 +19,6 @@ class NatureSynth {
         this.loopTimer = null; 
     }
     async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
-    
     stop() {
         if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
         this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
@@ -93,15 +92,18 @@ class NatureSynth {
 const synth = new NatureSynth();
 
 // --- 2. GLOBAL STATE ---
-const playerA = document.getElementById('vid1');
-const playerB = document.getElementById('vid2');
+// We only use ONE player (vid1) to reduce complexity and freeze risks
+const mainPlayer = document.getElementById('vid1');
+// Ensure the second player is hidden/removed to prevent interference
+const bufferPlayer = document.getElementById('vid2'); 
+if(bufferPlayer) bufferPlayer.style.display = 'none';
+
 const statusPill = document.getElementById('statusPill');
 const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
 
-let blobPlaylist = []; // Stores local Blob URLs
-let currentIndex = 0;
-let currentPlayer = playerA;
+let blobPlaylist = [];
+let currentBlobIndex = 0;
 
 // --- 3. INIT ---
 async function initStudio() {
@@ -110,20 +112,20 @@ async function initStudio() {
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
         
-        playerA.onended = () => swapPlayers(playerA, playerB);
-        playerB.onended = () => swapPlayers(playerB, playerA);
+        // Setup Main Player Loop
+        mainPlayer.onended = playNextBlob;
         
     } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 4. GENERATE CONTENT (BLOB LOADER) ---
+// --- 4. GENERATE CONTENT ---
 async function generateContent() {
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
     // UI
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Curating...';
+    statusText.textContent = 'Downloading Clips...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
@@ -131,12 +133,13 @@ async function generateContent() {
     const rawUrls = await fetchMontagePlaylist(theme, 4);
     
     if (rawUrls.length > 0) {
-        // 2. Download Videos as Blobs (The Freeze Fix)
         blobPlaylist = [];
+        
+        // 2. Download ALL Blobs first
         for (let i = 0; i < rawUrls.length; i++) {
-            statusText.textContent = `Downloading Clip ${i+1}/4...`;
-            const blobUrl = await fetchVideoAsBlob(rawUrls[i]);
-            if (blobUrl) blobPlaylist.push(blobUrl);
+            statusText.textContent = `Downloading ${i+1}/4...`;
+            const blob = await fetchVideoAsBlob(rawUrls[i]);
+            if (blob) blobPlaylist.push(blob);
         }
 
         if (blobPlaylist.length > 0) {
@@ -151,18 +154,23 @@ async function generateContent() {
             document.getElementById('audioVisualizer').classList.add('active');
             generateViralSEO(theme);
             
-            currentIndex = 0;
-            startVideoSequence();
+            // Start Video
+            currentBlobIndex = 0;
+            mainPlayer.src = blobPlaylist[0];
+            mainPlayer.play().then(() => {
+                statusText.textContent = 'Live';
+                recordBtn.disabled = false;
+            });
+            
         } else {
-            alert("Failed to download video clips. Please try again.");
-            statusText.textContent = 'Error';
+            alert("Download failed. Try again.");
         }
     } else {
-        alert("Not enough new videos found.");
+        alert("No videos found.");
     }
 }
 
-// Helper: Download Video to Memory
+// Helper: Download Video
 async function fetchVideoAsBlob(url) {
     try {
         const response = await fetch(url);
@@ -174,44 +182,17 @@ async function fetchVideoAsBlob(url) {
     }
 }
 
-// --- 5. VIDEO SEQUENCE ---
-function startVideoSequence() {
-    playerA.className = 'active';
-    playerB.className = 'standby';
-    currentPlayer = playerA;
-
-    // Load Local Blob URL
-    playerA.src = blobPlaylist[0];
-    playerA.play().then(() => {
-        statusText.textContent = 'Live Sequence';
-        recordBtn.disabled = false;
-    });
-
-    if (blobPlaylist.length > 1) {
-        playerB.src = blobPlaylist[1];
-    }
+// Helper: Play Next
+function playNextBlob() {
+    currentBlobIndex = (currentBlobIndex + 1) % blobPlaylist.length;
+    mainPlayer.src = blobPlaylist[currentBlobIndex];
+    mainPlayer.play().catch(e => console.log("Play error", e));
 }
 
-function swapPlayers(endingPlayer, nextPlayer) {
-    nextPlayer.play().then(() => {
-        endingPlayer.className = 'standby';
-        nextPlayer.className = 'active';
-        currentPlayer = nextPlayer;
-        
-        // Advance index
-        currentIndex++;
-        const nextBlobIndex = (currentIndex + 1) % blobPlaylist.length;
-        
-        // Load next blob into the player that just finished
-        endingPlayer.src = blobPlaylist[nextBlobIndex];
-        endingPlayer.load();
-    });
-}
-
-// --- 6. RECORDER ---
+// --- 5. RECORDER (With Frame Guard) ---
 function startRecording() {
     synth.resume();
-    if (currentPlayer.paused) currentPlayer.play();
+    if (mainPlayer.paused) mainPlayer.play();
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280; canvas.height = 720;
@@ -243,14 +224,36 @@ function startRecording() {
         recordBtn.disabled = false;
         clearInterval(drawInterval);
         clearInterval(timerInterval);
+        clearInterval(frameGuard); // Stop the guard
     };
 
+    // DRAW LOOP
     const drawInterval = setInterval(() => {
-        if (currentPlayer.readyState >= 2) {
-            ctx.drawImage(currentPlayer, 0, 0, canvas.width, canvas.height);
+        // Always draw the main player. Since we swap the .src of the main player, 
+        // this loop never needs to switch targets.
+        if (mainPlayer.readyState >= 2) {
+            ctx.drawImage(mainPlayer, 0, 0, canvas.width, canvas.height);
         }
     }, 1000 / 30);
 
+    // FRAME GUARD: Force next video if this one is stuck
+    let lastTime = 0;
+    let stuckCounter = 0;
+    const frameGuard = setInterval(() => {
+        if (mainPlayer.currentTime === lastTime && !mainPlayer.paused) {
+            stuckCounter++;
+            if (stuckCounter > 2) { // Stuck for 2 checks (approx 1 sec)
+                console.log("Video stuck! Forcing skip...");
+                playNextBlob();
+                stuckCounter = 0;
+            }
+        } else {
+            stuckCounter = 0;
+            lastTime = mainPlayer.currentTime;
+        }
+    }, 500);
+
+    // Countdown
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
@@ -263,7 +266,7 @@ function startRecording() {
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 7. FETCHERS ---
+// --- 6. FETCHERS ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -272,6 +275,7 @@ async function fetchMontagePlaylist(query, count) {
         const page = Math.floor(Math.random() * 20) + 1;
         const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
         const data = await res.json();
+        
         if (data.videos) {
             const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
             fresh.forEach(v => {
@@ -292,7 +296,7 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-// --- 8. VIRAL SEO ENGINE ---
+// --- 7. SEO ---
 const SEO_ENGINE = {
     forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
     rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
