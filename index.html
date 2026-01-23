@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Viral Sound Therapy Videos</title>
+    <title>ZenGen Studio | Live Search Viral Content</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-2.css">
     <style>
-        /* Loading Spinner */
+        /* Enhanced Loading Spinner for Live Search */
         #loadingSpinner {
             display: none;
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 30px 40px;
-            border-radius: 15px;
+            background: rgba(0,0,0,0.95);
+            padding: 40px 50px;
+            border-radius: 20px;
             z-index: 10000;
             text-align: center;
             border: 2px solid #3b82f6;
@@ -25,16 +25,20 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(10px);
+            min-width: 300px;
         }
         
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #333;
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(59, 130, 246, 0.2);
             border-top: 4px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
         }
         
         @keyframes spin {
@@ -42,7 +46,7 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Video Container with Controls */
+        /* Video Container with Live Source Info */
         .video-container {
             width: 100%;
             max-width: 900px;
@@ -67,8 +71,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,104 +86,143 @@
         
         .video-info {
             color: white;
+            flex: 1;
         }
         
         .video-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .video-subtitle {
             font-size: 12px;
             opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #93c5fd;
+        }
+        
+        .video-subtitle i {
+            color: #3b82f6;
+            font-size: 10px;
         }
         
         .video-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
         
         .video-action-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
         
         .video-action-btn:hover {
             background: rgba(59, 130, 246, 0.8);
+            transform: scale(1.1);
+            border-color: #3b82f6;
         }
         
-        /* Social Preview */
+        /* Source Badge */
+        .source-badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            margin-left: 8px;
+        }
+        
+        /* Enhanced Social Preview */
         .social-preview {
-            background: #111;
+            background: rgba(17, 17, 17, 0.8);
             border: 1px solid #333;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
         
         .social-preview h4 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: #3b82f6;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
+            gap: 10px;
+            font-size: 16px;
         }
         
         .preview-content {
-            background: #000;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         
         .preview-title {
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             color: #fff;
-            font-size: 14px;
+            font-size: 16px;
+            line-height: 1.4;
         }
         
         .preview-desc {
             color: #aaa;
-            margin-bottom: 8px;
-            line-height: 1.4;
-            font-size: 12px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            font-size: 13px;
         }
         
         .tags-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 8px;
+            gap: 8px;
+            margin-top: 12px;
         }
         
         .tag {
             background: rgba(59, 130, 246, 0.2);
             color: #93c5fd;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
             border: 1px solid rgba(59, 130, 246, 0.3);
+            transition: all 0.3s;
         }
         
-        /* Social Buttons */
+        .tag:hover {
+            background: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        /* Enhanced Social Buttons */
         .social-buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 20px;
         }
         
         .social-btn {
@@ -187,119 +230,140 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 12px;
-            background: #222;
+            padding: 15px;
+            background: rgba(34, 34, 34, 0.8);
             border: 1px solid #333;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #aaa;
             text-decoration: none;
             transition: all 0.3s;
             cursor: pointer;
             text-align: center;
+            backdrop-filter: blur(10px);
         }
         
         .social-btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
             color: white;
+            border-color: rgba(59, 130, 246, 0.5);
         }
         
         .social-btn i {
-            font-size: 20px;
-            margin-bottom: 5px;
+            font-size: 24px;
+            margin-bottom: 8px;
         }
         
         .social-btn span {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
         }
         
-        .social-btn.youtube:hover { background: #ff0000; border-color: #ff0000; }
-        .social-btn.tiktok:hover { background: #000; border-color: #69c9d0; }
+        .social-btn.youtube:hover { 
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            border-color: #ff0000; 
+        }
+        
+        .social-btn.tiktok:hover { 
+            background: linear-gradient(135deg, #000, #69c9d0);
+            border-color: #69c9d0; 
+        }
+        
         .social-btn.instagram:hover { 
             background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
             border-color: transparent;
         }
-        .social-btn.facebook:hover { background: #1877f2; border-color: #1877f2; }
         
-        /* Theme Cards */
+        .social-btn.facebook:hover { 
+            background: linear-gradient(135deg, #1877f2, #0d65c2);
+            border-color: #1877f2; 
+        }
+        
+        /* Enhanced Theme Cards */
         .theme-cards {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 15px;
         }
         
         .theme-card {
             flex: 1;
-            padding: 10px;
+            padding: 15px;
             background: rgba(0,0,0,0.3);
-            border-radius: 8px;
+            border-radius: 10px;
             text-align: center;
             cursor: pointer;
             border: 2px solid transparent;
             transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
         
         .theme-card:hover {
             border-color: #3b82f6;
             background: rgba(59, 130, 246, 0.1);
+            transform: translateY(-3px);
         }
         
         .theme-card.active {
             border-color: #3b82f6;
             background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.2);
         }
         
         .theme-card i {
-            font-size: 18px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            margin-bottom: 8px;
             display: block;
             color: #3b82f6;
         }
         
         .theme-card-name {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
         }
         
-        /* Audio Controls */
+        /* Enhanced Audio Controls */
         .audio-controls {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            padding: 10px;
+            gap: 12px;
+            margin-top: 15px;
+            padding: 12px;
             background: rgba(0,0,0,0.3);
-            border-radius: 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         
         .volume-control {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             flex: 1;
         }
         
         .volume-slider {
             flex: 1;
-            height: 4px;
+            height: 6px;
             -webkit-appearance: none;
             background: #333;
-            border-radius: 2px;
+            border-radius: 3px;
             outline: none;
+            background: linear-gradient(to right, #3b82f6 0%, #3b82f6 80%, #333 80%, #333 100%);
         }
         
         .volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background: #3b82f6;
             cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
         }
         
-        /* Download Section */
+        /* Enhanced Download Section */
         .download-section {
-            margin-top: 20px;
+            margin-top: 25px;
             text-align: center;
         }
         
@@ -307,89 +371,254 @@
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
+            padding: 15px 30px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            transition: transform 0.3s;
+            gap: 12px;
+            transition: all 0.3s;
             width: 100%;
             justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.3);
         }
         
         .download-btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.5);
         }
         
-        /* Instructions */
+        .download-btn:active {
+            transform: translateY(-2px);
+        }
+        
+        /* Enhanced Instructions */
         .instructions {
             background: rgba(59, 130, 246, 0.1);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 15px;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
             border: 1px solid rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         .instructions p {
-            font-size: 12px;
+            font-size: 13px;
             margin: 0;
             opacity: 0.9;
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: 10px;
+            line-height: 1.5;
         }
         
         .instructions i {
             color: #3b82f6;
             margin-top: 2px;
+            font-size: 14px;
         }
         
-        /* Status Styles */
+        /* Enhanced Status Styles */
+        .status-pill {
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            backdrop-filter: blur(10px);
+        }
+        
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #444;
             display: inline-block;
-            margin-right: 8px;
         }
         
-        .status-dot.ready { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
-        .status-dot.loading { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; animation: pulse 1s infinite; }
-        .status-dot.playing { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
-        .status-dot.error { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .status-dot.ready { 
+            background: #22c55e; 
+            box-shadow: 0 0 15px #22c55e; 
+        }
+        
+        .status-dot.loading { 
+            background: #3b82f6; 
+            box-shadow: 0 0 15px #3b82f6; 
+            animation: pulse 1s infinite; 
+        }
+        
+        .status-dot.playing { 
+            background: #3b82f6; 
+            box-shadow: 0 0 15px #3b82f6; 
+        }
+        
+        .status-dot.error { 
+            background: #ef4444; 
+            box-shadow: 0 0 15px #ef4444; 
+        }
+        
+        .status-dot.searching {
+            background: #8b5cf6;
+            box-shadow: 0 0 15px #8b5cf6;
+            animation: pulse 0.5s infinite;
+        }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.5; 
+                transform: scale(1.1);
+            }
+        }
+        
+        /* Live Search Indicator */
+        .live-search-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #3b82f6;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        .live-search-indicator i {
+            font-size: 8px;
+        }
+        
+        /* Source Info in Sidebar */
+        .source-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #93c5fd;
+        }
+        
+        .source-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Enhanced Generate Button */
+        .btn-generate {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+            border: none !important;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-generate::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 70%
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+        
+        .btn-generate:hover::before {
+            left: 100%;
+        }
+        
+        /* Responsive Updates */
+        @media (max-width: 900px) { 
+            .social-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .theme-cards {
+                flex-wrap: wrap;
+            }
+            
+            .theme-card {
+                min-width: 70px;
+                flex: none;
+                width: calc(50% - 5px);
+            }
+            
+            .video-controls {
+                padding: 15px;
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .video-title {
+                font-size: 14px;
+            }
+            
+            .video-subtitle {
+                font-size: 10px;
+            }
+            
+            .social-btn {
+                padding: 12px 8px;
+            }
+            
+            .social-btn i {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Spinner -->
+    <!-- Enhanced Loading Spinner -->
     <div id="loadingSpinner">
         <div class="spinner"></div>
-        <p>Generating viral content...</p>
-        <p style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Loading videos & sounds</p>
+        <h3 style="margin-bottom: 10px; color: #3b82f6;">Live Search Active</h3>
+        <p>Searching online sources for fresh content...</p>
+        <p style="font-size: 13px; opacity: 0.7; margin-top: 10px;">
+            <i class="fas fa-satellite-dish fa-spin"></i> 
+            Fetching videos, audio & trending SEO
+        </p>
     </div>
 
-    <!-- Splash Screen -->
+    <!-- Enhanced Splash Screen -->
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
-            <i class="fa-solid fa-fire fa-3x" style="color: #3b82f6;"></i>
-            <h1>ZenGen Studio</h1>
-            <p style="font-size: 18px; font-weight: 600;">Create Viral Sound Therapy Videos</p>
-            <p style="margin: 20px 0; opacity: 0.8;">Trending SEO • Working Videos • Social Ready</p>
+            <i class="fa-solid fa-satellite-dish fa-3x" style="color: #3b82f6;"></i>
+            <h1>ZenGen Live Studio</h1>
+            <p style="font-size: 20px; font-weight: 600;">Real-Time Viral Content Search</p>
+            <p style="margin: 20px 0; opacity: 0.8; max-width: 600px; line-height: 1.5;">
+                <span class="live-search-indicator">
+                    <i class="fas fa-circle"></i> LIVE SEARCH
+                </span>
+                Fresh videos from online sources • Trending audio • Viral SEO analysis
+            </p>
             <button id="enterStudioBtn" class="btn-enter">
-                <i class="fas fa-rocket"></i> Launch Studio
+                <i class="fas fa-satellite-dish"></i> Launch Live Studio
             </button>
-            <div style="margin-top: 30px; font-size: 12px; opacity: 0.6; max-width: 400px;">
-                <p><i class="fas fa-check-circle"></i> No 403 Errors - Working Videos</p>
-                <p><i class="fas fa-check-circle"></i> Preview Before Download</p>
-                <p><i class="fas fa-check-circle"></i> 25+ Viral Tags Per Video</p>
-                <p><i class="fas fa-check-circle"></i> Social Media Optimized</p>
+            <div style="margin-top: 30px; font-size: 13px; opacity: 0.7; max-width: 500px;">
+                <p><i class="fas fa-search" style="color: #3b82f6;"></i> <strong>Live Search Engine:</strong> Searches Pexels, Pixabay, Freesound APIs</p>
+                <p><i class="fas fa-trending-up" style="color: #3b82f6;"></i> <strong>Trend Analysis:</strong> Real-time viral SEO from YouTube/Reddit</p>
+                <p><i class="fas fa-sync-alt" style="color: #3b82f6;"></i> <strong>Fresh Every Time:</strong> New content on every generation</p>
+                <p><i class="fas fa-bolt" style="color: #3b82f6;"></i> <strong>Multiple Sources:</strong> Automatically switches APIs for best results</p>
             </div>
         </div>
     </div>
@@ -398,27 +627,31 @@
     <div id="workspace" class="workspace" style="display: none;">
         <nav>
             <div class="brand">
-                <i class="fa-solid fa-fire" style="color: #3b82f6;"></i>
-                <span style="font-weight: 800; font-size: 1.3rem;">ZenGen</span>
-                <span style="background: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">FIXED</span>
+                <i class="fa-solid fa-satellite-dish" style="color: #3b82f6;"></i>
+                <span style="font-weight: 800; font-size: 1.3rem;">ZenGen Live</span>
+                <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; border: none;">LIVE SEARCH</span>
             </div>
             <div class="status-pill" id="statusPill">
-                <span class="status-dot ready"></span> Ready to Create
+                <span class="status-dot ready"></span> 
+                <span id="statusText">Ready for live search</span>
+                <span class="live-search-indicator">
+                    <i class="fas fa-circle"></i> ONLINE
+                </span>
             </div>
         </nav>
 
         <div class="main-layout">
-            <!-- Left Panel -->
+            <!-- Left Panel - Enhanced for Live Search -->
             <aside class="sidebar">
                 <div class="control-group">
-                    <label><i class="fas fa-trending-up"></i> TRENDING THEME</label>
+                    <label><i class="fas fa-search"></i> LIVE SEARCH THEME</label>
                     <div class="custom-select">
                         <select id="themeSelect">
-                            <option value="forest">🌲 Forest Therapy (Most Popular)</option>
-                            <option value="ocean">🌊 Ocean Waves (Trending)</option>
-                            <option value="rain">🌧️ Rain ASMR (Viral)</option>
-                            <option value="fireplace">🔥 Cozy Fireplace (Winter)</option>
-                            <option value="snow">❄️ Arctic Sounds (Unique)</option>
+                            <option value="forest">🌲 Forest Therapy (Live Search)</option>
+                            <option value="ocean">🌊 Ocean Waves (Live Search)</option>
+                            <option value="rain">🌧️ Rain ASMR (Live Search)</option>
+                            <option value="fireplace">🔥 Cozy Fireplace (Live Search)</option>
+                            <option value="snow">❄️ Arctic Sounds (Live Search)</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
@@ -444,21 +677,25 @@
                 </div>
 
                 <div class="control-group">
-                    <label><i class="fas fa-music"></i> SOUND SELECTION</label>
+                    <label><i class="fas fa-satellite-dish"></i> LIVE AUDIO SEARCH</label>
                     <div class="custom-select">
                         <select id="audioVariant">
-                            <option value="">Select a sound therapy...</option>
+                            <option value="">Live audio search will appear...</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="source-info" id="audioSourceInfo">
+                        <span><i class="fas fa-database"></i> Source:</span>
+                        <span id="audioSourceValue">Waiting for search...</span>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <button id="generateBtn" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
-                        <i class="fa-solid fa-bolt"></i> GENERATE VIRAL CONTENT
+                    <button id="generateBtn" class="btn-primary btn-generate">
+                        <i class="fa-solid fa-satellite-dish"></i> SEARCH LIVE CONTENT
                     </button>
-                    <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
-                        Creates video + sound + trending SEO instantly
+                    <p style="font-size: 12px; margin-top: 8px; opacity: 0.7; text-align: center;">
+                        Searches online sources in real-time for fresh content
                     </p>
                 </div>
 
@@ -468,13 +705,13 @@
                     </button>
                     
                     <div class="audio-controls">
-                        <button id="muteBtn" style="width: auto; padding: 8px 12px; background: #222;">
+                        <button id="muteBtn" style="width: auto; padding: 8px 15px; background: #222; border: 1px solid #333;">
                             <i class="fas fa-volume-up"></i>
                         </button>
                         <div class="volume-control">
-                            <i class="fas fa-volume-low" style="font-size: 12px; color: #aaa;"></i>
+                            <i class="fas fa-volume-low" style="font-size: 14px; color: #aaa;"></i>
                             <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
-                            <i class="fas fa-volume-high" style="font-size: 12px; color: #aaa;"></i>
+                            <i class="fas fa-volume-high" style="font-size: 14px; color: #aaa;"></i>
                         </div>
                     </div>
                 </div>
@@ -485,24 +722,25 @@
                     <button id="recordBtn" class="download-btn">
                         <i class="fas fa-download"></i> DOWNLOAD MP4 VIDEO
                     </button>
-                    <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
-                        Save video and upload to any platform
+                    <p style="font-size: 12px; margin-top: 8px; opacity: 0.7; text-align: center;">
+                        Save fresh video from live search
                     </p>
                 </div>
                 
                 <div class="instructions">
                     <p>
-                        <i class="fas fa-lightbulb"></i>
-                        <strong>How to Use:</strong><br>
-                        1. Select theme & sound<br>
-                        2. Click GENERATE<br>
-                        3. Click PLAY to preview<br>
-                        4. Download & share!
+                        <i class="fas fa-satellite-dish"></i>
+                        <strong>Live Search Guide:</strong><br>
+                        1. Select search theme<br>
+                        2. Click SEARCH LIVE CONTENT<br>
+                        3. System searches online APIs<br>
+                        4. Fresh video, audio & SEO loaded<br>
+                        5. Play & download unique content
                     </p>
                 </div>
             </aside>
 
-            <!-- Main Content -->
+            <!-- Main Content - Enhanced -->
             <main class="monitor-section">
                 <div class="video-container">
                     <video id="vid1" controls playsinline>
@@ -512,38 +750,44 @@
                     
                     <div class="video-controls">
                         <div class="video-info">
-                            <div class="video-title" id="currentVideoTitle">Nature Sound Therapy</div>
-                            <div class="video-subtitle" id="currentVideoSub">Click GENERATE to load video</div>
+                            <div class="video-title" id="currentVideoTitle">
+                                Live Search Content
+                                <span class="source-badge" id="videoSourceBadge">Searching...</span>
+                            </div>
+                            <div class="video-subtitle" id="currentVideoSub">
+                                <i class="fas fa-sync-alt fa-spin"></i>
+                                <span id="videoStatus">Click SEARCH LIVE CONTENT to begin</span>
+                            </div>
                         </div>
                         <div class="video-actions">
-                            <button class="video-action-btn" onclick="document.getElementById('vid1').play()">
+                            <button class="video-action-btn" id="playBtn">
                                 <i class="fas fa-play"></i>
                             </button>
-                            <button class="video-action-btn" onclick="document.getElementById('vid1').pause()">
+                            <button class="video-action-btn" id="pauseBtn">
                                 <i class="fas fa-pause"></i>
                             </button>
-                            <button class="video-action-btn" onclick="document.getElementById('vid1').volume += 0.1">
+                            <button class="video-action-btn" id="muteVideoBtn">
                                 <i class="fas fa-volume-up"></i>
                             </button>
-                            <button class="video-action-btn" onclick="document.getElementById('vid1').volume -= 0.1">
-                                <i class="fas fa-volume-down"></i>
+                            <button class="video-action-btn" id="fullscreenBtn">
+                                <i class="fas fa-expand"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Social Preview -->
+                <!-- Enhanced Social Preview -->
                 <div class="social-preview">
-                    <h4><i class="fas fa-share-alt"></i> SOCIAL MEDIA PREVIEW</h4>
+                    <h4><i class="fas fa-trending-up"></i> LIVE TREND ANALYSIS</h4>
                     <div class="preview-content">
-                        <div class="preview-title" id="socialTitle">Your viral title will appear here</div>
-                        <div class="preview-desc" id="socialDesc">Trending description optimized for maximum views and engagement</div>
+                        <div class="preview-title" id="socialTitle">Live trend analysis will appear here</div>
+                        <div class="preview-desc" id="socialDesc">System analyzes YouTube, Reddit, and social trends for viral SEO</div>
                         <div class="tags-container" id="socialTags">
-                            <span class="tag">#viral</span>
+                            <span class="tag">#livesearch</span>
                             <span class="tag">#trending</span>
-                            <span class="tag">#therapy</span>
+                            <span class="tag">#viral</span>
+                            <span class="tag">#fresh</span>
                             <span class="tag">#2024</span>
-                            <span class="tag">#healing</span>
                         </div>
                     </div>
                     
@@ -568,69 +812,77 @@
                 </div>
             </main>
 
-            <!-- Right Panel -->
+            <!-- Right Panel - Enhanced for Live SEO -->
             <aside class="meta-sidebar">
                 <div class="meta-header">
-                    <h3><i class="fas fa-chart-line"></i> VIRAL SEO ENGINE</h3>
-                    <p style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Optimized for YouTube/TikTok algorithm 2024</p>
+                    <h3><i class="fas fa-chart-line"></i> LIVE SEO ANALYSIS</h3>
+                    <p style="font-size: 12px; opacity: 0.7; margin-top: 5px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-sync-alt fa-spin"></i> 
+                        Real-time trend analysis from multiple sources
+                    </p>
                 </div>
                 
                 <div class="meta-field">
-                    <label><i class="fas fa-heading"></i> VIRAL TITLE</label>
+                    <label><i class="fas fa-bolt"></i> VIRAL TITLE (Live)</label>
                     <div class="input-row">
-                        <input type="text" id="videoTitle" placeholder="Click GENERATE for trending title" readonly>
+                        <input type="text" id="videoTitle" placeholder="Live search for trending title..." readonly>
                         <button id="copyTitleBtn">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
-                    <p style="font-size: 10px; opacity: 0.6; margin-top: 3px;">
-                        🔥 High CTR guaranteed
+                    <p style="font-size: 11px; opacity: 0.6; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-fire" style="color: #ef4444;"></i>
+                        <span>Based on current trending topics</span>
                     </p>
                 </div>
                 
                 <div class="meta-field">
-                    <label><i class="fas fa-align-left"></i> DESCRIPTION</label>
+                    <label><i class="fas fa-rocket"></i> DESCRIPTION (Live)</label>
                     <div class="input-row">
-                        <textarea id="videoDesc" rows="6" placeholder="Viral description will auto-generate" readonly></textarea>
+                        <textarea id="videoDesc" rows="6" placeholder="Live trend analysis for description..." readonly></textarea>
                         <button id="copyDescBtn">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
-                    <p style="font-size: 10px; opacity: 0.6; margin-top: 3px;">
-                        📈 Includes engagement triggers
+                    <p style="font-size: 11px; opacity: 0.6; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-chart-line" style="color: #3b82f6;"></i>
+                        <span>Optimized for maximum virality</span>
                     </p>
                 </div>
                 
                 <div class="meta-field">
-                    <label><i class="fas fa-tags"></i> TRENDING TAGS (25+)</label>
+                    <label><i class="fas fa-hashtag"></i> TRENDING TAGS (25+ Live)</label>
                     <div class="input-row">
-                        <textarea id="videoTags" rows="8" placeholder="25+ trending tags will generate" readonly></textarea>
+                        <textarea id="videoTags" rows="8" placeholder="Live trend analysis for tags..." readonly></textarea>
                         <button id="copyTagsBtn">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
-                    <p style="font-size: 10px; opacity: 0.6; margin-top: 3px;">
-                        🎯 Algorithm optimized for 2024
+                    <p style="font-size: 11px; opacity: 0.6; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-trending-up" style="color: #22c55e;"></i>
+                        <span>Updated based on current trends</span>
                     </p>
                 </div>
                 
-                <div style="margin-top: 20px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                    <p style="font-size: 12px; margin: 0; opacity: 0.9;">
-                        <i class="fas fa-rocket" style="color: #22c55e;"></i>
-                        <strong>Ready to Go Viral:</strong> Copy & paste directly to YouTube/TikTok/Instagram
+                <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.3); backdrop-filter: blur(10px);">
+                    <p style="font-size: 13px; margin: 0; opacity: 0.9; display: flex; align-items: flex-start; gap: 10px;">
+                        <i class="fas fa-satellite-dish fa-spin" style="color: #3b82f6; margin-top: 2px;"></i>
+                        <div>
+                            <strong>Live Search Active:</strong> Content is fetched fresh from online sources. SEO is analyzed from current trends.
+                        </div>
                     </p>
                 </div>
                 
-                <div style="margin-top: 15px; font-size: 11px; opacity: 0.5; text-align: center;">
-                    <p>Updated for 2024 Trends • No 403 Errors • Working Videos</p>
+                <div style="margin-top: 15px; font-size: 11px; opacity: 0.5; text-align: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <p><i class="fas fa-database"></i> Sources: Pexels API • Pixabay API • YouTube Trends • Reddit Trends • Freesound</p>
                 </div>
             </aside>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app-2.js"></script>
     <script>
-    // Theme card click handlers
+    // Enhanced theme card click handlers
     document.querySelectorAll('.theme-card').forEach(card => {
         card.addEventListener('click', function() {
             const theme = this.dataset.theme;
@@ -640,14 +892,45 @@
             document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
             this.classList.add('active');
             
-            // Trigger content generation
-            if (typeof loadThemeOptions === 'function') loadThemeOptions();
-            if (typeof generateContent === 'function') generateContent();
+            // Update status
+            document.getElementById('statusText').textContent = `Theme: ${theme} - Ready to search`;
         });
     });
     
-    // Video volume persistence
-    document.getElementById('vid1').addEventListener('volumechange', function() {
+    // Enhanced video controls
+    const video = document.getElementById('vid1');
+    
+    document.getElementById('playBtn').addEventListener('click', () => video.play());
+    document.getElementById('pauseBtn').addEventListener('click', () => video.pause());
+    document.getElementById('muteVideoBtn').addEventListener('click', () => {
+        video.muted = !video.muted;
+        document.getElementById('muteVideoBtn').innerHTML = video.muted ? 
+            '<i class="fas fa-volume-mute"></i>' : 
+            '<i class="fas fa-volume-up"></i>';
+    });
+    
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.querySelector('.video-container').requestFullscreen().catch(err => {
+                console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+    
+    // Video events
+    video.addEventListener('play', () => {
+        document.getElementById('statusText').textContent = 'Playing live content';
+        document.querySelector('#statusPill .status-dot').className = 'status-dot playing';
+    });
+    
+    video.addEventListener('pause', () => {
+        document.getElementById('statusText').textContent = 'Paused';
+        document.querySelector('#statusPill .status-dot').className = 'status-dot ready';
+    });
+    
+    video.addEventListener('volumechange', function() {
         localStorage.setItem('videoVolume', this.volume);
     });
     
@@ -655,10 +938,13 @@
     window.addEventListener('load', function() {
         const savedVolume = localStorage.getItem('videoVolume');
         if (savedVolume) {
-            document.getElementById('vid1').volume = parseFloat(savedVolume);
+            video.volume = parseFloat(savedVolume);
             document.getElementById('volumeSlider').value = savedVolume;
         }
     });
+    
+    // Initialize with a message
+    console.log('🚀 ZenGen Live Studio - Real-time content search engine');
     </script>
 </body>
 </html>
