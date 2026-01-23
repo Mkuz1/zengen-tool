@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenGen - Relaxing Video Creator</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ZenGen Studio</h1>
+            <p>Create 1-minute relaxing nature videos instantly.</p>
+        </header>
+
+        <div class="controls">
+            <select id="themeSelect">
+                <option value="forest">Forest</option>
+                <option value="snow">Snow</option>
+                <option value="ocean">Ocean</option>
+                <option value="rain">Rain</option>
+                <option value="fireplace">Fireplace</option>
+            </select>
+            <button id="generateBtn" onclick="generateContent()">Find Content</button>
+            <button id="recordBtn" disabled onclick="startRecording()">🔴 Record 1-Min Clip</button>
+        </div>
+
+        <div class="preview-area">
+            <div id="videoContainer">
+                <video id="mainVideo" crossOrigin="anonymous" loop playsinline muted></video>
+                <div id="loading">Select a theme to start...</div>
+            </div>
+            <audio id="bgAudio" crossOrigin="anonymous" loop></audio>
+        </div>
+
+        <div class="metadata-panel" id="metaPanel" style="display:none;">
+            <h3>🚀 Video Metadata</h3>
+            
+            <div class="meta-group">
+                <label>Catchy Title:</label>
+                <input type="text" id="videoTitle" readonly>
+                <button onclick="copyToClip('videoTitle')">Copy</button>
+            </div>
+
+            <div class="meta-group">
+                <label>Description:</label>
+                <textarea id="videoDesc" rows="3" readonly></textarea>
+                <button onclick="copyToClip('videoDesc')">Copy</button>
+            </div>
+
+            <div class="meta-group">
+                <label>Viral Tags:</label>
+                <textarea id="videoTags" rows="2" readonly></textarea>
+                <button onclick="copyToClip('videoTags')">Copy</button>
+            </div>
+
+            <div class="social-share">
+                <p>Share this tool:</p>
+                <a href="#" id="shareFb" target="_blank">Facebook</a>
+                <a href="#" id="shareTw" target="_blank">X (Twitter)</a>
+                <a href="#" id="shareWa" target="_blank">WhatsApp</a>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
