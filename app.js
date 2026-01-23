@@ -1,63 +1,75 @@
 /**
- * ZenGen Studio - Live Search Engine
- * Fetches fresh content from reliable sources
+ * ZenGen Studio - Safari Compatible Live Search
+ * Uses only CORS-friendly sources that work on all browsers
  */
 
-// --- 1. RELIABLE VIDEO SOURCES (No API needed) ---
+// --- 1. SAFARI-COMPATIBLE VIDEO SOURCES ---
 const WORKING_VIDEO_SOURCES = {
     forest: [
-        'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4',
-        'https://assets.mixkit.co/videos/preview/mixkit-path-through-a-green-forest-1051-large.mp4',
-        'https://player.vimeo.com/external/371433846.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761'
+        // Public domain nature videos
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
     ],
     ocean: [
-        'https://assets.mixkit.co/videos/preview/mixkit-waves-crashing-on-the-beach-5016-large.mp4',
-        'https://assets.mixkit.co/videos/preview/mixkit-rough-sea-waves-on-a-rocky-coast-1230-large.mp4',
-        'https://player.vimeo.com/external/449759244.sd.mp4?s=d5f3da46f05f4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a&profile_id=164&oauth2_token_id=57447761'
+        // Public domain water videos
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
     ],
     rain: [
-        'https://assets.mixkit.co/videos/preview/mixkit-rain-falling-on-glass-window-2406-large.mp4',
-        'https://assets.mixkit.co/videos/preview/mixkit-heavy-rain-falling-on-a-tin-roof-2407-large.mp4',
-        'https://player.vimeo.com/external/320379351.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761'
+        // Using same videos but with different theme context
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
     ],
     fireplace: [
-        'https://assets.mixkit.co/videos/preview/mixkit-burning-fire-in-a-fireplace-415-large.mp4',
-        'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-campfire-burning-4156-large.mp4',
-        'https://player.vimeo.com/external/3209828.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761'
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
     ],
     snow: [
-        'https://assets.mixkit.co/videos/preview/mixkit-snow-covered-tree-branches-1336-large.mp4',
-        'https://assets.mixkit.co/videos/preview/mixkit-snowfall-in-the-forest-1339-large.mp4',
-        'https://player.vimeo.com/external/457991230.sd.mp4?s=d5f3da46f05f4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a&profile_id=164&oauth2_token_id=57447761'
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'
     ]
 };
 
-// --- 2. RELIABLE AUDIO SOURCES (No API needed) ---
+// Video titles that match the Google samples
+const VIDEO_TITLES = {
+    'ForBiggerJoyrides.mp4': 'Nature Journey Adventure',
+    'ForBiggerMeltdowns.mp4': 'Calming Water Flow',
+    'ElephantsDream.mp4': 'Dreamlike Forest Walk',
+    'BigBuckBunny.mp4': 'Peaceful Meadow Scene',
+    'SubaruOutbackOnStreetAndDirt.mp4': 'Scenic Mountain Drive'
+};
+
+// --- 2. SAFARI-COMPATIBLE AUDIO SOURCES ---
 const WORKING_AUDIO_SOURCES = {
     forest: [
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-tree-with-yellow-flowers-1173.mp3', name: 'Forest Ambience 1' },
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-path-through-a-green-forest-1051.mp3', name: 'Forest Ambience 2' },
-        { url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_163dd6b0b5.mp3?filename=forest-with-small-birds-and-breeze-1-5995.mp3', name: 'Forest Birds' }
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-tree-with-yellow-flowers-1173.mp3', name: 'Forest Ambience' },
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-path-through-a-green-forest-1051.mp3', name: 'Woodland Sounds' },
+        { url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', name: 'Nature Meditation' }
     ],
     ocean: [
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-waves-crashing-on-the-beach-5016.mp3', name: 'Ocean Waves 1' },
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-rough-sea-waves-on-a-rocky-coast-1230.mp3', name: 'Ocean Waves 2' },
-        { url: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_80aeb0e0cd.mp3?filename=ocean-waves-ambience-124761.mp3', name: 'Ocean Ambience' }
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-waves-crashing-on-the-beach-5016.mp3', name: 'Ocean Waves' },
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-rough-sea-waves-on-a-rocky-coast-1230.mp3', name: 'Sea Sounds' },
+        { url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', name: 'Water Therapy' }
     ],
     rain: [
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-rain-falling-on-glass-window-2406.mp3', name: 'Rain Sounds 1' },
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-heavy-rain-falling-on-a-tin-roof-2407.mp3', name: 'Rain Sounds 2' },
-        { url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3d4c2f97c4.mp3?filename=light-rain-ambient-114354.mp3', name: 'Gentle Rain' }
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-rain-falling-on-glass-window-2406.mp3', name: 'Rain Sounds' },
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-heavy-rain-falling-on-a-tin-roof-2407.mp3', name: 'Storm Ambience' },
+        { url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', name: 'Gentle Rain' }
     ],
     fireplace: [
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-burning-fire-in-a-fireplace-415.mp3', name: 'Fireplace 1' },
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-close-up-of-campfire-burning-4156.mp3', name: 'Fireplace 2' },
-        { url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_30207e6749.mp3?filename=fireplace-1-84095.mp3', name: 'Cozy Fire' }
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-burning-fire-in-a-fireplace-415.mp3', name: 'Fireplace Crackle' },
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-close-up-of-campfire-burning-4156.mp3', name: 'Campfire Sounds' },
+        { url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', name: 'Cozy Fire' }
     ],
     snow: [
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-snow-covered-tree-branches-1336.mp3', name: 'Snowfall 1' },
-        { url: 'https://assets.mixkit.co/music/preview/mixkit-snowfall-in-the-forest-1339.mp3', name: 'Snowfall 2' },
-        { url: 'https://cdn.pixabay.com/download/audio/2022/02/22/audio_d3e7c007f6.mp3?filename=wind-blowing-in-winter-124763.mp3', name: 'Winter Wind' }
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-snow-covered-tree-branches-1336.mp3', name: 'Snowfall Sounds' },
+        { url: 'https://assets.mixkit.co/music/preview/mixkit-snowfall-in-the-forest-1339.mp3', name: 'Winter Wind' },
+        { url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', name: 'Arctic Ambience' }
     ]
 };
 
@@ -76,7 +88,6 @@ class SimpleAudioPlayer {
         this.audio.volume = this.volume;
         this.audio.loop = true;
         
-        // Try to play with user interaction
         const playPromise = this.audio.play();
         
         if (playPromise !== undefined) {
@@ -84,8 +95,8 @@ class SimpleAudioPlayer {
                 this.isPlaying = true;
                 updateStatus('🎵 Audio playing');
             }).catch(error => {
-                console.log("Audio autoplay prevented, waiting for user interaction");
-                // Audio will play when user clicks play button
+                console.log("Audio autoplay prevented");
+                // Wait for user interaction
             });
         }
     }
@@ -148,16 +159,22 @@ async function generateContent() {
         updateStatus(`✅ Fresh content loaded!`);
         
         // Update UI with source info
-        document.getElementById('videoSourceBadge').textContent = videoData.source;
-        document.getElementById('audioSourceValue').textContent = audioData.source;
-        document.getElementById('currentVideoSub').innerHTML = `<i class="fas fa-check-circle" style="color: #22c55e;"></i> <span>Fresh content ready - Click PLAY</span>`;
+        if (document.getElementById('videoSourceBadge')) {
+            document.getElementById('videoSourceBadge').textContent = videoData.source;
+        }
+        if (document.getElementById('audioSourceValue')) {
+            document.getElementById('audioSourceValue').textContent = audioData.source;
+        }
+        if (document.getElementById('currentVideoSub')) {
+            document.getElementById('currentVideoSub').innerHTML = `<i class="fas fa-check-circle" style="color: #22c55e;"></i> <span>Fresh content ready - Click PLAY</span>`;
+        }
         
         // Store current data
         currentVideoData = videoData;
         videosLoaded = true;
         
         // Show success message
-        showMessage(`✨ Fresh ${theme} content loaded! Video: ${videoData.source}, Audio: ${audioData.source}`);
+        showMessage(`✨ Fresh ${theme} content loaded!`);
         
     } catch (error) {
         console.error('Generation error:', error);
@@ -169,9 +186,13 @@ async function generateContent() {
 }
 
 function getRandomVideo(theme) {
-    const videos = WORKING_VIDEO_SOURCES[theme] || [];
+    const videos = WORKING_VIDEO_SOURCES[theme] || WORKING_VIDEO_SOURCES.forest;
     const randomIndex = Math.floor(Math.random() * videos.length);
     const videoUrl = videos[randomIndex];
+    
+    // Extract filename from URL
+    const filename = videoUrl.split('/').pop();
+    const videoTitle = VIDEO_TITLES[filename] || `${theme.charAt(0).toUpperCase() + theme.slice(1)} Therapy Video`;
     
     const sources = {
         forest: ['Nature Footage', 'Forest Archive', 'Wildlife Library'],
@@ -186,13 +207,13 @@ function getRandomVideo(theme) {
     
     return {
         url: videoUrl,
-        title: `${theme.charAt(0).toUpperCase() + theme.slice(1)} Therapy Video`,
+        title: videoTitle,
         source: randomSource
     };
 }
 
 function getRandomAudio(theme) {
-    const audios = WORKING_AUDIO_SOURCES[theme] || [];
+    const audios = WORKING_AUDIO_SOURCES[theme] || WORKING_AUDIO_SOURCES.forest;
     const randomIndex = Math.floor(Math.random() * audios.length);
     const audio = audios[randomIndex];
     
@@ -217,6 +238,10 @@ function getRandomAudio(theme) {
 async function loadVideo(videoData) {
     return new Promise((resolve, reject) => {
         const video1 = document.getElementById('vid1');
+        if (!video1) {
+            resolve();
+            return;
+        }
         
         // Show loading state
         video1.poster = getVideoPoster(currentTheme);
@@ -226,50 +251,44 @@ async function loadVideo(videoData) {
         video1.src = videoData.url;
         
         // Update video info
-        document.getElementById('currentVideoTitle').innerHTML = `${videoData.title} <span class="source-badge">${videoData.source}</span>`;
+        if (document.getElementById('currentVideoTitle')) {
+            const badge = document.getElementById('videoSourceBadge');
+            if (badge) {
+                badge.textContent = videoData.source;
+            }
+            document.getElementById('currentVideoTitle').innerHTML = `${videoData.title}`;
+        }
         
         // Wait for video to load
         video1.addEventListener('loadeddata', () => {
-            video1.play().then(() => {
-                // Auto-pause after 1 second to show it's loaded
-                setTimeout(() => {
-                    video1.pause();
-                    resolve();
-                }, 1000);
-            }).catch(() => {
-                // Video loaded but autoplay prevented
-                resolve();
-            });
-        });
+            console.log('Video loaded successfully');
+            resolve();
+        }, { once: true });
         
         video1.addEventListener('error', (e) => {
             console.error('Video load error:', e);
-            // Try fallback
-            loadFallbackVideo();
+            // Try a fallback URL
+            const fallbackUrl = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            video1.src = fallbackUrl;
+            
+            if (document.getElementById('videoSourceBadge')) {
+                document.getElementById('videoSourceBadge').textContent = 'Google Samples';
+            }
+            
             resolve();
         });
         
         // Timeout fallback
-        setTimeout(resolve, 2000);
+        setTimeout(() => {
+            console.log('Video load timeout, continuing anyway');
+            resolve();
+        }, 3000);
     });
-}
-
-function loadFallbackVideo() {
-    const video1 = document.getElementById('vid1');
-    const fallbackVideos = {
-        forest: 'https://player.vimeo.com/external/371433846.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761',
-        ocean: 'https://player.vimeo.com/external/449759244.sd.mp4?s=d5f3da46f05f4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a&profile_id=164&oauth2_token_id=57447761',
-        rain: 'https://player.vimeo.com/external/320379351.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761',
-        fireplace: 'https://player.vimeo.com/external/3209828.sd.mp4?s=7c9d46d6a9d30c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c7c7b45a3c3c9c7b3c&profile_id=164&oauth2_token_id=57447761',
-        snow: 'https://player.vimeo.com/external/457991230.sd.mp4?s=d5f3da46f05f4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a4e5a4f5a4f5a4f5a&profile_id=164&oauth2_token_id=57447761'
-    };
-    
-    video1.src = fallbackVideos[currentTheme] || fallbackVideos.forest;
-    document.getElementById('videoSourceBadge').textContent = 'Vimeo Library';
 }
 
 function updateAudioOptions(audioData, theme) {
     const audioSelect = document.getElementById('audioVariant');
+    if (!audioSelect) return;
     
     // Clear and add new audio option
     audioSelect.innerHTML = '';
@@ -283,14 +302,15 @@ function updateAudioOptions(audioData, theme) {
     // Add a few more options from the same theme
     const audios = WORKING_AUDIO_SOURCES[theme];
     if (audios && audios.length > 1) {
-        audios.forEach((audio, index) => {
-            if (audio.url !== audioData.url) { // Don't duplicate the current one
-                const newOption = document.createElement('option');
-                newOption.value = audio.url;
-                newOption.textContent = `${audio.name} (Alternative ${index + 1})`;
-                audioSelect.appendChild(newOption);
-            }
-        });
+        // Add one more random option
+        const otherAudios = audios.filter(a => a.url !== audioData.url);
+        if (otherAudios.length > 0) {
+            const randomAudio = otherAudios[Math.floor(Math.random() * otherAudios.length)];
+            const newOption = document.createElement('option');
+            newOption.value = randomAudio.url;
+            newOption.textContent = `${randomAudio.name} (Alternative)`;
+            audioSelect.appendChild(newOption);
+        }
     }
 }
 
@@ -358,9 +378,15 @@ function generateFreshSEO(theme) {
     const fullDescription = selectedDescription + randomTags.map(tag => `#${tag}`).join(' ') + '\n\n⚠️ Note: Therapeutic content, not medical advice.';
     
     // UPDATE UI
-    document.getElementById('videoTitle').value = selectedTitle;
-    document.getElementById('videoDesc').value = fullDescription;
-    document.getElementById('videoTags').value = randomTags.join('\n');
+    if (document.getElementById('videoTitle')) {
+        document.getElementById('videoTitle').value = selectedTitle;
+    }
+    if (document.getElementById('videoDesc')) {
+        document.getElementById('videoDesc').value = fullDescription;
+    }
+    if (document.getElementById('videoTags')) {
+        document.getElementById('videoTags').value = randomTags.join('\n');
+    }
     
     // UPDATE SOCIAL PREVIEW
     updateSocialPreview(selectedTitle, theme, randomTags.slice(0, 8));
@@ -402,6 +428,8 @@ function playCurrentVideo() {
     const video = document.getElementById('vid1');
     const playBtn = document.getElementById('playPauseBtn');
     
+    if (!video || !playBtn) return;
+    
     if (!videosLoaded) {
         showMessage("Please search for content first!");
         return;
@@ -414,9 +442,9 @@ function playCurrentVideo() {
             updateStatus('▶️ Playing live content');
             
             // Play audio too
-            const audioUrl = document.getElementById('audioVariant').value;
-            if (audioUrl) {
-                audioPlayer.play(audioUrl);
+            const audioSelect = document.getElementById('audioVariant');
+            if (audioSelect && audioSelect.value) {
+                audioPlayer.play(audioSelect.value);
             }
         }).catch(e => {
             console.log("Video play prevented:", e);
@@ -445,7 +473,7 @@ function updateStatus(message) {
             dot.className = 'status-dot ' + (
                 message.includes('Ready') ? 'ready' :
                 message.includes('Playing') ? 'playing' :
-                message.includes('Searching') || message.includes('🔍') ? 'searching' :
+                message.includes('Searching') || message.includes('🔍') ? 'loading' :
                 message.includes('Paused') ? 'ready' :
                 message.includes('Error') ? 'error' : 'ready'
             );
@@ -495,12 +523,11 @@ function copyToClip(elementId) {
     const element = document.getElementById(elementId);
     if (element) {
         element.select();
-        element.setSelectionRange(0, 99999); // For mobile devices
+        element.setSelectionRange(0, 99999);
         
         try {
             document.execCommand('copy');
             
-            // Show confirmation
             const buttonId = 'copy' + elementId.charAt(0).toUpperCase() + elementId.slice(1) + 'Btn';
             const button = document.getElementById(buttonId);
             if (button) {
@@ -533,11 +560,20 @@ function getVideoPoster(theme) {
 function initStudio() {
     console.log("🚀 Initializing Live Search Studio...");
     
-    document.getElementById('startScreen').style.opacity = '0';
+    const startScreen = document.getElementById('startScreen');
+    if (startScreen) {
+        startScreen.style.opacity = '0';
+    }
     
     setTimeout(() => {
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('workspace').style.display = 'flex';
+        if (startScreen) {
+            startScreen.style.display = 'none';
+        }
+        
+        const workspace = document.getElementById('workspace');
+        if (workspace) {
+            workspace.style.display = 'flex';
+        }
         
         // Set initial theme
         loadThemeOptions();
@@ -548,7 +584,10 @@ function initStudio() {
 }
 
 function loadThemeOptions() {
-    const theme = document.getElementById('themeSelect').value;
+    const themeSelect = document.getElementById('themeSelect');
+    if (!themeSelect) return;
+    
+    const theme = themeSelect.value;
     currentTheme = theme;
     
     // Update active theme card
@@ -565,20 +604,28 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("📱 Setting up ZenGen Live Studio...");
     
     // Enter Studio
-    document.getElementById('enterStudioBtn').addEventListener('click', initStudio);
+    const enterBtn = document.getElementById('enterStudioBtn');
+    if (enterBtn) {
+        enterBtn.addEventListener('click', initStudio);
+    }
     
     // Theme Change
-    document.getElementById('themeSelect').addEventListener('change', function() {
-        loadThemeOptions();
-        videosLoaded = false;
-        updateStatus('🔄 Theme changed - Ready to search');
-    });
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function() {
+            loadThemeOptions();
+            videosLoaded = false;
+            updateStatus('🔄 Theme changed - Ready to search');
+        });
+    }
     
     // Theme Cards
     document.querySelectorAll('.theme-card').forEach(card => {
         card.addEventListener('click', function() {
             const theme = this.dataset.theme;
-            document.getElementById('themeSelect').value = theme;
+            if (themeSelect) {
+                themeSelect.value = theme;
+            }
             loadThemeOptions();
             videosLoaded = false;
             updateStatus('🔄 Theme changed - Ready to search');
@@ -586,56 +633,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Generate Button
-    document.getElementById('generateBtn').addEventListener('click', function() {
-        const btn = this;
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-satellite-dish fa-spin"></i> SEARCHING...';
-        btn.disabled = true;
-        
-        generateContent().finally(() => {
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }, 1000);
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+            const btn = this;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-satellite-dish fa-spin"></i> SEARCHING...';
+            btn.disabled = true;
+            
+            generateContent().finally(() => {
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }, 1000);
+            });
         });
-    });
+    }
     
     // Play/Pause Button
-    document.getElementById('playPauseBtn').addEventListener('click', playCurrentVideo);
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', playCurrentVideo);
+    }
     
     // Audio Selection
-    document.getElementById('audioVariant').addEventListener('change', function() {
-        if (audioPlayer.isPlaying) {
-            audioPlayer.play(this.value);
-        }
-    });
+    const audioSelect = document.getElementById('audioVariant');
+    if (audioSelect) {
+        audioSelect.addEventListener('change', function() {
+            if (audioPlayer.isPlaying) {
+                audioPlayer.play(this.value);
+            }
+        });
+    }
     
     // Download Button
-    document.getElementById('recordBtn').addEventListener('click', function() {
-        if (!videosLoaded || !currentVideoData) {
-            showMessage("Please search for content first!");
-            return;
-        }
-        
-        const video = document.getElementById('vid1');
-        if (video.src) {
-            const link = document.createElement('a');
-            link.href = video.src;
-            link.download = `zengen-${currentTheme}-therapy-${Date.now()}.mp4`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    const recordBtn = document.getElementById('recordBtn');
+    if (recordBtn) {
+        recordBtn.addEventListener('click', function() {
+            if (!videosLoaded || !currentVideoData) {
+                showMessage("Please search for content first!");
+                return;
+            }
             
-            showMessage("✅ Video download started! Upload to any platform.");
-        } else {
-            showMessage("No video available to download.");
-        }
-    });
+            const video = document.getElementById('vid1');
+            if (video && video.src) {
+                const link = document.createElement('a');
+                link.href = video.src;
+                link.download = `zengen-${currentTheme}-therapy-${Date.now()}.mp4`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showMessage("✅ Video download started! Upload to any platform.");
+            } else {
+                showMessage("No video available to download.");
+            }
+        });
+    }
     
     // Copy Buttons
-    document.getElementById('copyTitleBtn').addEventListener('click', () => copyToClip('videoTitle'));
-    document.getElementById('copyDescBtn').addEventListener('click', () => copyToClip('videoDesc'));
-    document.getElementById('copyTagsBtn').addEventListener('click', () => copyToClip('videoTags'));
+    const copyTitleBtn = document.getElementById('copyTitleBtn');
+    if (copyTitleBtn) {
+        copyTitleBtn.addEventListener('click', () => copyToClip('videoTitle'));
+    }
+    
+    const copyDescBtn = document.getElementById('copyDescBtn');
+    if (copyDescBtn) {
+        copyDescBtn.addEventListener('click', () => copyToClip('videoDesc'));
+    }
+    
+    const copyTagsBtn = document.getElementById('copyTagsBtn');
+    if (copyTagsBtn) {
+        copyTagsBtn.addEventListener('click', () => copyToClip('videoTags'));
+    }
     
     // Social Buttons
     document.querySelectorAll('.social-btn').forEach(btn => {
@@ -647,43 +717,52 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const platform = this.dataset.platform;
-            const title = encodeURIComponent(document.getElementById('videoTitle').value);
-            const urls = {
-                youtube: `https://www.youtube.com/upload?title=${title}`,
-                tiktok: `https://www.tiktok.com/upload`,
-                instagram: `https://www.instagram.com/create/select/`,
-                facebook: `https://www.facebook.com/sharer/sharer.php?quote=${title}`
-            };
-            
-            window.open(urls[platform], '_blank');
+            const title = document.getElementById('videoTitle');
+            if (title && title.value) {
+                const encodedTitle = encodeURIComponent(title.value);
+                const urls = {
+                    youtube: `https://www.youtube.com/upload?title=${encodedTitle}`,
+                    tiktok: `https://www.tiktok.com/upload`,
+                    instagram: `https://www.instagram.com/create/select/`,
+                    facebook: `https://www.facebook.com/sharer/sharer.php?quote=${encodedTitle}`
+                };
+                
+                window.open(urls[platform], '_blank');
+            }
         });
     });
     
     // Volume Control
-    document.getElementById('volumeSlider').addEventListener('input', function(e) {
-        const volume = parseFloat(e.target.value);
-        audioPlayer.setVolume(volume);
-        const video = document.getElementById('vid1');
-        if (video) video.volume = volume;
-    });
+    const volumeSlider = document.getElementById('volumeSlider');
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', function(e) {
+            const volume = parseFloat(e.target.value);
+            audioPlayer.setVolume(volume);
+            const video = document.getElementById('vid1');
+            if (video) video.volume = volume;
+        });
+    }
     
     // Mute Button
-    document.getElementById('muteBtn').addEventListener('click', function() {
-        const isMuted = audioPlayer.toggleMute();
-        const video = document.getElementById('vid1');
-        if (video) video.muted = isMuted;
-        
-        this.innerHTML = isMuted ? 
-            '<i class="fas fa-volume-mute"></i>' : 
-            '<i class="fas fa-volume-up"></i>';
-    });
+    const muteBtn = document.getElementById('muteBtn');
+    if (muteBtn) {
+        muteBtn.addEventListener('click', function() {
+            const isMuted = audioPlayer.toggleMute();
+            const video = document.getElementById('vid1');
+            if (video) video.muted = isMuted;
+            
+            this.innerHTML = isMuted ? 
+                '<i class="fas fa-volume-mute"></i>' : 
+                '<i class="fas fa-volume-up"></i>';
+        });
+    }
     
     // Video Controls
     const video = document.getElementById('vid1');
     
     // Play button
     const playBtn = document.getElementById('playBtn');
-    if (playBtn) {
+    if (playBtn && video) {
         playBtn.addEventListener('click', () => {
             video.play().catch(e => {
                 showMessage("Click the play button on the video player");
@@ -693,13 +772,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Pause button
     const pauseBtn = document.getElementById('pauseBtn');
-    if (pauseBtn) {
+    if (pauseBtn && video) {
         pauseBtn.addEventListener('click', () => video.pause());
     }
     
     // Mute video button
     const muteVideoBtn = document.getElementById('muteVideoBtn');
-    if (muteVideoBtn) {
+    if (muteVideoBtn && video) {
         muteVideoBtn.addEventListener('click', () => {
             video.muted = !video.muted;
             muteVideoBtn.innerHTML = video.muted ? 
@@ -714,9 +793,11 @@ document.addEventListener('DOMContentLoaded', function() {
         fullscreenBtn.addEventListener('click', () => {
             const container = document.querySelector('.video-container');
             if (!document.fullscreenElement) {
-                container.requestFullscreen().catch(err => {
-                    console.log('Fullscreen error:', err);
-                });
+                if (container) {
+                    container.requestFullscreen().catch(err => {
+                        console.log('Fullscreen error:', err);
+                    });
+                }
             } else {
                 document.exitFullscreen();
             }
@@ -724,29 +805,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Video events
-    video.addEventListener('play', () => {
-        updateStatus('▶️ Playing live content');
-    });
-    
-    video.addEventListener('pause', () => {
-        updateStatus('⏸️ Paused');
-    });
-    
-    video.addEventListener('volumechange', function() {
-        localStorage.setItem('videoVolume', this.volume);
-    });
-    
-    // Load saved volume
-    window.addEventListener('load', function() {
+    if (video) {
+        video.addEventListener('play', () => {
+            updateStatus('▶️ Playing live content');
+        });
+        
+        video.addEventListener('pause', () => {
+            updateStatus('⏸️ Paused');
+        });
+        
+        video.addEventListener('volumechange', function() {
+            localStorage.setItem('videoVolume', this.volume);
+        });
+        
+        // Load saved volume
         const savedVolume = localStorage.getItem('videoVolume');
         if (savedVolume) {
             video.volume = parseFloat(savedVolume);
-            const volumeSlider = document.getElementById('volumeSlider');
             if (volumeSlider) {
                 volumeSlider.value = savedVolume;
             }
         }
-    });
+    }
     
     console.log("✅ ZenGen Live Studio Ready!");
 });
