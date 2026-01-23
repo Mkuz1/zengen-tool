@@ -13,27 +13,27 @@ const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 // --- 1. RELIABLE AUDIO LIBRARY ---
 const STATIC_AUDIO_LIBRARY = {
     forest: [
-        { id: 'forest_morning', name: '🐦 Morning Birds', url: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' },
-        { id: 'stream_water', name: '💧 Forest Stream', url: 'https://actions.google.com/sounds/v1/water/stream_water.ogg' },
-        { id: 'crickets', name: '🦗 Night Crickets', url: 'https://actions.google.com/sounds/v1/animals/crickets.ogg' }
+        { id: 'forest_morning', name: 'Morning Birds', url: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' },
+        { id: 'stream_water', name: 'Forest Stream', url: 'https://actions.google.com/sounds/v1/water/stream_water.ogg' },
+        { id: 'crickets', name: 'Night Crickets', url: 'https://actions.google.com/sounds/v1/animals/crickets.ogg' }
     ],
     ocean: [
-        { id: 'waves_crashing', name: '🌊 Crashing Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing.ogg' },
-        { id: 'ocean_surf', name: '💨 Deep Surf', url: 'https://actions.google.com/sounds/v1/water/ocean_surf.ogg' },
-        { id: 'seagulls', name: '🐦 Beach Ambience', url: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_04d607623a.mp3' }
+        { id: 'waves_crashing', name: 'Crashing Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing.ogg' },
+        { id: 'ocean_surf', name: 'Deep Surf', url: 'https://actions.google.com/sounds/v1/water/ocean_surf.ogg' },
+        { id: 'seagulls', name: 'Beach Ambience', url: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_04d607623a.mp3' }
     ],
     rain: [
-        { id: 'rain_heavy', name: '⛈️ Heavy Storm', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
-        { id: 'rain_roof', name: '🏠 Rain on Roof', url: 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg' },
-        { id: 'thunder', name: '⚡ Rolling Thunder', url: 'https://actions.google.com/sounds/v1/weather/thunder_crack.ogg' }
+        { id: 'rain_heavy', name: 'Heavy Storm', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
+        { id: 'rain_roof', name: 'Rain on Roof', url: 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg' },
+        { id: 'thunder', name: 'Rolling Thunder', url: 'https://actions.google.com/sounds/v1/weather/thunder_crack.ogg' }
     ],
     fireplace: [
-        { id: 'fire', name: '🔥 Crackling Fire', url: 'https://actions.google.com/sounds/v1/ambiences/fire.ogg' },
-        { id: 'fireplace_room', name: '🪵 Cozy Room', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' }
+        { id: 'fire', name: 'Crackling Fire', url: 'https://actions.google.com/sounds/v1/ambiences/fire.ogg' },
+        { id: 'fireplace_room', name: 'Cozy Room', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' }
     ],
     snow: [
-        { id: 'wind', name: '💨 Strong Wind', url: 'https://actions.google.com/sounds/v1/weather/wind_strong.ogg' },
-        { id: 'blizzard', name: '❄️ Blizzard Howl', url: 'https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg' }
+        { id: 'wind', name: 'Strong Wind', url: 'https://actions.google.com/sounds/v1/weather/wind_strong.ogg' },
+        { id: 'blizzard', name: 'Blizzard Howl', url: 'https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg' }
     ]
 };
 
@@ -237,7 +237,7 @@ async function generateContent() {
             blobPlaylist = [];
             for (let i = 0; i < Math.min(rawUrls.length, 4); i++) {
                 if (statusPill) {
-                    statusPill.innerHTML = `<div class="dot"></div> Downloading Video ${i+1}/4...`;
+                    statusPill.innerHTML = '<div class="dot"></div> Downloading Video ' + (i+1) + '/4...';
                 }
                 const blob = await fetchBlob(rawUrls[i]);
                 if (blob) blobPlaylist.push(blob);
@@ -461,7 +461,7 @@ async function startRecording() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.mp4`;
+        a.download = 'ZenGen-' + document.getElementById('themeSelect').value + '-' + Date.now() + '.mp4';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -515,7 +515,7 @@ async function startRecording() {
     const timerInterval = setInterval(() => {
         timeLeft--;
         if (recordBtn) {
-            recordBtn.innerHTML = `<div class="rec-icon"></div> Recording... ${timeLeft}s`;
+            recordBtn.innerHTML = '<div class="rec-icon"></div> Recording... ' + timeLeft + 's';
         }
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
@@ -549,7 +549,7 @@ async function fetchMontagePlaylist(query, count) {
     // Try Pexels first
     try {
         const page = Math.floor(Math.random() * 5) + 1;
-        const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10&page=${page}&orientation=landscape`, {
+        const res = await fetch('https://api.pexels.com/videos/search?query=' + encodeURIComponent(query) + '&per_page=10&page=' + page + '&orientation=landscape', {
             headers: { Authorization: PEXELS_KEY }
         });
         const data = await res.json();
@@ -578,7 +578,7 @@ async function fetchMontagePlaylist(query, count) {
     // If we need more videos, try Pixabay
     if (list.length < count) {
         try {
-            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&per_page=10`);
+            const res = await fetch('https://pixabay.com/api/videos/?key=' + PIXABAY_KEY + '&q=' + encodeURIComponent(query) + '&per_page=10');
             const data = await res.json();
             
             if (data.hits && data.hits.length > 0) {
@@ -611,14 +611,14 @@ function generateViralSEO(theme) {
     const tagsElement = document.getElementById('videoTags');
     
     if (titleElement) {
-        titleElement.value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
+        titleElement.value = h + ' ' + theme.toUpperCase() + ' Sounds for Sleep & Relaxation (No Talking)';
     }
     
     if (descElement) {
-        descElement.value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
+        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ' + theme.toUpperCase() + '\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#' + theme + ' #relax #sleep';
     }
     
-    const themeTags = [`#${theme}`, `#${theme}sounds`, `#${theme}ambience`, `#${theme}asmr`, `#${theme}sleep`, `#real${theme}`, `#${theme}video`];
+    const themeTags = ['#' + theme, '#' + theme + 'sounds', '#' + theme + 'ambience', '#' + theme + 'asmr', '#' + theme + 'sleep', '#real' + theme, '#' + theme + 'video'];
     const combined = [...themeTags, ...GENERIC_TAGS];
     const shuffled = combined.sort(() => 0.5 - Math.random());
     const finalTags = [...new Set(shuffled)].slice(0, 25).join(' ');
@@ -684,17 +684,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Copy buttons
     const copyTitleBtn = document.getElementById('copyTitleBtn');
     if (copyTitleBtn) {
-        copyTitleBtn.addEventListener('click', () => copyToClip('videoTitle'));
+        copyTitleBtn.addEventListener('click', function() { copyToClip('videoTitle'); });
     }
     
     const copyDescBtn = document.getElementById('copyDescBtn');
     if (copyDescBtn) {
-        copyDescBtn.addEventListener('click', () => copyToClip('videoDesc'));
+        copyDescBtn.addEventListener('click', function() { copyToClip('videoDesc'); });
     }
     
     const copyTagsBtn = document.getElementById('copyTagsBtn');
     if (copyTagsBtn) {
-        copyTagsBtn.addEventListener('click', () => copyToClip('videoTags'));
+        copyTagsBtn.addEventListener('click', function() { copyToClip('videoTags'); });
     }
     
     // Initialize audio options on load
