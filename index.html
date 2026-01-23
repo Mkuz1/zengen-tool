@@ -7,8 +7,157 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Audio Help Modal */
+        .audio-help {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .audio-help-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .audio-help-icon {
+            font-size: 24px;
+            color: #ffd700;
+        }
+        
+        .audio-help-text {
+            flex: 1;
+        }
+        
+        .audio-help-text strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .audio-help-text p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .audio-help-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .audio-help-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Volume Control */
+        .volume-control {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .volume-control button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 16px;
+        }
+        
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        /* Mac Compatibility Notice */
+        .mac-notice {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 17, 17, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            border: 1px solid #3b82f6;
+            font-size: 12px;
+            text-align: center;
+            max-width: 400px;
+        }
+    </style>
 </head>
 <body>
+
+    <!-- Audio Help Modal -->
+    <div id="audioHelp" class="audio-help">
+        <div class="audio-help-content">
+            <div class="audio-help-icon">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <div class="audio-help-text">
+                <strong>🔊 Audio Help</strong>
+                <p>Click the Play button to enable sound. Some browsers require user interaction for audio playback.</p>
+            </div>
+            <button class="audio-help-close" onclick="this.parentElement.parentElement.style.display='none'">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mac Compatibility Notice -->
+    <div id="macNotice" class="mac-notice">
+        <i class="fas fa-apple"></i> For best Mac compatibility, videos will be saved as MP4 format.
+    </div>
 
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
@@ -29,21 +178,21 @@
             <aside class="sidebar">
                 
                 <div class="control-group">
-                    <label>1. VISUAL THEME</label>
+                    <label><i class="fa-solid fa-palette"></i> VISUAL THEME</label>
                     <div class="custom-select">
                         <select id="themeSelect">
-                            <option value="forest">Forest</option>
-                            <option value="ocean">Ocean</option>
-                            <option value="rain">Rain</option>
-                            <option value="fireplace">Fireplace</option>
-                            <option value="snow">Snow</option>
+                            <option value="forest">🌲 Forest</option>
+                            <option value="ocean">🌊 Ocean</option>
+                            <option value="rain">🌧️ Rain</option>
+                            <option value="fireplace">🔥 Fireplace</option>
+                            <option value="snow">❄️ Snow</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <label>2. AUDIO TRACK</label>
+                    <label><i class="fa-solid fa-music"></i> AUDIO TRACK</label>
                     <div class="custom-select">
                         <select id="audioVariant">
                             <!-- Options will be loaded dynamically -->
@@ -64,6 +213,14 @@
                     <button id="recordBtn" disabled class="btn-record">
                         <div class="rec-icon"></div> Record (1 Min)
                     </button>
+                </div>
+                
+                <!-- Volume Control -->
+                <div class="volume-control">
+                    <button id="muteBtn">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
                 </div>
             </aside>
 
@@ -86,7 +243,7 @@
             </main>
 
             <aside class="meta-sidebar" id="metaPanel">
-                <div class="meta-header"><h3>SEO Metadata</h3></div>
+                <div class="meta-header"><h3><i class="fa-solid fa-chart-line"></i> SEO Metadata</h3></div>
                 <div class="meta-field">
                     <label>Title</label>
                     <div class="input-row">
@@ -109,7 +266,7 @@
                     </div>
                 </div>
                 <div class="upload-shortcuts">
-                    <label>Share To</label>
+                    <label><i class="fa-solid fa-share-nodes"></i> Share To</label>
                     <div class="social-grid">
                         <a href="https://studio.youtube.com" target="_blank" class="s-link yt">
                             <i class="fa-brands fa-youtube"></i>
@@ -121,14 +278,4 @@
                             <i class="fa-brands fa-instagram"></i>
                         </a>
                         <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-link fb">
-                            <i class="fa-brands fa-facebook"></i>
-                        </a>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </div>
-    
-    <script src="app.js"></script>
-</body>
-</html>
+                            <i class="fa-brands fa-facebook
