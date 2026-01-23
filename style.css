@@ -1,13 +1,7 @@
 :root {
-    --bg-dark: #050505;
-    --panel-bg: #111111;
-    --border: #222;
-    --primary: #ffffff;
-    --accent: #3b82f6;
-    --record-red: #ef4444;
-    --text-main: #e5e5e5;
-    --text-muted: #737373;
-    --font: 'Manrope', sans-serif;
+    --bg-dark: #050505; --panel-bg: #111111; --border: #222;
+    --primary: #ffffff; --accent: #3b82f6; --record-red: #ef4444;
+    --text-main: #e5e5e5; --text-muted: #737373; --font: 'Manrope', sans-serif;
 }
 
 body {
@@ -76,7 +70,7 @@ button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; curso
 .video-wrapper {
     width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #111; border: 1px solid #333;
     position: relative; overflow: hidden; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    transform: translateZ(0);
+    transform: translateZ(0); /* Safari Hardware Accel */
 }
 .video-wrapper video {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
@@ -108,13 +102,14 @@ button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; curso
 .bar:nth-child(3) { animation-duration: 0.5s; } .bar:nth-child(4) { animation-duration: 0.9s; }
 @keyframes bounce { 0%, 100% { transform: scaleY(0.5); transform-origin: bottom; } 50% { transform: scaleY(1.2); transform-origin: bottom; } }
 
-/* METADATA & SOCIAL */
+/* METADATA */
 .input-row { display: flex; background: #000; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
 .input-row input, .input-row textarea { width: 100%; background: transparent; border: none; color: white; padding: 12px; font-family: var(--font); font-size: 0.85rem; resize: none; }
 .input-row input:focus, .input-row textarea:focus { outline: none; background: #0a0a0a; }
 .input-row button { width: 45px; background: transparent; color: #555; border-left: 1px solid #333; padding: 0; transition: all 0.2s; cursor: pointer; }
 .input-row button:hover { color: white; background: #111; }
 
+/* Social Icons */
 .social-grid { display: flex; gap: 8px; margin-top: 5px; }
 .s-link { flex: 1; height: 35px; display: flex; align-items: center; justify-content: center; background: #222; border-radius: 4px; color: #aaa; transition: 0.2s; text-decoration: none; font-size: 1.2rem; }
 .s-link:hover { color: white; background: #333; transform: translateY(-2px); }
