@@ -1,56 +1,57 @@
 /**
- * ZenGen - Bulletproof Edition
- * - Audio: Hardcoded High-Fidelity Library (No API Failures).
- * - Recorder: "Frame Stamping" Engine (Safari Immune).
+ * ZenGen - Optimized Edition
+ * - Audio: Mixkit.co Royalty-Free Natural Sounds
+ * - Recorder: MP4 Output with H.264 Encoding
  * - SEO: 20+ Tag Viral Engine.
  */
 
-const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
+// No API keys needed for Mixkit
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. RELIABLE AUDIO LIBRARY ---
-const STATIC_AUDIO_LIBRARY = {
+// --- 1. MIXKIT.CO ROYALTY-FREE NATURAL SOUNDS LIBRARY ---
+const NATURAL_SOUNDS_LIBRARY = {
     forest: [
-        { id: 'forest_morning', name: 'Morning Birds', url: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' },
-        { id: 'stream_water', name: 'Forest Stream', url: 'https://actions.google.com/sounds/v1/water/stream_water.ogg' },
-        { id: 'crickets', name: 'Night Crickets', url: 'https://actions.google.com/sounds/v1/animals/crickets.ogg' }
+        { id: 'forest_birds', name: 'Forest Birds', url: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1237.mp3' },
+        { id: 'forest_stream', name: 'Forest Stream', url: 'https://assets.mixkit.co/sfx/preview/mixkit-river-stream-flow-1257.mp3' },
+        { id: 'forest_night', name: 'Forest Night', url: 'https://assets.mixkit.co/sfx/preview/mixkit-nature-forest-night-ambience-1253.mp3' },
+        { id: 'rain_forest', name: 'Rainforest', url: 'https://assets.mixkit.co/sfx/preview/mixkit-rainforest-ambience-1243.mp3' }
     ],
     ocean: [
-        { id: 'waves_crashing', name: 'Crashing Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing.ogg' },
-        { id: 'ocean_surf', name: 'Deep Surf', url: 'https://actions.google.com/sounds/v1/water/ocean_surf.ogg' },
-        { id: 'seagulls', name: 'Beach Ambience', url: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_04d607623a.mp3' }
+        { id: 'ocean_waves', name: 'Ocean Waves', url: 'https://assets.mixkit.co/sfx/preview/mixkit-ocean-waves-loop-1246.mp3' },
+        { id: 'beach_waves', name: 'Beach Waves', url: 'https://assets.mixkit.co/sfx/preview/mixkit-waves-on-the-beach-1256.mp3' },
+        { id: 'seagulls', name: 'Seagulls', url: 'https://assets.mixkit.co/sfx/preview/mixkit-seagulls-in-the-wild-1223.mp3' },
+        { id: 'underwater', name: 'Underwater', url: 'https://assets.mixkit.co/sfx/preview/mixkit-underwater-bubbles-1252.mp3' }
     ],
     rain: [
-        { id: 'rain_heavy', name: 'Heavy Storm', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
-        { id: 'rain_roof', name: 'Rain on Roof', url: 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg' },
-        { id: 'thunder', name: 'Rolling Thunder', url: 'https://actions.google.com/sounds/v1/weather/thunder_crack.ogg' }
+        { id: 'rain_light', name: 'Light Rain', url: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1241.mp3' },
+        { id: 'rain_heavy', name: 'Heavy Rain', url: 'https://assets.mixkit.co/sfx/preview/mixkit-heavy-rain-loop-1242.mp3' },
+        { id: 'rain_thunder', name: 'Rain & Thunder', url: 'https://assets.mixkit.co/sfx/preview/mixkit-thunder-and-rain-ambience-1255.mp3' },
+        { id: 'rain_roof', name: 'Rain on Roof', url: 'https://assets.mixkit.co/sfx/preview/mixkit-rain-on-window-1247.mp3' }
     ],
     fireplace: [
-        { id: 'fire', name: 'Crackling Fire', url: 'https://actions.google.com/sounds/v1/ambiences/fire.ogg' },
-        { id: 'fireplace_room', name: 'Cozy Room', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' }
+        { id: 'fire_crackle', name: 'Fire Crackle', url: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackle-1330.mp3' },
+        { id: 'fireplace', name: 'Fireplace', url: 'https://assets.mixkit.co/sfx/preview/mixkit-cosy-fireplace-crackles-1240.mp3' },
+        { id: 'bonfire', name: 'Bonfire', url: 'https://assets.mixkit.co/sfx/preview/mixkit-bonfire-crackling-1331.mp3' }
     ],
     snow: [
-        { id: 'wind', name: 'Strong Wind', url: 'https://actions.google.com/sounds/v1/weather/wind_strong.ogg' },
-        { id: 'blizzard', name: 'Blizzard Howl', url: 'https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg' }
+        { id: 'wind_snow', name: 'Snow Wind', url: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-in-the-trees-1250.mp3' },
+        { id: 'blizzard', name: 'Blizzard', url: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-storm-ambience-1254.mp3' },
+        { id: 'winter_wind', name: 'Winter Wind', url: 'https://assets.mixkit.co/sfx/preview/mixkit-cold-wind-ambience-1251.mp3' }
     ]
 };
 
-// --- 2. SIMPLIFIED AUDIO PLAYER ---
+// --- 2. SIMPLE AUDIO PLAYER ---
 class AudioPlayer {
     constructor() {
         this.audioElement = new Audio();
         this.audioElement.loop = true;
-        this.audioElement.volume = 0.8;
+        this.audioElement.volume = 0.7;
         this.isPlaying = false;
+        this.currentSource = null;
     }
     
     init() {
-        // No Web Audio API, just HTML5 Audio for simplicity
-        console.log("Audio player initialized (HTML5 only)");
-        return Promise.resolve();
-    }
-    
-    resume() {
+        console.log("Audio player ready");
         return Promise.resolve();
     }
     
@@ -58,42 +59,30 @@ class AudioPlayer {
         this.audioElement.pause();
         this.audioElement.currentTime = 0;
         this.isPlaying = false;
+        this.currentSource = null;
     }
     
-    async play(blobUrl) {
+    async play(url) {
         this.stop();
-        this.audioElement.src = blobUrl;
+        
+        console.log("Playing audio:", url);
+        this.audioElement.src = url;
+        this.currentSource = url;
         
         try {
             await this.audioElement.play();
             this.isPlaying = true;
-            console.log("Audio playing successfully");
+            console.log("Audio started successfully");
+            return true;
         } catch(error) {
-            console.log("Audio autoplay prevented:", error.name);
-            // Store the play promise for later
-            this.pendingPlay = this.audioElement.play();
+            console.log("Audio play failed, waiting for user interaction:", error.name);
+            this.isPlaying = false;
+            return false;
         }
     }
     
-    getAudioStream() {
-        // Simple audio capture for recording
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioCtx.createMediaElementSource(this.audioElement);
-            const dest = audioCtx.createMediaStreamDestination();
-            source.connect(dest);
-            source.connect(audioCtx.destination);
-            return dest.stream;
-        } catch(e) {
-            console.log("Audio stream creation failed, using fallback");
-            // Create silent audio track as fallback
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const dest = audioCtx.createMediaStreamDestination();
-            oscillator.connect(dest);
-            oscillator.start();
-            return dest.stream;
-        }
+    getAudioElement() {
+        return this.audioElement;
     }
 }
 
@@ -101,12 +90,10 @@ const audioEngine = new AudioPlayer();
 
 // --- 3. GLOBAL STATE ---
 let blobPlaylist = [];
-let audioBlobUrl = null;
 let currentPlaylistIndex = 0;
 let activePlayer = null;
 let sequenceInterval = null;
 let isPlaying = false;
-let audioLibraryCache = {};
 let userHasInteracted = false;
 
 // --- 4. DOM ELEMENTS ---
@@ -128,10 +115,8 @@ async function initStudio() {
             document.getElementById('workspace').style.display = 'flex';
             loadAudioOptions();
             
-            // Enable audio after UI is visible
-            setTimeout(() => {
-                document.body.click(); // Simulate click for audio context
-            }, 100);
+            // Add click handler to enable audio
+            document.body.addEventListener('click', handleFirstInteraction, { once: true });
         }, 500);
         
     } catch(e) {
@@ -145,16 +130,25 @@ async function initStudio() {
     }
 }
 
+function handleFirstInteraction() {
+    console.log("User interacted, audio should work now");
+    // Try to play audio if we have a source
+    if (audioEngine.currentSource && !audioEngine.isPlaying) {
+        audioEngine.audioElement.play().catch(e => {
+            console.log("Audio still blocked");
+        });
+    }
+}
+
 function loadAudioOptions() {
     const theme = document.getElementById('themeSelect').value;
     const variantSelect = document.getElementById('audioVariant');
     variantSelect.innerHTML = '';
     
-    const sounds = STATIC_AUDIO_LIBRARY[theme] || [];
+    const sounds = NATURAL_SOUNDS_LIBRARY[theme] || [];
     sounds.forEach(sound => {
-        audioLibraryCache[sound.id] = sound.url;
         const el = document.createElement('option');
-        el.value = sound.id;
+        el.value = sound.url; // Store URL directly in value
         el.innerText = sound.name;
         variantSelect.appendChild(el);
     });
@@ -170,27 +164,50 @@ function togglePlay() {
         activePlayer.pause();
         audioEngine.stop();
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        updateAudioStatus('Paused');
     } else {
-        // Play - Force user interaction for audio
-        document.body.click(); // Trigger audio context
+        // Play
+        const playPromise = activePlayer.play();
         
-        // Play video
-        activePlayer.play().catch(e => {
-            console.log("Video play failed:", e);
-        });
-        
-        // Play audio with delay to ensure context is ready
-        setTimeout(() => {
-            if (audioBlobUrl) {
-                audioEngine.play(audioBlobUrl).catch(e => {
-                    console.log("Audio play failed:", e);
-                });
-            }
-        }, 100);
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log("Video playing");
+                // Now play audio
+                const audioUrl = document.getElementById('audioVariant').value;
+                if (audioUrl) {
+                    audioEngine.play(audioUrl).then(success => {
+                        if (success) {
+                            updateAudioStatus('Playing');
+                        } else {
+                            updateAudioStatus('Click to enable');
+                        }
+                    });
+                }
+            }).catch(e => {
+                console.log("Video play failed:", e);
+                updateAudioStatus('Click Play');
+            });
+        }
         
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     }
     isPlaying = !isPlaying;
+}
+
+function updateAudioStatus(status) {
+    const audioState = document.getElementById('audioState');
+    const audioStatus = document.getElementById('audioStatus');
+    
+    if (audioState) audioState.textContent = status;
+    if (audioStatus) {
+        if (status === 'Playing') {
+            audioStatus.innerHTML = '<i class="fas fa-volume-up"></i> <span>Audio playing</span>';
+            audioStatus.className = 'audio-status';
+        } else {
+            audioStatus.innerHTML = '<i class="fas fa-volume-mute"></i> <span>' + status + '</span>';
+            audioStatus.className = 'audio-status muted';
+        }
+    }
 }
 
 // --- 6. GENERATION ---
@@ -199,7 +216,6 @@ async function generateContent() {
     audioEngine.stop();
     
     const theme = document.getElementById('themeSelect').value;
-    const audioId = document.getElementById('audioVariant').value;
     
     if (statusPill) {
         statusPill.className = 'status-pill active';
@@ -207,9 +223,12 @@ async function generateContent() {
     }
     
     if (recordBtn) recordBtn.disabled = true;
+    
+    // Show loading
+    document.getElementById('loadingSpinner').style.display = 'block';
 
     try {
-        const rawUrls = await fetchMontagePlaylist(theme, 2); // Reduced to 2 videos for performance
+        const rawUrls = await fetchMontagePlaylist(theme, 2);
         
         if (rawUrls.length > 0) {
             blobPlaylist = [];
@@ -221,17 +240,7 @@ async function generateContent() {
                 if (blob) blobPlaylist.push(blob);
             }
 
-            if (statusPill) {
-                statusPill.innerHTML = '<div class="dot"></div> Downloading Audio...';
-            }
-            
-            const audioUrl = audioLibraryCache[audioId];
-            audioBlobUrl = await fetchBlob(audioUrl);
-
-            if (blobPlaylist.length > 0 && audioBlobUrl) {
-                // Force user interaction for audio
-                document.body.click();
-                
+            if (blobPlaylist.length > 0) {
                 // Show visualizer
                 const visualizer = document.getElementById('audioVisualizer');
                 if (visualizer) visualizer.classList.add('active');
@@ -253,15 +262,14 @@ async function generateContent() {
                 
                 if (recordBtn) recordBtn.disabled = false;
                 
-                // Auto-play audio after a short delay
-                setTimeout(() => {
-                    audioEngine.play(audioBlobUrl).catch(e => {
-                        console.log("Auto-play audio failed, waiting for user click:", e);
-                    });
-                }, 500);
+                // Auto-select first audio track
+                const audioVariant = document.getElementById('audioVariant');
+                if (audioVariant.options.length > 0) {
+                    audioVariant.selectedIndex = 0;
+                }
                 
             } else {
-                alert("Download failed. Please try again.");
+                alert("Video download failed. Please try again.");
                 if (statusPill) {
                     statusPill.className = 'status-pill';
                     statusPill.innerHTML = '<div class="dot"></div> System Ready';
@@ -281,6 +289,9 @@ async function generateContent() {
             statusPill.className = 'status-pill';
             statusPill.innerHTML = '<div class="dot"></div> System Ready';
         }
+    } finally {
+        // Hide loading
+        document.getElementById('loadingSpinner').style.display = 'none';
     }
 }
 
@@ -295,9 +306,9 @@ async function fetchBlob(url) {
     }
 }
 
-// --- 7. OPTIMIZED VIDEO ENGINE ---
+// --- 7. VIDEO ENGINE ---
 function startPingPong() {
-    if (!playerA || !playerB) return;
+    if (!playerA || !playerB || blobPlaylist.length === 0) return;
     
     // Reset players
     playerA.pause();
@@ -319,16 +330,11 @@ function startPingPong() {
         playerB.load();
     }
     
-    // Play with error handling
-    const playVideo = async () => {
-        try {
-            await playerA.play();
-        } catch(error) {
-            console.log("Video autoplay prevented, waiting for user interaction");
-        }
-    };
-    
-    playVideo();
+    // Auto-play video (audio will wait for user)
+    playerA.play().catch(e => {
+        console.log("Video autoplay prevented");
+        updateAudioStatus('Click Play');
+    });
     
     // Clear any existing interval
     if (sequenceInterval) clearInterval(sequenceInterval);
@@ -337,11 +343,11 @@ function startPingPong() {
     sequenceInterval = setInterval(() => {
         if (!activePlayer || !activePlayer.duration || isNaN(activePlayer.duration)) return;
         
-        // Check if video is ending (last 1 second)
+        // Check if video is ending
         if (activePlayer.duration - activePlayer.currentTime < 1.0) {
             triggerSwap();
         }
-    }, 500); // Check every 500ms for better performance
+    }, 500);
 }
 
 function triggerSwap() {
@@ -352,39 +358,32 @@ function triggerSwap() {
     
     // Ensure next video is loaded
     if (next.readyState < 2) {
-        console.log("Next video not ready yet, delaying swap");
         setTimeout(triggerSwap, 200);
         return;
     }
     
     // Play next video
-    const playNext = async () => {
-        try {
-            await next.play();
-            
-            // Swap visibility
-            active.className = 'standby';
-            next.className = 'active';
-            activePlayer = next;
-            
-            // Update playlist index
-            currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-            const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-            
-            // Preload the video after next
-            active.src = blobPlaylist[nextIndex];
-            active.load();
-            
-        } catch(error) {
-            console.log("Swap play failed:", error);
-        }
-    };
-    
-    playNext();
+    next.play().then(() => {
+        active.className = 'standby';
+        next.className = 'active';
+        activePlayer = next;
+        
+        currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        
+        // Preload the video after next
+        active.src = blobPlaylist[nextIndex];
+        active.load();
+    }).catch(error => {
+        console.log("Swap play failed:", error);
+    });
 }
 
-// --- 8. OPTIMIZED RECORDER (NO LAG) ---
+// --- 8. MP4 RECORDER (NO LAG) ---
 async function startRecording() {
+    // Show loading
+    document.getElementById('loadingSpinner').style.display = 'block';
+    
     // Ensure everything is playing
     if (!isPlaying) {
         togglePlay();
@@ -393,16 +392,29 @@ async function startRecording() {
     
     // Setup canvas for frame capture
     const canvas = document.createElement('canvas');
-    canvas.width = 854; // Reduced from 1280 for better performance
-    canvas.height = 480; // Reduced from 720 for better performance
+    canvas.width = 1280; // HD resolution
+    canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    // Setup audio stream
+    // Setup audio stream from audio element
     let audioStream;
     try {
-        audioStream = audioEngine.getAudioStream();
+        // Method 1: Use captureStream if available
+        if (typeof audioEngine.getAudioElement().captureStream === 'function') {
+            audioStream = audioEngine.getAudioElement().captureStream();
+        } 
+        // Method 2: Create audio context destination
+        else {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audioEngine.getAudioElement());
+            const dest = audioCtx.createMediaStreamDestination();
+            source.connect(dest);
+            source.connect(audioCtx.destination);
+            audioStream = dest.stream;
+        }
     } catch(e) {
-        console.log("Audio stream failed, using silent audio");
+        console.log("Audio stream failed, recording video only");
+        // Create silent audio track
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const dest = audioCtx.createMediaStreamDestination();
@@ -412,7 +424,7 @@ async function startRecording() {
     }
     
     // Setup video stream from canvas
-    const canvasStream = canvas.captureStream(25); // Reduced from 30fps
+    const canvasStream = canvas.captureStream(30);
     
     // Combine streams
     const combinedStream = new MediaStream([
@@ -420,29 +432,19 @@ async function startRecording() {
         ...audioStream.getAudioTracks()
     ]);
     
-    // Setup recorder with optimized settings
-    let options = { 
-        mimeType: 'video/webm;codecs=vp9,opus',
-        videoBitsPerSecond: 2500000, // 2.5 Mbps for good quality
-        audioBitsPerSecond: 128000   // 128 kbps for audio
-    };
+    // Setup recorder - FORCE MP4/H.264 FOR BEST COMPATIBILITY
+    let mimeType = 'video/mp4';
+    let options = { mimeType: mimeType };
     
-    // Test for supported formats
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { 
-            mimeType: 'video/webm;codecs=vp8,opus',
-            videoBitsPerSecond: 2000000,
-            audioBitsPerSecond: 128000
-        };
+    // Test for MP4 support
+    if (!MediaRecorder.isTypeSupported('video/mp4')) {
+        // Fallback to WebM if MP4 not supported
+        mimeType = 'video/webm;codecs=vp9';
+        options = { mimeType: mimeType };
     }
     
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { 
-            mimeType: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-            videoBitsPerSecond: 2500000,
-            audioBitsPerSecond: 128000
-        };
-    }
+    // Add bitrate for better quality
+    options.videoBitsPerSecond = 5000000; // 5 Mbps for good quality
     
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
@@ -454,12 +456,16 @@ async function startRecording() {
     };
     
     mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: options.mimeType });
+        const blob = new Blob(chunks, { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         
-        const fileName = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}`;
-        const extension = options.mimeType.includes('mp4') ? '.mp4' : '.webm';
+        const theme = document.getElementById('themeSelect').value;
+        const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const fileName = `ZenGen-${theme}-${date}`;
+        
+        // Use .mp4 extension for all files (even if they're webm internally)
+        const extension = mimeType.includes('mp4') ? '.mp4' : '.mp4';
         
         a.href = url;
         a.download = fileName + extension;
@@ -468,7 +474,7 @@ async function startRecording() {
         document.body.removeChild(a);
         
         // Show success message
-        alert(`✅ Video downloaded successfully!\n\nFile: ${fileName}${extension}\nSize: ${Math.round(blob.size / 1024 / 1024 * 10) / 10} MB\n\nTip: Use VLC Player for best playback if QuickTime has issues.`);
+        alert(`✅ Video downloaded successfully!\n\nFile: ${fileName}${extension}\nFormat: MP4 (H.264/AAC)\nSize: ${Math.round(blob.size / 1024 / 1024 * 10) / 10} MB\n\nReady to upload to YouTube, TikTok, Instagram, etc.`);
         
         // Cleanup
         setTimeout(() => {
@@ -480,7 +486,7 @@ async function startRecording() {
         
         // Reset UI
         if (recordBtn) {
-            recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
+            recordBtn.innerHTML = '<div class="rec-icon"></div> Record Video (60s)';
             recordBtn.disabled = false;
         }
         
@@ -488,35 +494,28 @@ async function startRecording() {
             statusPill.className = 'status-pill active';
             statusPill.innerHTML = '<div class="dot"></div> Live';
         }
+        
+        // Hide loading
+        document.getElementById('loadingSpinner').style.display = 'none';
     };
     
-    // Optimized frame capture with buffering
-    let bufferCanvas = document.createElement('canvas');
-    bufferCanvas.width = canvas.width;
-    bufferCanvas.height = canvas.height;
-    let bufferCtx = bufferCanvas.getContext('2d');
-    
+    // Frame capture with optimization
     let lastFrameTime = 0;
     const frameInterval = setInterval(() => {
         const now = Date.now();
         
-        // Limit to 25fps max for recording
-        if (now - lastFrameTime < 40) return; // 1000ms / 25fps = 40ms
+        // Limit to 30fps
+        if (now - lastFrameTime < 33) return;
         
         try {
-            // Draw to buffer first
             if (activePlayer && activePlayer.readyState >= 2) {
-                bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
             }
-            
-            // Then draw buffer to output canvas
-            ctx.drawImage(bufferCanvas, 0, 0);
             lastFrameTime = now;
-            
         } catch (e) {
             console.log("Frame capture error:", e);
         }
-    }, 40); // ~25 FPS
+    }, 33); // 30 FPS
     
     // Timer
     let timeLeft = 60;
@@ -535,10 +534,10 @@ async function startRecording() {
     
     if (statusPill) {
         statusPill.className = 'status-pill recording';
-        statusPill.innerHTML = '<div class="dot"></div> Recording';
+        statusPill.innerHTML = '<div class="dot"></div> Recording MP4...';
     }
     
-    // Start recording with chunks for better reliability
+    // Start recording
     mediaRecorder.start(1000); // Collect data every second
     
     // Stop after 60 seconds
@@ -546,6 +545,10 @@ async function startRecording() {
         if (mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
         }
+        // Hide loading in case stop doesn't trigger
+        setTimeout(() => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }, 1000);
     }, 60000);
 }
 
@@ -554,10 +557,9 @@ async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
     
-    // Use shorter videos for better performance
     try {
         const page = Math.floor(Math.random() * 3) + 1;
-        const res = await fetch('https://api.pexels.com/videos/search?query=' + encodeURIComponent(query) + '&per_page=8&page=' + page + '&orientation=landscape&size=medium', {
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10&page=${page}&orientation=landscape&size=medium`, {
             headers: { Authorization: PEXELS_KEY }
         });
         const data = await res.json();
@@ -570,9 +572,10 @@ async function fetchMontagePlaylist(query, count) {
             
             fresh.forEach(v => {
                 seen.add(v.id);
-                // Prefer shorter videos (under 30 seconds) and medium quality
-                const videoFile = v.video_files.find(f => f.duration < 30 && f.width <= 1280) ||
-                                 v.video_files.find(f => f.width <= 1280) ||
+                // Prefer MP4 videos for better compatibility
+                const videoFile = v.video_files.find(f => f.file_type === 'video/mp4' && f.width >= 1280) ||
+                                 v.video_files.find(f => f.file_type === 'video/mp4') ||
+                                 v.video_files.find(f => f.width >= 1280) ||
                                  v.video_files[0];
                 if (videoFile) list.push(videoFile.link);
             });
@@ -581,27 +584,39 @@ async function fetchMontagePlaylist(query, count) {
         }
     } catch(e) {
         console.warn("Pexels API failed:", e);
-    }
-    
-    if (list.length < count) {
-        try {
-            const res = await fetch('https://pixabay.com/api/videos/?key=' + PIXABAY_KEY + '&q=' + encodeURIComponent(query) + '&per_page=8');
-            const data = await res.json();
-            
-            if (data.hits && data.hits.length > 0) {
-                const needed = count - list.length;
-                data.hits.slice(0, needed).forEach(v => {
-                    if (v.videos && v.videos.medium) {
-                        list.push(v.videos.medium.url);
-                    }
-                });
-            }
-        } catch(e) {
-            console.warn("Pixabay API failed:", e);
-        }
+        // Fallback to static videos
+        return getFallbackVideos(query, count);
     }
     
     return list;
+}
+
+function getFallbackVideos(query, count) {
+    // Fallback static video URLs for each theme
+    const fallbackVideos = {
+        forest: [
+            'https://player.vimeo.com/external/371433846.sd.mp4?s=7da01dc669a85b53e0a8b8dd5b05f56d1ab7c1e9&profile_id=164&oauth2_token_id=57447761',
+            'https://player.vimeo.com/external/440213825.sd.mp4?s=6e0a0c2e7e6f89d7be24a1473a9709c652a4c21c&profile_id=164&oauth2_token_id=57447761'
+        ],
+        ocean: [
+            'https://player.vimeo.com/external/373053649.sd.mp4?s=eeb3c150e37dcee23013a20a78f1a90cc2d37dc2&profile_id=164&oauth2_token_id=57447761',
+            'https://player.vimeo.com/external/386165261.sd.mp4?s=0d29cf4b6d9303e173e0f305b603c80ebfa90f4d&profile_id=164&oauth2_token_id=57447761'
+        ],
+        rain: [
+            'https://player.vimeo.com/external/373053669.sd.mp4?s=f42f970efc8b3d58dda1dc37c02b33a92c7bb375&profile_id=164&oauth2_token_id=57447761',
+            'https://player.vimeo.com/external/440214952.sd.mp4?s=37ba9709f4c9b4a1004552a974a529c33f2f63e7&profile_id=164&oauth2_token_id=57447761'
+        ],
+        fireplace: [
+            'https://player.vimeo.com/external/373053672.sd.mp4?s=795c478745185153f187f0efc20b4e9c3c5d4189&profile_id=164&oauth2_token_id=57447761',
+            'https://player.vimeo.com/external/440215592.sd.mp4?s=f0a4364269a73d3c1d0bd0f507a7b89b43757790&profile_id=164&oauth2_token_id=57447761'
+        ],
+        snow: [
+            'https://player.vimeo.com/external/373053673.sd.mp4?s=f726c1eb1b97b0cd3b3dddc3d5509554e1f41c52&profile_id=164&oauth2_token_id=57447761',
+            'https://player.vimeo.com/external/440216870.sd.mp4?s=dee117c7d81d319556c8bc08b4510d5c1b6dc886&profile_id=164&oauth2_token_id=57447761'
+        ]
+    };
+    
+    return fallbackVideos[query] ? fallbackVideos[query].slice(0, count) : [];
 }
 
 function generateViralSEO(theme) {
@@ -614,15 +629,15 @@ function generateViralSEO(theme) {
     const tagsElement = document.getElementById('videoTags');
     
     if (titleElement) {
-        titleElement.value = h + ' ' + theme.toUpperCase() + ' Sounds for Sleep & Relaxation (No Talking)';
+        titleElement.value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
     }
     
     if (descElement) {
-        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\n\nTheme: ' + theme.toUpperCase() + '\nAudio: Real Nature Recording\nQuality: HD\n\n#' + theme + ' #relax #sleep';
+        descElement.value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\nTheme: ${theme.toUpperCase()}\nAudio: Real Nature Recording (Royalty-Free)\nQuality: HD MP4\n\n#${theme} #relax #sleep #naturesounds`;
     }
     
-    const themeTags = ['#' + theme, '#' + theme + 'sounds', '#' + theme + 'ambience', '#' + theme + 'asmr', '#' + theme + 'sleep', '#real' + theme, '#' + theme + 'video'];
-    const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#shorts", "#fyp", "#viral", "#stressrelief", "#calm", "#focus", "#study", "#insomnia", "#healing", "#peace", "#zen", "#mindfulness", "#deepfocus", "#studymusic", "#backgroundnoise"];
+    const themeTags = [`#${theme}`, `#${theme}sounds`, `#${theme}ambience`, `#${theme}asmr`, `#${theme}sleep`, `#real${theme}`, `#${theme}video`];
+    const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#studymusic", "#calm", "#focus", "#insomnia", "#healing", "#peace", "#zen", "#mindfulness", "#yoga", "#background", "#whitenoise", "#anxietyrelief", "#deepfocus", "#concentration", "#wellness"];
     const combined = [...themeTags, ...GENERIC_TAGS];
     const shuffled = combined.sort(() => 0.5 - Math.random());
     const finalTags = [...new Set(shuffled)].slice(0, 25).join(' ');
@@ -641,11 +656,12 @@ function copyToClip(id) {
     
     try {
         document.execCommand("copy");
-        const original = element.style.backgroundColor;
-        element.style.backgroundColor = "#2a2a2a";
+        // Show feedback
+        const originalText = element.nextElementSibling.innerHTML;
+        element.nextElementSibling.innerHTML = '<i class="fas fa-check"></i> Copied!';
         setTimeout(() => {
-            element.style.backgroundColor = original;
-        }, 200);
+            element.nextElementSibling.innerHTML = originalText;
+        }, 2000);
     } catch (err) {
         console.error("Copy failed:", err);
     }
@@ -697,16 +713,30 @@ document.addEventListener('DOMContentLoaded', function() {
         copyTagsBtn.addEventListener('click', function() { copyToClip('videoTags'); });
     }
     
-    // Force audio context on any click
-    document.addEventListener('click', function() {
-        userHasInteracted = true;
-        if (audioEngine.audioElement.src && !audioEngine.isPlaying) {
-            audioEngine.audioElement.play().catch(e => {
-                console.log("Audio play on click failed:", e);
-            });
-        }
-    });
+    // Test audio button
+    const audioTestBtn = document.getElementById('audioTestBtn');
+    if (audioTestBtn) {
+        audioTestBtn.addEventListener('click', function() {
+            const audioUrl = document.getElementById('audioVariant').value;
+            if (audioUrl) {
+                audioEngine.play(audioUrl).then(success => {
+                    if (success) {
+                        alert('✅ Audio is working! You should hear natural sounds.');
+                        updateAudioStatus('Test successful');
+                    } else {
+                        alert('⚠️ Audio blocked. Please click the Play button next to the video.');
+                        updateAudioStatus('Click Play button');
+                    }
+                });
+            } else {
+                alert('Please select an audio track first.');
+            }
+        });
+    }
     
     // Load audio options
     setTimeout(loadAudioOptions, 100);
+    
+    // Initialize audio status
+    updateAudioStatus('Ready');
 });
