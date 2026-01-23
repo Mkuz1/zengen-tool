@@ -2,29 +2,29 @@
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// NATURAL SOUNDS ONLY (Strictly enforced)
+// 1. RELIABLE AUDIO (Google Hosted - 100% Uptime & CORS Friendly)
 const AUDIO_LIBRARY = {
-    forest: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/forest.mp3"],
-    rain: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/rain.mp3"],
-    fireplace: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/campfire.mp3"],
-    ocean: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/waves.mp3"],
-    snow: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/wind.mp3"] 
+    forest: ["https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg"],
+    rain: ["https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"],
+    fireplace: ["https://actions.google.com/sounds/v1/ambiences/fire.ogg"],
+    ocean: ["https://actions.google.com/sounds/v1/water/waves_crashing.ogg"],
+    snow: ["https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg"] // Wind sounds like snow storm
 };
 
 // SEO DATA
 const SEO_DATA = {
     titles: {
-        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil"],
-        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape"],
-        actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying"]
+        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil", "Dreamy", "Restorative"],
+        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape", "Retreat", "Haven"],
+        actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying", "for Yoga", "for Deep Rest"]
     },
     tags: {
-        common: ["#shorts", "#relaxation", "#meditation", "#sleep", "#asmr", "#nature", "#peace"],
-        forest: ["#forest", "#woods", "#birds", "#nature", "#green"],
-        rain: ["#rain", "#rainstorm", "#thunder", "#rainyday", "#sleepsounds"],
-        fireplace: ["#fireplace", "#fire", "#burning", "#warmth", "#cozy"],
-        ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer"],
-        snow: ["#snow", "#winter", "#blizzard", "#cold", "#white"]
+        common: ["#shorts", "#relaxation", "#meditation", "#sleep", "#asmr", "#nature", "#peace", "#calm", "#mindfulness", "#wellness"],
+        forest: ["#forest", "#woods", "#birds", "#nature", "#green", "#camping", "#wildlife", "#trees"],
+        rain: ["#rain", "#rainstorm", "#thunder", "#rainyday", "#sleepsounds", "#storm", "#heavyrain"],
+        fireplace: ["#fireplace", "#fire", "#burning", "#warmth", "#cozy", "#winter", "#cracklingfire"],
+        ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer", "#water", "#seascape"],
+        snow: ["#snow", "#winter", "#blizzard", "#cold", "#white", "#arctic", "#wind"]
     }
 };
 
@@ -32,54 +32,58 @@ const SEO_DATA = {
 const videoEl = document.getElementById('mainVideo');
 const audioEl = document.getElementById('bgAudio');
 const statusPill = document.getElementById('statusPill');
-const statusText = statusPill.childNodes[1]; 
+const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
 
 // AUDIO ENGINE GLOBALS
 let audioCtx;
-let audioDest;      // Stream destination for Recorder
-let audioSource;    // The node connecting the HTML <audio> to the Context
+let audioDest;      
+let audioSource;    
 
-// --- 1. INITIALIZATION (The Audio Fix) ---
+// --- 1. INITIALIZATION ---
 async function initStudio() {
-    // A. Start Audio Context on User Gesture
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    await audioCtx.resume(); // Force "Running" state
+    try {
+        // A. Start Audio Context
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        await audioCtx.resume(); 
 
-    // B. Setup Routing Logic (Once)
-    // 1. Create Destination for Recorder
-    audioDest = audioCtx.createMediaStreamDestination();
-    
-    // 2. Create Source from <audio> element
-    if (!audioSource) {
-        audioSource = audioCtx.createMediaElementSource(audioEl);
+        // B. Routing
+        audioDest = audioCtx.createMediaStreamDestination();
         
-        // 3. Connect Graph: Source -> Recorder Destination -> Speakers
-        audioSource.connect(audioDest);
-        audioSource.connect(audioCtx.destination);
-    }
+        if (!audioSource) {
+            audioSource = audioCtx.createMediaElementSource(audioEl);
+            audioSource.connect(audioDest);
+            audioSource.connect(audioCtx.destination);
+        }
 
-    // C. Transition UI
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('workspace').style.display = 'flex';
+        // C. UI Transition
+        document.getElementById('startScreen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('workspace').style.display = 'flex';
+        }, 500);
+        
+    } catch(e) {
+        alert("Could not start audio engine. Please refresh and try again.");
+    }
 }
 
-// --- 2. GENERATE CONTENT ---
+// --- 2. GENERATE CONTENT (Crash-Proof Logic) ---
 async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     
     // UI Updates
-    statusPill.className = 'status-pill active';
-    statusText.textContent = "Fetching content...";
+    if(statusPill) statusPill.className = 'status-pill active';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
     try {
-        // Fetch Video
+        // 1. Fetch Video
         let videoUrl = await fetchPexelsVideo(theme);
         if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
 
-        // Fetch Audio (Always first from library)
+        // 2. Fetch Audio (Google Link)
+        // We add a timestamp to ensure the browser treats it as a fresh request
         const audioUrl = AUDIO_LIBRARY[theme][0] + "?t=" + Date.now();
 
         if (videoUrl) {
@@ -89,35 +93,36 @@ async function generateContent() {
             videoEl.src = videoUrl;
             audioEl.src = audioUrl;
 
-            // Wait for load
-            await Promise.all([
-                new Promise(r => videoEl.onloadeddata = r),
-                new Promise(r => audioEl.onloadeddata = r)
-            ]);
+            // 3. Robust Loading (Won't crash if audio is slow)
+            videoEl.onloadeddata = () => {
+                videoEl.play();
+                generateSEO(theme); // Generate SEO as soon as video is ready
+            };
 
-            // Play & Confirm
-            videoEl.play();
-            audioEl.play()
-                .then(() => {
-                    // Show Visualizer if audio plays
-                    document.getElementById('audioVisualizer').classList.add('active');
-                    statusText.textContent = "Playing";
-                    recordBtn.disabled = false;
-                })
-                .catch(e => {
-                    console.error("Autoplay failed:", e);
-                    statusText.textContent = "Click Play needed";
-                });
-            
-            generateSEO(theme);
+            audioEl.onloadeddata = () => {
+                audioEl.play().then(() => {
+                     document.getElementById('audioVisualizer').classList.add('active');
+                     recordBtn.disabled = false;
+                     if(statusPill) statusPill.innerHTML = '<div class="dot"></div> Playing';
+                }).catch(e => console.log("Audio autoplay restricted, waiting for interaction"));
+            };
+
+            // Error Handling: If audio fails, still allow recording video
+            audioEl.onerror = () => {
+                console.warn("Audio failed to load. Continuing with video only.");
+                recordBtn.disabled = false; // Allow recording anyway
+                if(statusPill) statusPill.innerHTML = '<div class="dot" style="background:orange"></div> No Audio';
+            };
+
+        } else {
+            alert("Could not find a video for this theme. Please try again.");
         }
     } catch (error) {
-        console.error(error);
-        statusText.textContent = "Error loading";
+        console.error("Critical Error:", error);
     }
 }
 
-// --- 3. FETCHERS ---
+// --- 3. API FETCHERS ---
 const usedVideoIds = new Set();
 async function fetchPexelsVideo(query) {
     try {
@@ -131,9 +136,10 @@ async function fetchPexelsVideo(query) {
             const pool = fresh.length ? fresh : data.videos;
             const vid = pool[Math.floor(Math.random() * pool.length)];
             usedVideoIds.add(vid.id);
+            // Prefer HD
             return vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
         }
-    } catch (e) {} return null;
+    } catch (e) { console.log('Pexels skipped'); } return null;
 }
 
 async function fetchPixabayVideo(query) {
@@ -142,7 +148,7 @@ async function fetchPixabayVideo(query) {
         const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=10&page=${page}`);
         const data = await res.json();
         if (data.hits.length) return data.hits[Math.floor(Math.random() * data.hits.length)].videos.medium.url;
-    } catch (e) {} return null;
+    } catch (e) { console.log('Pixabay skipped'); } return null;
 }
 
 // --- 4. SEO GENERATOR ---
@@ -152,46 +158,53 @@ function generateSEO(theme) {
     const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
     const action = t.actions[Math.floor(Math.random() * t.actions.length)];
     
+    // Title
     document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase() + theme.slice(1)} ${noun} ${action}`;
-    document.getElementById('videoDesc').value = `Enjoy this ${adj.toLowerCase()} ${theme} ${noun.toLowerCase()}. Pure nature sounds, no music. #${theme} #relax`;
     
+    // Description
+    document.getElementById('videoDesc').value = `Immerse yourself in this ${adj.toLowerCase()} ${theme} ${noun.toLowerCase()}. 
+Perfect ${action.toLowerCase()}. 
+1 minute of pure nature sounds (no music) to help you reset.
+
+#${theme} #relax #nature`;
+    
+    // Tags
     const tags = [...SEO_DATA.tags[theme], ...SEO_DATA.tags.common];
-    document.getElementById('videoTags').value = [...new Set(tags.sort(() => .5 - Math.random()))].slice(0, 15).join(' ');
+    const uniqueTags = [...new Set(tags.sort(() => .5 - Math.random()))].slice(0, 15).join(' ');
+    document.getElementById('videoTags').value = uniqueTags;
 }
 
 function copyToClip(id) {
-    document.getElementById(id).select();
+    const el = document.getElementById(id);
+    el.select();
     document.execCommand("copy");
-    statusText.textContent = "Copied to clipboard!";
-    setTimeout(() => statusText.textContent = "Ready", 2000);
+    // Visual feedback
+    const btn = el.nextElementSibling;
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+    setTimeout(() => btn.innerHTML = originalIcon, 1500);
 }
 
-// --- 5. RECORDING (AUDIO-SAFE) ---
+// --- 5. RECORDING ---
 function startRecording() {
-    // Safety check
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!audioCtx || audioCtx.state === 'suspended') audioCtx && audioCtx.resume();
 
-    // Setup Video Stream
     const canvas = document.createElement('canvas');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
     const ctx = canvas.getContext('2d');
     const canvasStream = canvas.captureStream(30);
 
-    // COMBINE: Video Stream + The Audio Destination Stream (which we connected in init)
-    const combinedTracks = [
-        ...canvasStream.getVideoTracks(),
-        ...audioDest.stream.getAudioTracks() // This is the Clean Audio Feed
-    ];
-
-    if (audioDest.stream.getAudioTracks().length === 0) {
-        alert("Audio Engine not active. Refresh and click 'Enter Studio'.");
-        return;
-    }
-
-    const combinedStream = new MediaStream(combinedTracks);
+    // Combine Video + Clean Audio
+    const tracks = [...canvasStream.getVideoTracks()];
+    const audioTrack = audioDest.stream.getAudioTracks()[0];
     
-    // Format Logic
+    if (audioTrack) tracks.push(audioTrack);
+    else console.warn("Recording video without audio (Audio track missing)");
+
+    const combinedStream = new MediaStream(tracks);
+    
+    // Format Support Check
     let options = { mimeType: 'video/webm; codecs=vp9' };
     let ext = 'webm';
     if (MediaRecorder.isTypeSupported('video/mp4')) { options = { mimeType: 'video/mp4' }; ext = 'mp4'; }
@@ -211,8 +224,7 @@ function startRecording() {
         
         recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
         recordBtn.disabled = false;
-        statusPill.className = 'status-pill active';
-        statusText.textContent = "Export Complete";
+        statusPill.innerHTML = '<div class="dot"></div> Ready';
         clearInterval(drawInterval);
     };
 
@@ -221,8 +233,7 @@ function startRecording() {
     mediaRecorder.start();
     recordBtn.innerText = "Recording... (Wait 60s)";
     recordBtn.disabled = true;
-    statusPill.className = 'status-pill recording';
-    statusText.textContent = "Recording in progress...";
+    statusPill.innerHTML = '<div class="dot" style="background:red; box-shadow:0 0 10px red;"></div> Recording';
     
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
