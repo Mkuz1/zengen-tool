@@ -1,15 +1,15 @@
 /**
- * ZenGen - "Ping-Pong" Montage Edition
- * - Video: Dual players (Active/Standby) for instant, seamless cuts.
- * - Audio: Procedural Nature Sounds.
- * - Recording: Smart Canvas Recorder captures the 'Active' video.
+ * ZenGen - "Montage Studio" Final
+ * - Video: Dual-Player Ping-Pong (Seamless Transitions)
+ * - Audio: Procedural Nature Engine (Infinite, Non-Repeating)
+ * - Recorder: Global State Tracking (Fixes "Frozen Video" bug)
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ---
+// --- 1. PROCEDURAL AUDIO ENGINE ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -102,7 +102,8 @@ const recordBtn = document.getElementById('recordBtn');
 
 let currentPlaylist = [];
 let currentIndex = 0;
-let currentPlayer = playerA; // Start with A
+// CRITICAL: We track the ACTIVE player in a variable for the recorder
+let currentPlayer = playerA; 
 
 // --- 3. INIT ---
 async function initStudio() {
@@ -158,7 +159,7 @@ function startVideoSequence() {
     // 1. Reset Players
     playerA.className = 'active';
     playerB.className = 'standby';
-    currentPlayer = playerA;
+    currentPlayer = playerA; // Recorder will look at A
 
     // 2. Load Clip 0 into A
     loadClip(playerA, 0);
@@ -181,24 +182,30 @@ function loadClip(videoEl, index) {
 }
 
 function swapPlayers(endingPlayer, nextPlayer) {
-    // 1. Cut to Next Player
+    // 1. Update Recorder Target IMMEDIATELY
+    currentPlayer = nextPlayer;
+
+    // 2. Visual Swap
     endingPlayer.className = 'standby';
     nextPlayer.className = 'active';
-    currentPlayer = nextPlayer;
+    
+    // 3. Play Next
     nextPlayer.play();
 
-    // 2. Increment Index and Preload the *next* clip into the old player
+    // 4. Preload Future Clip
     currentIndex++;
     loadClip(endingPlayer, currentIndex + 1);
 }
 
-// --- 6. RECORDER (Smart) ---
+// --- 6. RECORDER (Smart & Robust) ---
 function startRecording() {
     synth.resume();
     if (currentPlayer.paused) currentPlayer.play();
 
+    // FIXED CANVAS SIZE (HD)
     const canvas = document.createElement('canvas');
-    canvas.width = 1280; canvas.height = 720; // Fixed HD
+    canvas.width = 1280; 
+    canvas.height = 720; 
     const ctx = canvas.getContext('2d');
     const canvasStream = canvas.captureStream(30);
 
@@ -229,13 +236,18 @@ function startRecording() {
         clearInterval(timerInterval);
     };
 
-    // SMART DRAW LOOP: Always draws whichever video is '.active'
+    // CRITICAL FIX: The loop always draws 'currentPlayer'
+    // This variable is updated by swapPlayers the instant the video changes.
     const drawInterval = setInterval(() => {
-        const activeEl = playerA.classList.contains('active') ? playerA : playerB;
-        ctx.drawImage(activeEl, 0, 0, canvas.width, canvas.height);
+        try {
+            // Only draw if we have a valid image (prevents black frames)
+            if (currentPlayer.readyState >= 2) {
+                ctx.drawImage(currentPlayer, 0, 0, canvas.width, canvas.height);
+            }
+        } catch(e) { console.log("Frame drop"); }
     }, 1000 / 30);
 
-    // Countdown
+    // Countdown UI
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
