@@ -278,4 +278,98 @@
                             <i class="fa-brands fa-instagram"></i>
                         </a>
                         <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-link fb">
-                            <i class="fa-brands fa-facebook
+                            <i class="fa-brands fa-facebook"></i>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+    // Additional audio controls
+    document.addEventListener('DOMContentLoaded', function() {
+        // Volume control
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteBtn = document.getElementById('muteBtn');
+        let isMuted = false;
+        let previousVolume = 0.8;
+        
+        if (volumeSlider && muteBtn) {
+            volumeSlider.addEventListener('input', function() {
+                const volume = parseFloat(this.value);
+                if (window.audioEngine && window.audioEngine.audioElement) {
+                    window.audioEngine.audioElement.volume = volume;
+                    if (window.audioEngine.gainNode) {
+                        window.audioEngine.gainNode.gain.value = volume;
+                    }
+                    
+                    // Update mute button icon
+                    if (volume === 0) {
+                        muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                        isMuted = true;
+                    } else {
+                        muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                        isMuted = false;
+                    }
+                    
+                    // Save volume
+                    previousVolume = volume;
+                }
+            });
+            
+            muteBtn.addEventListener('click', function() {
+                if (window.audioEngine && window.audioEngine.audioElement) {
+                    if (isMuted) {
+                        // Unmute
+                        window.audioEngine.audioElement.volume = previousVolume;
+                        if (window.audioEngine.gainNode) {
+                            window.audioEngine.gainNode.gain.value = previousVolume;
+                        }
+                        volumeSlider.value = previousVolume;
+                        muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                        isMuted = false;
+                    } else {
+                        // Mute
+                        previousVolume = window.audioEngine.audioElement.volume;
+                        window.audioEngine.audioElement.volume = 0;
+                        if (window.audioEngine.gainNode) {
+                            window.audioEngine.gainNode.gain.value = 0;
+                        }
+                        volumeSlider.value = 0;
+                        muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                        isMuted = true;
+                    }
+                }
+            });
+        }
+        
+        // Show audio help after 3 seconds if no interaction
+        setTimeout(() => {
+            if (!window.isPlaying) {
+                document.getElementById('audioHelp').style.display = 'block';
+            }
+        }, 3000);
+        
+        // Show Mac notice if on Mac
+        if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+            document.getElementById('macNotice').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('macNotice').style.display = 'none';
+            }, 5000);
+        }
+        
+        // Auto-hide audio help when user interacts
+        document.addEventListener('click', function() {
+            const audioHelp = document.getElementById('audioHelp');
+            if (audioHelp.style.display === 'block') {
+                setTimeout(() => {
+                    audioHelp.style.display = 'none';
+                }, 1000);
+            }
+        });
+    });
+    </script>
+</body>
+</html>
