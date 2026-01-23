@@ -3,252 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Optimized</title>
+    <title>ZenGen Studio | Natural Sounds & MP4 Videos</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Performance Optimizations */
-        * {
-            box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        /* Audio Controls */
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
         }
         
-        video {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000;
-        }
-        
-        /* Audio Status Indicator */
-        .audio-status {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            z-index: 1000;
+        .audio-preview {
+            flex: 1;
             display: flex;
             align-items: center;
             gap: 8px;
-            border: 1px solid #333;
-        }
-        
-        .audio-status i {
-            color: #3b82f6;
-        }
-        
-        .audio-status.muted i {
-            color: #ef4444;
-        }
-        
-        /* Performance Warning */
-        .performance-warning {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(239, 68, 68, 0.9);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-size: 12px;
-            text-align: center;
-            max-width: 400px;
-            backdrop-filter: blur(5px);
-        }
-        
-        /* Recording Quality Selector */
-        .quality-selector {
-            margin-top: 15px;
-            padding: 10px;
+            padding: 8px 12px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 6px;
-            border: 1px solid #333;
-        }
-        
-        .quality-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px 0;
-            padding: 5px;
             cursor: pointer;
-            border-radius: 4px;
             transition: background 0.2s;
         }
         
-        .quality-option:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .quality-option.selected {
+        .audio-preview:hover {
             background: rgba(59, 130, 246, 0.2);
-            border: 1px solid #3b82f6;
         }
         
-        /* Loading Spinner */
-        .loading-spinner {
+        .audio-preview i {
+            color: #3b82f6;
+        }
+        
+        .audio-status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .audio-status-indicator.playing {
+            background: rgba(34, 197, 94, 0.7);
+        }
+        
+        /* MP4 Badge */
+        .mp4-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        /* Theme Preview */
+        .theme-preview {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .theme-sample {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+        
+        .theme-sample:hover {
+            border-color: #3b82f6;
+        }
+        
+        .theme-sample.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        
+        /* Loading Overlay */
+        #loadingOverlay {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        
+        .loading-subtext {
+            margin-top: 10px;
+            font-size: 14px;
+            opacity: 0.7;
+            max-width: 300px;
             text-align: center;
         }
         
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #333;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Video Info */
+        .video-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            max-width: 200px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Audio Status -->
-    <div id="audioStatus" class="audio-status">
-        <i class="fas fa-volume-mute"></i>
-        <span>Click Play to enable audio</span>
-    </div>
-
-    <!-- Performance Warning -->
-    <div id="performanceWarning" class="performance-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        Recording in progress - For best performance, close other applications
-    </div>
-
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="loading-spinner">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
         <div class="spinner"></div>
-        <p>Processing...</p>
+        <div class="loading-text" id="loadingText">Loading...</div>
+        <div class="loading-subtext" id="loadingSubtext">Please wait</div>
     </div>
 
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
-            <i class="fa-solid fa-wave-square fa-3x"></i>
+            <i class="fa-solid fa-mountain fa-3x"></i>
             <h1>ZenGen Studio</h1>
-            <p>Optimized Audio & Video Engine</p>
+            <p>Royalty-Free Natural Sounds & MP4 Videos</p>
             <button id="enterStudioBtn" class="btn-enter">Enter Studio</button>
-            <p style="font-size: 11px; margin-top: 20px; opacity: 0.7;">
-                <i class="fas fa-lightbulb"></i> Tip: Allow audio autoplay for best experience
-            </p>
-        </div>
-    </div>
-
-    <div id="workspace" class="workspace" style="display: none;">
-        <nav>
-            <div class="brand"><i class="fa-solid fa-layer-group"></i> ZenGen <span>OPTIMIZED</span></div>
-            <div class="status-pill" id="statusPill"><div class="dot"></div> System Ready</div>
-        </nav>
-
-        <div class="main-layout">
-            <aside class="sidebar">
-                
-                <div class="control-group">
-                    <label><i class="fa-solid fa-palette"></i> VISUAL THEME</label>
-                    <div class="custom-select">
-                        <select id="themeSelect">
-                            <option value="forest">🌲 Forest</option>
-                            <option value="ocean">🌊 Ocean</option>
-                            <option value="rain">🌧️ Rain</option>
-                            <option value="fireplace">🔥 Fireplace</option>
-                            <option value="snow">❄️ Snow</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label><i class="fa-solid fa-music"></i> AUDIO TRACK</label>
-                    <div class="custom-select">
-                        <select id="audioVariant">
-                            <!-- Options will be loaded dynamically -->
-                        </select>
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <button id="generateBtn" class="btn-primary">
-                        <i class="fa-solid fa-rotate"></i> Generate Content
-                    </button>
-                    <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
-                        Downloads 2 short videos for better performance
-                    </p>
-                </div>
-                
-                <div class="divider"></div>
-
-                <div class="control-group">
-                    <button id="recordBtn" disabled class="btn-record">
-                        <div class="rec-icon"></div> Record 60s Video
-                    </button>
-                    
-                    <div class="quality-selector">
-                        <p style="font-size: 11px; margin-bottom: 8px; opacity: 0.7;">
-                            <i class="fas fa-cog"></i> Recording Quality
-                        </p>
-                        <div class="quality-option selected" data-quality="balanced">
-                            <i class="fas fa-check-circle"></i>
-                            <div>
-                                <strong>Balanced</strong>
-                                <div style="font-size: 10px; opacity: 0.7;">Best performance</div>
-                            </div>
-                        </div>
-                        <div class="quality-option" data-quality="high">
-                            <i class="far fa-circle"></i>
-                            <div>
-                                <strong>High Quality</strong>
-                                <div style="font-size: 10px; opacity: 0.7;">May cause lag</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Audio Test Button -->
-                <div class="control-group">
-                    <button id="audioTestBtn" style="background: #333; color: white; margin-top: 10px;">
-                        <i class="fas fa-volume-up"></i> Test Audio
-                    </button>
-                </div>
-            </aside>
-
-            <main class="monitor-section">
-                <div class="video-wrapper">
-                    <video id="vid1" class="active" crossorigin="anonymous" playsinline preload="auto"></video>
-                    <video id="vid2" class="standby" crossorigin="anonymous" playsinline preload="auto"></video>
-                    
-                    <div class="playback-controls">
-                        <button id="playPauseBtn"><i class="fa-solid fa-play"></i></button>
-                    </div>
-
-                    <div id="audioVisualizer" class="visualizer-overlay">
-                        <div class="bar"></div>
-                        <div class="bar"></div>
-                        <div class="bar"></div>
-                        <div class="bar"></div>
-                    </div>
-                    
-                    <!-- Audio Indicator -->
-                    <div style="position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; font-size: 12px;">
-                        <i class="fas fa-headphones"></i> Audio: <
+            <div style="margin-top: 30px; font-size: 12px; opacity: 0.7; max-width: 400px;">
+                <i class="fas fa-check-circle"></i> Features:<br>
+                • Royalty-free natural sounds from Mixkit.co<br>
+                • MP4 video output (YouTube/TikTok/Instagram ready)<br>
+                • SEO-optimized metadata<br>
+                • No
