@@ -2,15 +2,6 @@
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// 1. RELIABLE AUDIO (Google Hosted - 100% Uptime & CORS Friendly)
-const AUDIO_LIBRARY = {
-    forest: ["https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg"],
-    rain: ["https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"],
-    fireplace: ["https://actions.google.com/sounds/v1/ambiences/fire.ogg"],
-    ocean: ["https://actions.google.com/sounds/v1/water/waves_crashing.ogg"],
-    snow: ["https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg"] // Wind sounds like snow storm
-};
-
 // SEO DATA
 const SEO_DATA = {
     titles: {
@@ -26,6 +17,16 @@ const SEO_DATA = {
         ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer", "#water", "#seascape"],
         snow: ["#snow", "#winter", "#blizzard", "#cold", "#white", "#arctic", "#wind"]
     }
+};
+
+// SPECIFIC SEARCH QUERIES FOR PIXABAY SFX
+// We use "loop" to find sounds meant for background ambience
+const AUDIO_QUERIES = {
+    forest: "forest ambience birds loop",
+    rain: "rain heavy loop",
+    fireplace: "fireplace fire crackle loop",
+    ocean: "ocean waves sea loop",
+    snow: "wind blizzard winter loop"
 };
 
 // GLOBALS
@@ -50,6 +51,7 @@ async function initStudio() {
         // B. Routing
         audioDest = audioCtx.createMediaStreamDestination();
         
+        // Only create source once
         if (!audioSource) {
             audioSource = audioCtx.createMediaElementSource(audioEl);
             audioSource.connect(audioDest);
@@ -64,16 +66,17 @@ async function initStudio() {
         }, 500);
         
     } catch(e) {
-        alert("Could not start audio engine. Please refresh and try again.");
+        alert("Could not start audio engine. Please refresh.");
     }
 }
 
-// --- 2. GENERATE CONTENT (Crash-Proof Logic) ---
+// --- 2. GENERATE CONTENT ---
 async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     
     // UI Updates
     if(statusPill) statusPill.className = 'status-pill active';
+    if(statusText) statusText.innerHTML = '<div class="dot"></div> Fetching...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
@@ -82,40 +85,38 @@ async function generateContent() {
         let videoUrl = await fetchPexelsVideo(theme);
         if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
 
-        // 2. Fetch Audio (Google Link)
-        // We add a timestamp to ensure the browser treats it as a fresh request
-        const audioUrl = AUDIO_LIBRARY[theme][0] + "?t=" + Date.now();
+        // 2. Fetch Audio (DYNAMICALLY from Pixabay SFX API)
+        const audioUrl = await fetchPixabayAudio(theme);
 
-        if (videoUrl) {
+        if (videoUrl && audioUrl) {
             videoEl.crossOrigin = "anonymous";
             audioEl.crossOrigin = "anonymous";
             
             videoEl.src = videoUrl;
             audioEl.src = audioUrl;
 
-            // 3. Robust Loading (Won't crash if audio is slow)
+            // 3. Play Video Immediately
             videoEl.onloadeddata = () => {
                 videoEl.play();
-                generateSEO(theme); // Generate SEO as soon as video is ready
+                generateSEO(theme);
             };
 
+            // 4. Play Audio when ready
             audioEl.onloadeddata = () => {
                 audioEl.play().then(() => {
                      document.getElementById('audioVisualizer').classList.add('active');
                      recordBtn.disabled = false;
                      if(statusPill) statusPill.innerHTML = '<div class="dot"></div> Playing';
-                }).catch(e => console.log("Audio autoplay restricted, waiting for interaction"));
+                }).catch(e => console.log("Audio autoplay waiting for interaction"));
             };
 
-            // Error Handling: If audio fails, still allow recording video
             audioEl.onerror = () => {
-                console.warn("Audio failed to load. Continuing with video only.");
-                recordBtn.disabled = false; // Allow recording anyway
-                if(statusPill) statusPill.innerHTML = '<div class="dot" style="background:orange"></div> No Audio';
+                console.warn("Audio failed. Retrying...");
+                if(statusPill) statusPill.innerHTML = '<div class="dot" style="background:orange"></div> Audio Error';
             };
 
         } else {
-            alert("Could not find a video for this theme. Please try again.");
+            alert("Could not find media. Please try again.");
         }
     } catch (error) {
         console.error("Critical Error:", error);
@@ -123,6 +124,28 @@ async function generateContent() {
 }
 
 // --- 3. API FETCHERS ---
+
+// A. Pixabay Sound Effects (New Function)
+async function fetchPixabayAudio(theme) {
+    try {
+        const query = AUDIO_QUERIES[theme];
+        // Note: 'https://pixabay.com/api/sfx/' is the endpoint for Sound Effects (not music)
+        const res = await fetch(`https://pixabay.com/api/sfx/?key=${PIXABAY_KEY}&q=${query}`);
+        const data = await res.json();
+        
+        if (data.hits && data.hits.length > 0) {
+            // Pick a random sound from the top 5 results
+            const poolSize = Math.min(data.hits.length, 5);
+            const rand = Math.floor(Math.random() * poolSize);
+            return data.hits[rand].url; // This returns a valid .mp3 link
+        }
+    } catch (e) {
+        console.log('Pixabay Audio Error:', e);
+    }
+    return null;
+}
+
+// B. Video Fetchers
 const usedVideoIds = new Set();
 async function fetchPexelsVideo(query) {
     try {
@@ -178,7 +201,6 @@ function copyToClip(id) {
     const el = document.getElementById(id);
     el.select();
     document.execCommand("copy");
-    // Visual feedback
     const btn = el.nextElementSibling;
     const originalIcon = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
