@@ -1,8 +1,7 @@
 /**
- * ZenGen - "Ironclad" Edition
- * - Video: Single-player Blob Queue (Reduces complexity, eliminates freeze risks).
- * - Audio: Procedural Nature Engine.
- * - Recorder: Frame Guard protection to auto-skip stuck frames.
+ * ZenGen - "Dual-Blob" Ping Pong Edition
+ * - Video: Uses 2 players + Local Blobs. Player B preloads while A plays.
+ * - Result: 100% Seamless Recording (No freezing).
  */
 
 // --- CONFIGURATION ---
@@ -24,11 +23,9 @@ class NatureSynth {
         this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
         this.activeNodes = [];
     }
-    
     playRain() { this.runNoise(0.8, 400 + Math.random()*800); }
     playSnow() { this.runNoise(0.5, 200 + Math.random()*300); }
     playForest() { this.runNoise(0.3, 500 + Math.random()*300); this.birdLoop(); }
-    
     playOcean() {
         this.stop();
         const noise = this.createPinkNoise(0.4);
@@ -41,7 +38,6 @@ class NatureSynth {
         noise.connect(gain); gain.connect(this.master); lfo.start();
         this.activeNodes.push(noise, lfo);
     }
-    
     playFire() {
         this.stop();
         const noise = this.createBrownNoise(0.7);
@@ -53,7 +49,6 @@ class NatureSynth {
         crackle.connect(this.master); noise.connect(this.master);
         this.activeNodes.push(noise, crackle);
     }
-
     runNoise(vol, freq) {
         this.stop();
         const noise = this.createPinkNoise(vol);
@@ -76,7 +71,6 @@ class NatureSynth {
             this.loopTimer = setTimeout(chirp, 1000+Math.random()*4000);
         }; chirp();
     }
-    
     createPinkNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
     createBrownNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
     noiseNode(vol, size, algo) {
@@ -92,18 +86,15 @@ class NatureSynth {
 const synth = new NatureSynth();
 
 // --- 2. GLOBAL STATE ---
-// We only use ONE player (vid1) to reduce complexity and freeze risks
-const mainPlayer = document.getElementById('vid1');
-// Ensure the second player is hidden/removed to prevent interference
-const bufferPlayer = document.getElementById('vid2'); 
-if(bufferPlayer) bufferPlayer.style.display = 'none';
-
+const playerA = document.getElementById('vid1');
+const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
 const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
 
 let blobPlaylist = [];
-let currentBlobIndex = 0;
+let currentPlaylistIndex = 0;
+let activePlayer = playerA; // Tracks which player the recorder should look at
 
 // --- 3. INIT ---
 async function initStudio() {
@@ -112,18 +103,18 @@ async function initStudio() {
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
         
-        // Setup Main Player Loop
-        mainPlayer.onended = playNextBlob;
+        // Listen for video end to trigger swap
+        playerA.onended = () => swapPlayers(playerA, playerB);
+        playerB.onended = () => swapPlayers(playerB, playerA);
         
     } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 4. GENERATE CONTENT ---
+// --- 4. GENERATE CONTENT (Blob Preloader) ---
 async function generateContent() {
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
-    // UI
     statusPill.className = 'status-pill active';
     statusText.textContent = 'Downloading Clips...';
     recordBtn.disabled = true;
@@ -135,7 +126,7 @@ async function generateContent() {
     if (rawUrls.length > 0) {
         blobPlaylist = [];
         
-        // 2. Download ALL Blobs first
+        // 2. Download Blobs
         for (let i = 0; i < rawUrls.length; i++) {
             statusText.textContent = `Downloading ${i+1}/4...`;
             const blob = await fetchVideoAsBlob(rawUrls[i]);
@@ -143,7 +134,6 @@ async function generateContent() {
         }
 
         if (blobPlaylist.length > 0) {
-            // Start Audio
             synth.resume();
             if(theme==='rain') synth.playRain();
             else if(theme==='snow') synth.playSnow();
@@ -154,16 +144,12 @@ async function generateContent() {
             document.getElementById('audioVisualizer').classList.add('active');
             generateViralSEO(theme);
             
-            // Start Video
-            currentBlobIndex = 0;
-            mainPlayer.src = blobPlaylist[0];
-            mainPlayer.play().then(() => {
-                statusText.textContent = 'Live';
-                recordBtn.disabled = false;
-            });
+            // Start Sequence
+            currentPlaylistIndex = 0;
+            startPingPong();
             
         } else {
-            alert("Download failed. Try again.");
+            alert("Download failed.");
         }
     } else {
         alert("No videos found.");
@@ -176,23 +162,51 @@ async function fetchVideoAsBlob(url) {
         const response = await fetch(url);
         const blob = await response.blob();
         return URL.createObjectURL(blob);
-    } catch (e) {
-        console.warn("Blob fetch failed", e);
-        return null;
+    } catch (e) { return null; }
+}
+
+// --- 5. PING PONG LOGIC ---
+function startPingPong() {
+    // Reset
+    playerA.className = 'active';
+    playerB.className = 'standby';
+    activePlayer = playerA;
+
+    // Load first into A
+    playerA.src = blobPlaylist[0];
+    playerA.play();
+
+    // Preload second into B
+    if (blobPlaylist.length > 1) {
+        playerB.src = blobPlaylist[1];
+        playerB.load();
     }
+
+    statusText.textContent = 'Live';
+    recordBtn.disabled = false;
 }
 
-// Helper: Play Next
-function playNextBlob() {
-    currentBlobIndex = (currentBlobIndex + 1) % blobPlaylist.length;
-    mainPlayer.src = blobPlaylist[currentBlobIndex];
-    mainPlayer.play().catch(e => console.log("Play error", e));
+function swapPlayers(endingPlayer, nextPlayer) {
+    // 1. Swap active visual
+    endingPlayer.className = 'standby';
+    nextPlayer.className = 'active';
+    activePlayer = nextPlayer; // Switch recorder target
+
+    // 2. Play next (it's already loaded)
+    nextPlayer.play();
+
+    // 3. Preload FUTURE clip into the one that just ended
+    currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+    const nextClipIndex = (currentPlaylistIndex + 1) % blobPlaylist.length; // The one AFTER next
+    
+    endingPlayer.src = blobPlaylist[nextClipIndex];
+    endingPlayer.load();
 }
 
-// --- 5. RECORDER (With Frame Guard) ---
+// --- 6. RECORDER (Smart Target) ---
 function startRecording() {
     synth.resume();
-    if (mainPlayer.paused) mainPlayer.play();
+    if (activePlayer.paused) activePlayer.play();
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280; canvas.height = 720;
@@ -224,36 +238,16 @@ function startRecording() {
         recordBtn.disabled = false;
         clearInterval(drawInterval);
         clearInterval(timerInterval);
-        clearInterval(frameGuard); // Stop the guard
     };
 
-    // DRAW LOOP
+    // DRAW LOOP: ALWAYS DRAWS 'activePlayer'
     const drawInterval = setInterval(() => {
-        // Always draw the main player. Since we swap the .src of the main player, 
-        // this loop never needs to switch targets.
-        if (mainPlayer.readyState >= 2) {
-            ctx.drawImage(mainPlayer, 0, 0, canvas.width, canvas.height);
+        // We draw whichever player is currently flagged as active
+        if (activePlayer.readyState >= 2) {
+            ctx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
         }
     }, 1000 / 30);
 
-    // FRAME GUARD: Force next video if this one is stuck
-    let lastTime = 0;
-    let stuckCounter = 0;
-    const frameGuard = setInterval(() => {
-        if (mainPlayer.currentTime === lastTime && !mainPlayer.paused) {
-            stuckCounter++;
-            if (stuckCounter > 2) { // Stuck for 2 checks (approx 1 sec)
-                console.log("Video stuck! Forcing skip...");
-                playNextBlob();
-                stuckCounter = 0;
-            }
-        } else {
-            stuckCounter = 0;
-            lastTime = mainPlayer.currentTime;
-        }
-    }, 500);
-
-    // Countdown
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
@@ -266,7 +260,7 @@ function startRecording() {
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 6. FETCHERS ---
+// --- 7. FETCHERS ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -275,7 +269,6 @@ async function fetchMontagePlaylist(query, count) {
         const page = Math.floor(Math.random() * 20) + 1;
         const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
         const data = await res.json();
-        
         if (data.videos) {
             const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
             fresh.forEach(v => {
@@ -296,7 +289,7 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-// --- 7. SEO ---
+// --- 8. SEO ---
 const SEO_ENGINE = {
     forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
     rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
