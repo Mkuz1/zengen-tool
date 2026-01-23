@@ -1,14 +1,14 @@
 /**
- * ZenGen - "Dual-Blob" Ping Pong Edition
- * - Video: Uses 2 players + Local Blobs. Player B preloads while A plays.
- * - Result: 100% Seamless Recording (No freezing).
+ * ZenGen - "Safari Pro" Edition
+ * - CSS: Uses Z-Index swapping instead of Opacity (Forces Safari to decode).
+ * - JS: "Safe Handoff" ensures recorder only switches when target is moving.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ENGINE ---
+// --- 1. PROCEDURAL AUDIO ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -94,7 +94,8 @@ const recordBtn = document.getElementById('recordBtn');
 
 let blobPlaylist = [];
 let currentPlaylistIndex = 0;
-let activePlayer = playerA; // Tracks which player the recorder should look at
+let renderSource = playerA; // The player currently being drawn to canvas
+let sequenceInterval = null;
 
 // --- 3. INIT ---
 async function initStudio() {
@@ -102,31 +103,24 @@ async function initStudio() {
         await synth.resume();
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
-        
-        // Listen for video end to trigger swap
-        playerA.onended = () => swapPlayers(playerA, playerB);
-        playerB.onended = () => swapPlayers(playerB, playerA);
-        
     } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 4. GENERATE CONTENT (Blob Preloader) ---
+// --- 4. GENERATE CONTENT ---
 async function generateContent() {
+    if (sequenceInterval) clearInterval(sequenceInterval);
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Downloading Clips...';
+    statusText.textContent = 'Curating...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
-    // 1. Fetch URLs
     const rawUrls = await fetchMontagePlaylist(theme, 4);
     
     if (rawUrls.length > 0) {
         blobPlaylist = [];
-        
-        // 2. Download Blobs
         for (let i = 0; i < rawUrls.length; i++) {
             statusText.textContent = `Downloading ${i+1}/4...`;
             const blob = await fetchVideoAsBlob(rawUrls[i]);
@@ -144,7 +138,6 @@ async function generateContent() {
             document.getElementById('audioVisualizer').classList.add('active');
             generateViralSEO(theme);
             
-            // Start Sequence
             currentPlaylistIndex = 0;
             startPingPong();
             
@@ -156,7 +149,6 @@ async function generateContent() {
     }
 }
 
-// Helper: Download Video
 async function fetchVideoAsBlob(url) {
     try {
         const response = await fetch(url);
@@ -165,48 +157,66 @@ async function fetchVideoAsBlob(url) {
     } catch (e) { return null; }
 }
 
-// --- 5. PING PONG LOGIC ---
+// --- 5. SAFARI-PROOF PING PONG ---
 function startPingPong() {
     // Reset
     playerA.className = 'active';
     playerB.className = 'standby';
-    activePlayer = playerA;
+    renderSource = playerA;
 
-    // Load first into A
     playerA.src = blobPlaylist[0];
     playerA.play();
-
-    // Preload second into B
+    
     if (blobPlaylist.length > 1) {
         playerB.src = blobPlaylist[1];
-        playerB.load();
+        playerB.load(); // Just load, don't play yet
     }
 
     statusText.textContent = 'Live';
     recordBtn.disabled = false;
+
+    // WATCHDOG
+    sequenceInterval = setInterval(() => {
+        // Look at the active player
+        const active = playerA.classList.contains('active') ? playerA : playerB;
+        if (!active.duration) return;
+
+        // Trigger swap 0.3s before end
+        if (active.duration - active.currentTime < 0.3) {
+            triggerSwap();
+        }
+    }, 100);
 }
 
-function swapPlayers(endingPlayer, nextPlayer) {
-    // 1. Swap active visual
-    endingPlayer.className = 'standby';
-    nextPlayer.className = 'active';
-    activePlayer = nextPlayer; // Switch recorder target
+function triggerSwap() {
+    const active = playerA.classList.contains('active') ? playerA : playerB;
+    const next = active === playerA ? playerB : playerA;
 
-    // 2. Play next (it's already loaded)
-    nextPlayer.play();
+    // 1. Play Next
+    next.play().then(() => {
+        // 2. ONLY after it starts playing, we switch visual state
+        // This ensures Safari doesn't freeze the recorder
+        active.className = 'standby';
+        next.className = 'active';
+        
+        // 3. Update the recorder target
+        renderSource = next;
 
-    // 3. Preload FUTURE clip into the one that just ended
-    currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-    const nextClipIndex = (currentPlaylistIndex + 1) % blobPlaylist.length; // The one AFTER next
-    
-    endingPlayer.src = blobPlaylist[nextClipIndex];
-    endingPlayer.load();
+        // 4. Preload future clip into old player
+        currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        const futureIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        active.src = blobPlaylist[futureIndex];
+        active.load();
+        
+    }).catch(e => console.error("Swap failed", e));
 }
 
-// --- 6. RECORDER (Smart Target) ---
+// --- 6. RECORDER (Frame Holding) ---
 function startRecording() {
     synth.resume();
-    if (activePlayer.paused) activePlayer.play();
+    // Ensure both are ready (Safari check)
+    if (playerA.paused && playerA.classList.contains('active')) playerA.play();
+    if (playerB.paused && playerB.classList.contains('active')) playerB.play();
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280; canvas.height = 720;
@@ -240,11 +250,13 @@ function startRecording() {
         clearInterval(timerInterval);
     };
 
-    // DRAW LOOP: ALWAYS DRAWS 'activePlayer'
+    // SAFARI SAFE DRAW LOOP
     const drawInterval = setInterval(() => {
-        // We draw whichever player is currently flagged as active
-        if (activePlayer.readyState >= 2) {
-            ctx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
+        // We only draw the 'renderSource' if it is actually ready.
+        // If it's swapping, we simply keep the last frame (don't clearRect),
+        // effectively "holding" the image until the new video is ready.
+        if (renderSource.readyState >= 2) {
+            ctx.drawImage(renderSource, 0, 0, canvas.width, canvas.height);
         }
     }, 1000 / 30);
 
@@ -260,11 +272,10 @@ function startRecording() {
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 7. FETCHERS ---
+// --- 7. FETCHERS & SEO (Standard) ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
-    
     try {
         const page = Math.floor(Math.random() * 20) + 1;
         const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
@@ -278,7 +289,6 @@ async function fetchMontagePlaylist(query, count) {
             localStorage.setItem('zenGen_seen', JSON.stringify([...seen]));
         }
     } catch(e){}
-    
     if (list.length < count) {
         try {
             const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15`);
@@ -289,7 +299,6 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-// --- 8. SEO ---
 const SEO_ENGINE = {
     forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
     rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
@@ -302,16 +311,12 @@ const SEO_ENGINE = {
 function generateViralSEO(theme) {
     const data = SEO_ENGINE[theme];
     const generic = SEO_ENGINE.generic;
-    
     const hook = data.hooks[Math.floor(Math.random() * data.hooks.length)];
     const benefit = data.benefits[Math.floor(Math.random() * data.benefits.length)];
     const suffix = generic.suffixes[Math.floor(Math.random() * generic.suffixes.length)];
-    
     document.getElementById('videoTitle').value = `${hook} ${theme.toUpperCase()} Sounds ${benefit} ${suffix}`;
     document.getElementById('videoDesc').value = `Experience the ${hook.toLowerCase()} power of ${theme} sounds.\nThis video is designed to help you ${benefit.toLowerCase()}.\nPure nature atmosphere with NO talking and NO loops.\n\n✅ Features:\n- ${suffix}\n- High Definition Audio\n- Natural Stress Relief\n\n#${theme} #relax`;
-    
     const pool = [...data.keywords, ...generic.tags];
     document.getElementById('videoTags').value = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
 }
-
 function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
