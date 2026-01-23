@@ -1,224 +1,322 @@
-/* --- 1. GLOBAL VARIABLES --- */
-:root {
-    --bg-dark: #050505;       /* Deepest Black */
-    --panel-bg: #111111;      /* Slightly lighter for panels */
-    --border: #222;           /* Subtle borders */
-    --primary: #ffffff;       /* White text/accents */
-    --accent: #3b82f6;        /* Professional Blue (for Active states) */
-    --record-red: #ef4444;    /* Recording Red */
-    --text-main: #e5e5e5;     /* Main text color */
-    --text-muted: #737373;    /* Muted text color */
-    --font: 'Manrope', sans-serif;
+/**
+ * ZenGen - "Safari Pro" Edition
+ * - CSS: Uses Z-Index swapping instead of Opacity (Forces Safari to decode).
+ * - JS: "Safe Handoff" ensures recorder only switches when target is moving.
+ */
+
+// --- CONFIGURATION ---
+const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
+const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
+
+// --- 1. PROCEDURAL AUDIO ---
+class NatureSynth {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.master = this.ctx.createGain();
+        this.master.connect(this.ctx.destination);
+        this.activeNodes = [];
+        this.loopTimer = null; 
+    }
+    async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
+    stop() {
+        if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
+        this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
+        this.activeNodes = [];
+    }
+    playRain() { this.runNoise(0.8, 400 + Math.random()*800); }
+    playSnow() { this.runNoise(0.5, 200 + Math.random()*300); }
+    playForest() { this.runNoise(0.3, 500 + Math.random()*300); this.birdLoop(); }
+    playOcean() {
+        this.stop();
+        const noise = this.createPinkNoise(0.4);
+        const gain = this.ctx.createGain();
+        const lfo = this.ctx.createOscillator();
+        lfo.type = 'sine'; lfo.frequency.value = 0.1 + Math.random()*0.2;
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.value = 0.3; 
+        lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+        noise.connect(gain); gain.connect(this.master); lfo.start();
+        this.activeNodes.push(noise, lfo);
+    }
+    playFire() {
+        this.stop();
+        const noise = this.createBrownNoise(0.7);
+        const crackle = this.ctx.createScriptProcessor(4096, 1, 1);
+        crackle.onaudioprocess = (e) => {
+            const out = e.outputBuffer.getChannelData(0);
+            for(let i=0; i<out.length; i++) out[i] = (Math.random() > 0.992) ? Math.random()*0.5 : 0;
+        };
+        crackle.connect(this.master); noise.connect(this.master);
+        this.activeNodes.push(noise, crackle);
+    }
+    runNoise(vol, freq) {
+        this.stop();
+        const noise = this.createPinkNoise(vol);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.value = freq;
+        noise.connect(filter); filter.connect(this.master);
+        this.activeNodes.push(noise);
+    }
+    birdLoop() {
+        const chirp = () => {
+            if(this.ctx.state === 'suspended') return;
+            const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+            const f = 1500+Math.random()*1500;
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(f/2, this.ctx.currentTime+0.1);
+            g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
+            osc.connect(g); g.connect(this.master);
+            osc.start(); osc.stop(this.ctx.currentTime+0.2);
+            this.loopTimer = setTimeout(chirp, 1000+Math.random()*4000);
+        }; chirp();
+    }
+    createPinkNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
+    createBrownNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
+    noiseNode(vol, size, algo) {
+        const n = this.ctx.createScriptProcessor(size, 1, 1);
+        let last = 0;
+        n.onaudioprocess = e => {
+            const o = e.outputBuffer.getChannelData(0);
+            for(let i=0; i<size; i++) { const w = Math.random()*2-1; o[i] = algo(last, w); last = o[i]; o[i]*=3.5; }
+        };
+        const g = this.ctx.createGain(); g.gain.value = vol; n.connect(g); return n;
+    }
+}
+const synth = new NatureSynth();
+
+// --- 2. GLOBAL STATE ---
+const playerA = document.getElementById('vid1');
+const playerB = document.getElementById('vid2');
+const statusPill = document.getElementById('statusPill');
+const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
+const recordBtn = document.getElementById('recordBtn');
+
+let blobPlaylist = [];
+let currentPlaylistIndex = 0;
+let renderSource = playerA; // The player currently being drawn to canvas
+let sequenceInterval = null;
+
+// --- 3. INIT ---
+async function initStudio() {
+    try {
+        await synth.resume();
+        document.getElementById('startScreen').style.opacity = '0';
+        setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
+    } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-/* --- 2. BASE RESET --- */
-body {
-    margin: 0;
-    background-color: var(--bg-dark);
-    font-family: var(--font);
-    color: var(--text-main);
-    overflow: hidden; /* Prevent scrolling, app-like feel */
-    height: 100vh;
+// --- 4. GENERATE CONTENT ---
+async function generateContent() {
+    if (sequenceInterval) clearInterval(sequenceInterval);
+    synth.stop();
+    const theme = document.getElementById('themeSelect').value;
+    
+    statusPill.className = 'status-pill active';
+    statusText.textContent = 'Curating...';
+    recordBtn.disabled = true;
+    document.getElementById('audioVisualizer').classList.remove('active');
+
+    const rawUrls = await fetchMontagePlaylist(theme, 4);
+    
+    if (rawUrls.length > 0) {
+        blobPlaylist = [];
+        for (let i = 0; i < rawUrls.length; i++) {
+            statusText.textContent = `Downloading ${i+1}/4...`;
+            const blob = await fetchVideoAsBlob(rawUrls[i]);
+            if (blob) blobPlaylist.push(blob);
+        }
+
+        if (blobPlaylist.length > 0) {
+            synth.resume();
+            if(theme==='rain') synth.playRain();
+            else if(theme==='snow') synth.playSnow();
+            else if(theme==='ocean') synth.playOcean();
+            else if(theme==='fireplace') synth.playFire();
+            else if(theme==='forest') synth.playForest();
+            
+            document.getElementById('audioVisualizer').classList.add('active');
+            generateViralSEO(theme);
+            
+            currentPlaylistIndex = 0;
+            startPingPong();
+            
+        } else {
+            alert("Download failed.");
+        }
+    } else {
+        alert("No videos found.");
+    }
 }
 
-/* --- 3. SPLASH SCREEN (Enter Studio) --- */
-.splash-screen {
-    position: fixed;
-    top: 0; left: 0; 
-    width: 100%; height: 100%;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    transition: opacity 0.5s ease;
-}
-.splash-content { text-align: center; }
-.splash-content i { color: var(--text-main); margin-bottom: 20px; }
-.splash-content h1 { font-weight: 800; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2rem; }
-.splash-content p { color: var(--text-muted); margin-bottom: 30px; font-size: 0.9rem; }
-.btn-enter {
-    background: white; color: black; border: none; padding: 15px 40px;
-    font-size: 1rem; font-weight: 700; border-radius: 6px; cursor: pointer;
-    transition: transform 0.2s;
-}
-.btn-enter:hover { transform: scale(1.05); }
-
-/* --- 4. WORKSPACE LAYOUT --- */
-.workspace {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+async function fetchVideoAsBlob(url) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    } catch (e) { return null; }
 }
 
-/* Navigation Bar */
-nav {
-    height: 60px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30px;
-    background: var(--panel-bg);
-}
-.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
-.brand span { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; color: #aaa; }
+// --- 5. SAFARI-PROOF PING PONG ---
+function startPingPong() {
+    // Reset
+    playerA.className = 'active';
+    playerB.className = 'standby';
+    renderSource = playerA;
 
-/* Status Indicator Pill */
-.status-pill {
-    font-size: 0.8rem; background: #000; padding: 6px 14px; border-radius: 20px;
-    border: 1px solid #333; display: flex; align-items: center; gap: 8px; color: var(--text-muted);
-}
-.dot { width: 8px; height: 8px; background: #444; border-radius: 50%; }
-.status-pill.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-.status-pill.recording .dot { background: var(--record-red); box-shadow: 0 0 10px var(--record-red); }
+    playerA.src = blobPlaylist[0];
+    playerA.play();
+    
+    if (blobPlaylist.length > 1) {
+        playerB.src = blobPlaylist[1];
+        playerB.load(); // Just load, don't play yet
+    }
 
-/* Main Grid Layout */
-.main-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr 350px; /* Sidebar | Monitor | Meta */
-    flex: 1;
-    overflow: hidden;
-}
+    statusText.textContent = 'Live';
+    recordBtn.disabled = false;
 
-/* --- 5. SIDEBARS (Controls & Metadata) --- */
-aside {
-    padding: 30px;
-    background: var(--panel-bg);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    overflow-y: auto; /* Scrollable if content overflows */
-}
-.meta-sidebar { border-right: none; border-left: 1px solid var(--border); }
+    // WATCHDOG
+    sequenceInterval = setInterval(() => {
+        // Look at the active player
+        const active = playerA.classList.contains('active') ? playerA : playerB;
+        if (!active.duration) return;
 
-/* Input Styling */
-.control-group label, .meta-field label {
-    display: block; font-size: 0.7rem; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
+        // Trigger swap 0.3s before end
+        if (active.duration - active.currentTime < 0.3) {
+            triggerSwap();
+        }
+    }, 100);
 }
 
-/* Custom Select Dropdown */
-.custom-select { position: relative; }
-select {
-    width: 100%; background: #000; border: 1px solid #333; color: white;
-    padding: 12px 15px; border-radius: 6px; appearance: none; font-family: var(--font);
-    cursor: pointer; font-size: 0.95rem;
-}
-.custom-select i { position: absolute; right: 15px; top: 15px; pointer-events: none; font-size: 0.8rem; color: #666; }
+function triggerSwap() {
+    const active = playerA.classList.contains('active') ? playerA : playerB;
+    const next = active === playerA ? playerB : playerA;
 
-/* Buttons */
-button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
+    // 1. Play Next
+    next.play().then(() => {
+        // 2. ONLY after it starts playing, we switch visual state
+        // This ensures Safari doesn't freeze the recorder
+        active.className = 'standby';
+        next.className = 'active';
+        
+        // 3. Update the recorder target
+        renderSource = next;
 
-.btn-primary { background: #222; color: white; border: 1px solid #333; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.btn-primary:hover { background: #333; border-color: #555; }
-
-.btn-record { background: var(--primary); color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.btn-record:disabled { opacity: 0.5; cursor: not-allowed; background: #555; }
-.rec-icon { width: 12px; height: 12px; background: var(--record-red); border-radius: 50%; }
-
-.divider { height: 1px; background: #222; margin: 10px 0; }
-.hint { font-size: 0.75rem; color: #555; text-align: center; margin-top: 10px; }
-
-/* --- 6. VIDEO MONITOR (THE DUAL-PLAYER STACK) --- */
-.monitor-section {
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    position: relative;
+        // 4. Preload future clip into old player
+        currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        const futureIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        active.src = blobPlaylist[futureIndex];
+        active.load();
+        
+    }).catch(e => console.error("Swap failed", e));
 }
 
-.video-wrapper {
-    width: 100%;
-    max-width: 900px;
-    aspect-ratio: 16/9;
-    background: #111;
-    border: 1px solid #333;
-    position: relative; /* Essential for absolute positioning of children */
-    overflow: hidden;
-    border-radius: 4px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+// --- 6. RECORDER (Frame Holding) ---
+function startRecording() {
+    synth.resume();
+    // Ensure both are ready (Safari check)
+    if (playerA.paused && playerA.classList.contains('active')) playerA.play();
+    if (playerB.paused && playerB.classList.contains('active')) playerB.play();
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1280; canvas.height = 720;
+    const ctx = canvas.getContext('2d');
+    const canvasStream = canvas.captureStream(30);
+
+    const audioDest = synth.ctx.createMediaStreamDestination();
+    synth.master.connect(audioDest);
+    
+    const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
+    
+    let options = { mimeType: 'video/webm; codecs=vp9' };
+    if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
+
+    const mediaRecorder = new MediaRecorder(combinedStream, options);
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: options.mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.mp4`;
+        a.click();
+        
+        recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
+        recordBtn.disabled = false;
+        clearInterval(drawInterval);
+        clearInterval(timerInterval);
+    };
+
+    // SAFARI SAFE DRAW LOOP
+    const drawInterval = setInterval(() => {
+        // We only draw the 'renderSource' if it is actually ready.
+        // If it's swapping, we simply keep the last frame (don't clearRect),
+        // effectively "holding" the image until the new video is ready.
+        if (renderSource.readyState >= 2) {
+            ctx.drawImage(renderSource, 0, 0, canvas.width, canvas.height);
+        }
+    }, 1000 / 30);
+
+    let timeLeft = 60;
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        recordBtn.innerText = `Recording... ${timeLeft}s`;
+        if (timeLeft <= 0) clearInterval(timerInterval);
+    }, 1000);
+
+    mediaRecorder.start();
+    recordBtn.disabled = true;
+    setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-/* Stacking the Videos */
-.video-wrapper video {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transition: opacity 0.2s ease-in-out; /* Smooth cross-fade */
+// --- 7. FETCHERS & SEO (Standard) ---
+async function fetchMontagePlaylist(query, count) {
+    let list = [];
+    const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
+    try {
+        const page = Math.floor(Math.random() * 20) + 1;
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
+        const data = await res.json();
+        if (data.videos) {
+            const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
+            fresh.forEach(v => {
+                seen.add(v.id);
+                list.push(v.video_files.find(f=>f.width===1280)?.link || v.video_files[0].link);
+            });
+            localStorage.setItem('zenGen_seen', JSON.stringify([...seen]));
+        }
+    } catch(e){}
+    if (list.length < count) {
+        try {
+            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15`);
+            const data = await res.json();
+            if(data.hits) data.hits.slice(0, count-list.length).forEach(v => list.push(v.videos.medium.url));
+        } catch(e){}
+    }
+    return list;
 }
 
-/* Active Player: Fully Visible */
-.video-wrapper video.active {
-    opacity: 1;
-    z-index: 2;
-}
+const SEO_ENGINE = {
+    forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
+    rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
+    ocean: { hooks: ["Tropical", "Midnight", "Crystal Clear", "Deep Blue"], benefits: ["Calm Your Nerves", "Drift Away", "Theta Waves"], keywords: ["#oceanwaves", "#beachasmr", "#wavesounds", "#seascape"] },
+    fireplace: { hooks: ["Crackling", "Roaring", "Warm", "Winter"], benefits: ["Cozy Vibes", "Warm Your Soul", "Stress Relief"], keywords: ["#fireplace", "#cracklingfire", "#firesounds", "#cozyambience"] },
+    snow: { hooks: ["Arctic", "Blizzard", "Howling", "Frozen"], benefits: ["Cool Down", "Winter Sleep", "Focus Isolation"], keywords: ["#blizzard", "#snowstorm", "#arcticwind", "#winterambience"] },
+    generic: { suffixes: ["(No Talking)", "(Dark Screen)", "ASMR", "4K Ultra HD", "8D Audio"], tags: ["#shorts", "#fyp", "#viral", "#trending", "#sleep"] }
+};
 
-/* Standby Player: Hidden (Safari Hack applied here) */
-.video-wrapper video.standby {
-    opacity: 0.01; /* Must be > 0 to keep Safari from pausing it */
-    z-index: 1;
+function generateViralSEO(theme) {
+    const data = SEO_ENGINE[theme];
+    const generic = SEO_ENGINE.generic;
+    const hook = data.hooks[Math.floor(Math.random() * data.hooks.length)];
+    const benefit = data.benefits[Math.floor(Math.random() * data.benefits.length)];
+    const suffix = generic.suffixes[Math.floor(Math.random() * generic.suffixes.length)];
+    document.getElementById('videoTitle').value = `${hook} ${theme.toUpperCase()} Sounds ${benefit} ${suffix}`;
+    document.getElementById('videoDesc').value = `Experience the ${hook.toLowerCase()} power of ${theme} sounds.\nThis video is designed to help you ${benefit.toLowerCase()}.\nPure nature atmosphere with NO talking and NO loops.\n\n✅ Features:\n- ${suffix}\n- High Definition Audio\n- Natural Stress Relief\n\n#${theme} #relax`;
+    const pool = [...data.keywords, ...generic.tags];
+    document.getElementById('videoTags').value = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
 }
-
-/* Visualizer Bars */
-.visualizer-overlay {
-    position: absolute; bottom: 20px; right: 20px;
-    display: flex; gap: 4px; align-items: flex-end;
-    height: 30px; opacity: 0; transition: opacity 0.3s;
-    z-index: 10;
-}
-.visualizer-overlay.active { opacity: 1; }
-.visualizer-overlay.active .bar { animation: bounce 1s infinite ease-in-out; }
-
-.bar { 
-    width: 6px; background: rgba(255, 255, 255, 0.9); 
-    border-radius: 2px; min-height: 4px; 
-}
-.bar:nth-child(1) { animation-duration: 0.8s; }
-.bar:nth-child(2) { animation-duration: 1.2s; }
-.bar:nth-child(3) { animation-duration: 0.5s; }
-.bar:nth-child(4) { animation-duration: 0.9s; }
-
-@keyframes bounce { 
-    0%, 100% { transform: scaleY(0.5); transform-origin: bottom; } 
-    50% { transform: scaleY(1.2); transform-origin: bottom; } 
-}
-
-/* --- 7. METADATA INPUTS --- */
-.input-row { display: flex; background: #000; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
-.input-row input, .input-row textarea {
-    width: 100%; background: transparent; border: none; color: white; padding: 12px; 
-    font-family: var(--font); font-size: 0.85rem; resize: none;
-}
-.input-row input:focus, .input-row textarea:focus { outline: none; background: #0a0a0a; }
-
-.input-row button {
-    width: 45px; background: transparent; color: #555; border-left: 1px solid #333; padding: 0;
-    transition: all 0.2s; cursor: pointer;
-}
-.input-row button:hover { color: white; background: #111; }
-
-/* Social Icons */
-.upload-shortcuts label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
-.social-grid { display: flex; gap: 8px; }
-.s-link {
-    flex: 1; height: 35px; display: flex; align-items: center; justify-content: center;
-    background: #222; border-radius: 4px; color: #aaa; transition: 0.2s; text-decoration: none;
-}
-.s-link:hover { color: white; background: #333; transform: translateY(-2px); }
-.yt:hover { background: #ff0000; }
-.tt:hover { background: #000; border: 1px solid #444; }
-.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
-.fb:hover { background: #1877F2; }
-
-/* --- 8. MOBILE RESPONSIVENESS --- */
-@media (max-width: 900px) {
-    .main-layout { grid-template-columns: 1fr; overflow-y: auto; height: auto; display: block; }
-    aside, .monitor-section { height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
-    .video-wrapper { aspect-ratio: 16/9; max-width: 100%; }
-    .workspace { height: auto; overflow: auto; }
-}
+function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
