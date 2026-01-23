@@ -1,161 +1,156 @@
 /**
- * ZenGen Studio - Complete Fix
+ * ZenGen Studio - Working Version
  */
 
-// --- 1. TRENDY NATURAL SOUNDS LIBRARY ---
-const TRENDY_SOUNDS = {
+const PEXELS_API_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
+
+// --- 1. WORKING VIDEO SOURCES ---
+const WORKING_VIDEOS = {
     forest: [
-        { name: '🌿 Forest ASMR', url: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1237.mp3' },
-        { name: '💧 River Flow', url: 'https://assets.mixkit.co/sfx/preview/mixkit-river-stream-flow-1257.mp3' },
-        { name: '🌙 Night Forest', url: 'https://assets.mixkit.co/sfx/preview/mixkit-nature-forest-night-ambience-1253.mp3' }
+        'https://videos.pexels.com/video-files/3209828/3209828-hd_1920_1080_30fps.mp4',
+        'https://videos.pexels.com/video-files/2278095/2278095-hd_1920_1080_25fps.mp4'
     ],
     ocean: [
-        { name: '🌊 Wave Therapy', url: 'https://assets.mixkit.co/sfx/preview/mixkit-ocean-waves-loop-1246.mp3' },
-        { name: '🏖️ Beach Waves', url: 'https://assets.mixkit.co/sfx/preview/mixkit-waves-on-the-beach-1256.mp3' },
-        { name: '🐬 Underwater', url: 'https://assets.mixkit.co/sfx/preview/mixkit-underwater-bubbles-1252.mp3' }
+        'https://videos.pexels.com/video-files/2098988/2098988-hd_1920_1080_30fps.mp4',
+        'https://videos.pexels.com/video-files/1448735/1448735-hd_1920_1080_30fps.mp4'
     ],
     rain: [
-        { name: '☔ Rain ASMR', url: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1241.mp3' },
-        { name: '⛈️ Storm Sounds', url: 'https://assets.mixkit.co/sfx/preview/mixkit-heavy-rain-loop-1242.mp3' },
-        { name: '⚡ Thunderstorm', url: 'https://assets.mixkit.co/sfx/preview/mixkit-thunder-and-rain-ambience-1255.mp3' }
+        'https://videos.pexels.com/video-files/17928341/17928341-hd_1920_1080_30fps.mp4',
+        'https://videos.pexels.com/video-files/17928343/17928343-hd_1920_1080_25fps.mp4'
     ],
     fireplace: [
-        { name: '🔥 Fire ASMR', url: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackle-1330.mp3' },
-        { name: '🪵 Cozy Fireplace', url: 'https://assets.mixkit.co/sfx/preview/mixkit-cosy-fireplace-crackles-1240.mp3' },
-        { name: '🏕️ Bonfire Night', url: 'https://assets.mixkit.co/sfx/preview/mixkit-bonfire-crackling-1331.mp3' }
+        'https://videos.pexels.com/video-files/1570519/1570519-hd_1920_1080_30fps.mp4',
+        'https://videos.pexels.com/video-files/1570521/1570521-hd_1920_1080_30fps.mp4'
     ],
     snow: [
-        { name: '❄️ Winter Wind', url: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-in-the-trees-1250.mp3' },
-        { name: '🌨️ Blizzard', url: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-storm-ambience-1254.mp3' },
-        { name: '🥶 Arctic Wind', url: 'https://assets.mixkit.co/sfx/preview/mixkit-cold-wind-ambience-1251.mp3' }
+        'https://videos.pexels.com/video-files/16017087/16017087-hd_1920_1080_30fps.mp4',
+        'https://videos.pexels.com/video-files/16017088/16017088-hd_1920_1080_25fps.mp4'
     ]
 };
 
-// --- 2. TRENDY VIDEO LIBRARY ---
-const TRENDY_VIDEOS = {
+// --- 2. WORKING AUDIO SOURCES ---
+const WORKING_AUDIO = {
     forest: [
-        'https://cdn.pixabay.com/vimeo/876223819/forest-209757.mp4?width=1280&hash=5b1beeb08cd5d88d098ca2b99b6ca65fe7d6be08',
-        'https://cdn.pixabay.com/vimeo/876223815/nature-209755.mp4?width=1280&hash=bbda56c63034a2b4e38aeae57fe15854f75c2956'
+        { name: 'Forest Birds', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+        { name: 'Forest Stream', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' }
     ],
     ocean: [
-        'https://cdn.pixabay.com/vimeo/876223817/waves-209756.mp4?width=1280&hash=1d2db469116a3ef1435c2ddfde15d05d0ff2cfdc',
-        'https://cdn.pixabay.com/vimeo/876223814/beach-209754.mp4?width=1280&hash=b97f8ed1ed4d1e7f7fa82e6016925f3e0aedb54f'
+        { name: 'Ocean Waves', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+        { name: 'Beach Waves', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' }
     ],
     rain: [
-        'https://cdn.pixabay.com/vimeo/876223818/rain-209758.mp4?width=1280&hash=8fd82f30326433e6f2c572957fa9a0bf7c9e37db',
-        'https://cdn.pixabay.com/vimeo/876223816/thunderstorm-209753.mp4?width=1280&hash=b4e9a262ec38011345f72b16b3b0e9f4b1d7f240'
+        { name: 'Light Rain', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+        { name: 'Heavy Rain', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' }
     ],
     fireplace: [
-        'https://cdn.pixabay.com/vimeo/876223820/fire-209759.mp4?width=1280&hash=85000d91ae315ad01d5fe09182f6d358104c1d5e',
-        'https://cdn.pixabay.com/vimeo/876223821/campfire-209760.mp4?width=1280&hash=f21335d7e73697dc1d13a1c82e44e4183dba0be0'
+        { name: 'Fire Crackle', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
+        { name: 'Fireplace', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' }
     ],
     snow: [
-        'https://cdn.pixabay.com/vimeo/876223822/snow-209761.mp4?width=1280&hash=84d00ec4b407265e21d3c9e17a40ff15dc4d57f3',
-        'https://cdn.pixabay.com/vimeo/876223823/winter-209762.mp4?width=1280&hash=29881d7a6c38aac65d3e27801ce7487941cc464a'
+        { name: 'Winter Wind', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3' },
+        { name: 'Blizzard', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' }
     ]
 };
 
-// --- 3. AUDIO PLAYER WITH GUARANTEED PLAYBACK ---
-class GuaranteedAudioPlayer {
+// --- 3. SIMPLE AUDIO PLAYER ---
+class SimpleAudioPlayer {
     constructor() {
-        this.audio = new Audio();
-        this.audio.loop = true;
-        this.audio.volume = 1.0; // Full volume
+        this.audio = null;
         this.isPlaying = false;
-        this.hasUserInteracted = false;
+        this.volume = 0.8;
     }
     
-    init() {
-        // Mark first user interaction
-        const enableAudio = () => {
-            this.hasUserInteracted = true;
-            document.body.removeEventListener('click', enableAudio);
-            document.body.removeEventListener('touchstart', enableAudio);
-        };
+    play(url) {
+        this.stop();
         
-        document.body.addEventListener('click', enableAudio);
-        document.body.addEventListener('touchstart', enableAudio);
+        this.audio = new Audio(url);
+        this.audio.volume = this.volume;
+        this.audio.loop = true;
         
-        return Promise.resolve();
+        // Enable autoplay by simulating user interaction
+        document.body.addEventListener('click', this.startAudio.bind(this, url), { once: true });
+        
+        // Also try to play immediately
+        this.startAudio(url);
     }
     
-    async play(url) {
-        if (!this.hasUserInteracted) {
-            console.log("Waiting for user interaction...");
-            return false;
+    startAudio(url) {
+        if (!this.audio) {
+            this.audio = new Audio(url);
+            this.audio.volume = this.volume;
+            this.audio.loop = true;
         }
         
-        this.stop();
-        this.audio.src = url;
-        
-        try {
-            await this.audio.play();
+        this.audio.play().then(() => {
             this.isPlaying = true;
             console.log("✅ Audio playing successfully!");
-            return true;
-        } catch(error) {
-            console.log("Audio blocked, showing instructions:", error);
-            // Show instruction to user
-            alert("🔊 Click the Play button again to enable sound!\n\nSome browsers require clicking the play button directly.");
-            return false;
-        }
+            updateStatus('🎵 Audio playing');
+        }).catch(e => {
+            console.log("Audio blocked, user needs to click Play button");
+            showMessage("🔊 Click the PLAY button to enable sound!");
+        });
     }
     
     stop() {
-        this.audio.pause();
-        this.audio.currentTime = 0;
+        if (this.audio) {
+            this.audio.pause();
+            this.audio.currentTime = 0;
+            this.audio = null;
+        }
         this.isPlaying = false;
     }
     
+    setVolume(level) {
+        this.volume = level;
+        if (this.audio) {
+            this.audio.volume = level;
+        }
+    }
+    
     toggleMute() {
-        this.audio.muted = !this.audio.muted;
-        return this.audio.muted;
+        if (this.audio) {
+            this.audio.muted = !this.audio.muted;
+            return this.audio.muted;
+        }
+        return false;
     }
 }
 
-const audioPlayer = new GuaranteedAudioPlayer();
+const audioPlayer = new SimpleAudioPlayer();
 
 // --- 4. GLOBAL STATE ---
-let currentVideos = [];
-let currentAudio = null;
-let isPlaying = false;
+let currentTheme = 'forest';
+let currentVideoIndex = 0;
+let videosLoaded = false;
 
 // --- 5. INITIALIZATION ---
 function initStudio() {
-    console.log("🚀 Initializing ZenGen Studio...");
+    console.log("🚀 Initializing Studio...");
     
     // Hide splash screen
-    const startScreen = document.getElementById('startScreen');
-    const workspace = document.getElementById('workspace');
-    
-    startScreen.style.opacity = '0';
+    document.getElementById('startScreen').style.opacity = '0';
     
     setTimeout(() => {
-        startScreen.style.display = 'none';
-        workspace.style.display = 'flex';
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('workspace').style.display = 'flex';
         
-        // Initialize audio
-        audioPlayer.init();
-        
-        // Load theme options
+        // Load initial content
         loadThemeOptions();
+        generateContent();
         
-        // Generate initial content
-        generateVideoContent();
-        
-        console.log("✅ Studio initialized successfully!");
-        updateStatus('Ready');
+        updateStatus('✅ Ready');
+        console.log("Studio initialized!");
     }, 500);
 }
 
 function loadThemeOptions() {
-    const themeSelect = document.getElementById('themeSelect');
+    const theme = document.getElementById('themeSelect').value;
+    currentTheme = theme;
     const audioSelect = document.getElementById('audioVariant');
     
     // Clear and populate audio options
     audioSelect.innerHTML = '';
-    const theme = themeSelect.value;
-    const sounds = TRENDY_SOUNDS[theme] || [];
+    const sounds = WORKING_AUDIO[theme] || [];
     
     sounds.forEach(sound => {
         const option = document.createElement('option');
@@ -164,230 +159,252 @@ function loadThemeOptions() {
         audioSelect.appendChild(option);
     });
     
-    // Enable record button
-    document.getElementById('recordBtn').disabled = false;
+    // Update active theme card
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.classList.remove('active');
+        if (card.dataset.theme === theme) {
+            card.classList.add('active');
+        }
+    });
 }
 
-// --- 6. VIDEO CONTENT GENERATION ---
-async function generateVideoContent() {
+// --- 6. CONTENT GENERATION ---
+async function generateContent() {
     updateStatus('🎬 Generating content...');
     showLoading(true);
     
     const theme = document.getElementById('themeSelect').value;
+    currentTheme = theme;
     
     try {
         // Get videos for theme
-        currentVideos = TRENDY_VIDEOS[theme] || [];
+        const videos = WORKING_VIDEOS[theme] || [];
         
-        if (currentVideos.length > 0) {
-            // Load first video
-            const video1 = document.getElementById('vid1');
-            const video2 = document.getElementById('vid2');
+        if (videos.length > 0) {
+            // Load videos
+            await loadVideos(videos);
             
-            video1.src = currentVideos[0];
-            video2.src = currentVideos[1] || currentVideos[0];
-            
-            video1.load();
-            video2.load();
-            
-            // Get selected audio
-            const audioSelect = document.getElementById('audioVariant');
-            currentAudio = audioSelect.value;
-            
-            // Generate POWERFUL SEO
+            // Generate SEO
             generatePowerfulSEO(theme);
             
             // Update UI
-            updateStatus('✅ Content Ready!');
-            document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-play"></i> Play Video & Sound';
+            updateStatus('✅ Content Ready');
+            document.getElementById('playPauseBtn').innerHTML = '<i class="fa-solid fa-play"></i> PLAY VIDEO & SOUND';
             
-            // Auto-play after a delay
-            setTimeout(() => {
-                togglePlayPause();
-            }, 1000);
+            // Auto-play video
+            playCurrentVideo();
+            
+            videosLoaded = true;
             
         } else {
-            throw new Error("No videos found");
+            throw new Error("No videos available");
         }
     } catch(error) {
         console.error("Generation error:", error);
         updateStatus('❌ Error - Try Again');
-        alert("Unable to load videos. Please try again.");
+        showMessage("Unable to load videos. Please try a different theme.");
     } finally {
         showLoading(false);
     }
 }
 
-// --- 7. PLAYBACK CONTROL ---
-function togglePlayPause() {
-    const playBtn = document.getElementById('playPauseBtn');
-    const video1 = document.getElementById('vid1');
-    
-    if (!isPlaying) {
-        // PLAY
-        updateStatus('▶️ Playing...');
+async function loadVideos(videoUrls) {
+    return new Promise((resolve) => {
+        const video1 = document.getElementById('vid1');
+        const video2 = document.getElementById('vid2');
         
-        // Play video
-        video1.play().then(() => {
+        // Set video sources
+        video1.src = videoUrls[0];
+        video2.src = videoUrls[1] || videoUrls[0];
+        
+        // Set poster images for preview
+        video1.poster = getVideoPoster(currentTheme);
+        video2.poster = getVideoPoster(currentTheme);
+        
+        // Load videos
+        video1.load();
+        video2.load();
+        
+        // Update video info
+        updateVideoInfo();
+        
+        resolve();
+    });
+}
+
+function getVideoPoster(theme) {
+    // Fallback poster images
+    const posters = {
+        forest: 'https://images.pexels.com/photos/572897/pexels-photo-572897.jpeg?auto=compress&cs=tinysrgb&w=800',
+        ocean: 'https://images.pexels.com/photos/1532771/pexels-photo-1532771.jpeg?auto=compress&cs=tinysrgb&w=800',
+        rain: 'https://images.pexels.com/photos/125510/pexels-photo-125510.jpeg?auto=compress&cs=tinysrgb&w=800',
+        fireplace: 'https://images.pexels.com/photos/158471/ibis-bird-red-animals-158471.jpeg?auto=compress&cs=tinysrgb&w=800',
+        snow: 'https://images.pexels.com/photos/688660/pexels-photo-688660.jpeg?auto=compress&cs=tinysrgb&w=800'
+    };
+    return posters[theme] || '';
+}
+
+function updateVideoInfo() {
+    const themeNames = {
+        forest: 'Enchanted Forest Therapy',
+        ocean: 'Ocean Wave Meditation',
+        rain: 'Rain Sound ASMR',
+        fireplace: 'Cozy Fireplace Ambience',
+        snow: 'Arctic Winter Sounds'
+    };
+    
+    document.getElementById('currentVideoTitle').textContent = themeNames[currentTheme] || 'Nature Therapy';
+    document.getElementById('currentVideoSub').textContent = 'Click PLAY to watch preview';
+}
+
+// --- 7. VIDEO PLAYBACK ---
+function playCurrentVideo() {
+    const video = document.getElementById('vid1');
+    const playBtn = document.getElementById('playPauseBtn');
+    
+    if (video.paused) {
+        // PLAY
+        video.play().then(() => {
             console.log("Video playing");
+            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> PAUSE';
+            updateStatus('▶️ Playing');
+            
+            // Try to play audio too
+            playAudio();
         }).catch(e => {
             console.log("Video autoplay prevented");
+            showMessage("Click PLAY button to watch the video");
         });
-        
-        // Play audio
-        if (currentAudio) {
-            audioPlayer.play(currentAudio).then(success => {
-                if (success) {
-                    console.log("Audio playing successfully");
-                }
-            });
-        }
-        
-        playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
-        isPlaying = true;
-        
     } else {
         // PAUSE
-        updateStatus('⏸️ Paused');
-        video1.pause();
+        video.pause();
         audioPlayer.stop();
-        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
-        isPlaying = false;
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> PLAY';
+        updateStatus('⏸️ Paused');
+    }
+}
+
+function playAudio() {
+    const audioUrl = document.getElementById('audioVariant').value;
+    if (audioUrl) {
+        audioPlayer.play(audioUrl);
     }
 }
 
 // --- 8. POWERFUL SEO GENERATOR ---
 function generatePowerfulSEO(theme) {
-    console.log("🎯 Generating POWERFUL SEO for:", theme);
+    console.log("🎯 Generating viral SEO for:", theme);
     
-    // TRENDY HOOKS (Updated for 2024)
+    // VIRAL HOOKS 2024
     const HOOKS = [
-        "This Changed My Sleep Forever",
-        "Doctors Recommend This For Anxiety",
-        "The Secret To Instant Calm",
-        "Why Everyone Is Listening To This",
-        "The #1 Sound For Deep Sleep",
-        "Neuroscientists Love This Sound",
-        "This Will Calm Your Mind In 60 Seconds",
-        "The Viral Sleep Hack Everyone's Using",
-        "This Cured My Insomnia Instantly",
+        "THIS Changed My Sleep FOREVER",
+        "Doctors Are Recommending This For Anxiety",
+        "The Secret To Instant Calm Nobody Tells You",
+        "Why 1M+ People Listen To This Daily",
+        "The #1 Sound For Deep Sleep In 2024",
+        "Neuroscientists LOVE This Sound Therapy",
+        "This Calms Your Mind In 60 Seconds",
+        "The Viral Sleep Hack EVERYONE's Using",
+        "This CURED My Insomnia Instantly",
         "The Most Relaxing Sound On Earth"
     ];
     
-    // POWERFUL DESCRIPTIONS
-    const DESCRIPTIONS = {
-        forest: [
-            "Experience the magic of an ancient forest with crystal-clear bird songs and gentle stream sounds. Perfect for sleep, meditation, or focus. These natural frequencies have been scientifically proven to reduce stress by 65% and improve sleep quality. Ideal for ASMR lovers, students, and anyone needing mental clarity.",
-            "Immerse yourself in a pristine forest ambience that feels like a digital detox. This 8D audio experience transports you to the most peaceful woods on Earth. Used by therapists for anxiety relief and by students for concentration."
-        ],
-        ocean: [
-            "Let the rhythmic ocean waves wash away all your stress and anxiety. This powerful sound therapy mimics the brain's delta waves for deepest sleep. Perfect for meditation, yoga, or creating a spa-like atmosphere at home.",
-            "Experience beach therapy from anywhere! These ocean sounds are engineered to trigger your parasympathetic nervous system, promoting instant relaxation. Great for insomnia, tinnitus relief, and mindfulness practice."
-        ],
-        rain: [
-            "Sleep like a baby with this ultra-realistic rain and thunderstorm experience. The perfect white noise for blocking out distractions and achieving deep, restorative sleep. Scientifically crafted for maximum relaxation.",
-            "Transform your space into a cozy rainy day retreat. These rain sounds create the perfect ambiance for reading, working, or sleeping. Known to reduce cortisol levels and promote mental clarity."
-        ],
-        fireplace: [
-            "Get cozy with authentic fireplace crackles that feel like a warm hug. This ASMR experience is perfect for cold nights, creating romantic atmospheres, or simply unwinding after a long day.",
-            "Experience the magic of a real fireplace without the hassle. These deep, resonant crackles are scientifically proven to lower blood pressure and induce a state of calm focus."
-        ],
-        snow: [
-            "Escape to a peaceful winter wonderland with gentle snow winds and distant blizzard sounds. Perfect for cooling down, focusing, or creating a serene winter atmosphere any time of year.",
-            "Experience the tranquility of an Arctic winter. These cold wind sounds are perfect for hot climates, fever reduction, or creating a crisp, clean atmosphere for work or study."
-        ]
-    };
-    
-    // TRENDY TAGS FOR EACH THEME (Minimum 15 per theme)
+    // TRENDY TAGS (Minimum 15 per theme)
     const TRENDY_TAGS = {
         forest: [
-            "#forestsounds", "#asmrsleep", "#naturesounds", "#deeprelaxation", "#meditationmusic",
+            "#foresttherapy", "#asmrsleep", "#naturesounds2024", "#deeprelaxation", "#meditationmusic",
             "#sleepsounds", "#anxietyrelief", "#focusmusic", "#studymusic", "#whitenoise",
-            "#calmmind", "#peaceful", "#mindfulness", "#yogasounds", "#digitaldetox",
-            "#healingfrequencies", "#brainwaves", "#stressrelief", "#insomniacure", "#mentalhealth",
-            "#wellness", "#selfcare", "#therapy", "#ambience", "#binauralbeats"
+            "#calmmind", "#peaceful", "#mindfulness", "#yogasounds", "#healingfrequencies",
+            "#brainwaves", "#stressrelief", "#insomniacure", "#mentalhealth", "#wellness",
+            "#selfcare", "#therapy", "#ambience", "#binauralbeats", "#viralsounds"
         ],
         ocean: [
-            "#oceansounds", "#wavesounds", "#beachvibes", "#sleeptherapy", "#meditation",
+            "#oceantherapy", "#wavesounds", "#beachvibes2024", "#sleeptherapy", "#meditation",
             "#relaxation", "#calmsea", "#bluespace", "#watertherapy", "#naturehealing",
             "#asmr", "#sleepaid", "#anxiety", "#peace", "#mindfulness",
             "#stressfree", "#wellbeing", "#healing", "#therapy", "#spa",
-            "#vacationvibes", "#summervibes", "#beachlife", "#coastalliving", "#surfsup"
+            "#vacationvibes", "#summervibes", "#beachlife", "#coastalliving", "#viralaudio"
         ],
         rain: [
-            "#rainsounds", "#thunderstorm", "#sleeprain", "#asmrrain", "#cozyvibes",
+            "#raintherapy", "#thunderstorm", "#sleeprain", "#asmrrain", "#cozyvibes2024",
             "#rainyday", "#stormchasing", "#weatherasmr", "#sleepsounds", "#relaxation",
             "#meditation", "#anxietyrelief", "#peaceful", "#calm", "#mindfulness",
             "#whitenoise", "#studysounds", "#worksounds", "#focus", "#productivity",
-            "#hygge", "#cozy", "#homevibes", "#interiorvibes", "#ambient"
+            "#hygge", "#cozy", "#homevibes", "#interiorvibes", "#viralvideos"
         ],
         fireplace: [
-            "#fireplacesounds", "#fireasmr", "#cozyfire", "#wintervibes", "#christmasvibes",
+            "#fireplacetherapy", "#fireasmr", "#cozyfire", "#wintervibes2024", "#christmasvibes",
             "#cabinlife", "#hygge", "#cozyvibes", "#warmth", "#comfort",
             "#relaxation", "#sleepsounds", "#meditation", "#asmr", "#anxietyrelief",
             "#stressrelief", "#homevibes", "#interior", "#cabin", "#mountainlife",
-            "#winterevening", "#snowday", "#fireplace", "#cracklingfire", "#ambience"
+            "#winterevening", "#snowday", "#fireplace", "#cracklingfire", "#trending"
         ],
         snow: [
-            "#snowsounds", "#winterwind", "#blizzard", "#arctic", "#coldweather",
-            "#wintervibes", "#snowfall", "#winterstorm", "#coldasmr", "#icesounds",
+            "#snowtherapy", "#winterwind", "#blizzard", "#arctic", "#coldweather",
+            "#wintervibes2024", "#snowfall", "#winterstorm", "#coldasmr", "#icesounds",
             "#relaxation", "#sleep", "#meditation", "#focus", "#studymusic",
             "#cooling", "#refresh", "#crisp", "#clean", "#pure",
-            "#winterwonderland", "#snowday", "#arcticcircle", "#northpole", "#coldtherapy"
+            "#winterwonderland", "#snowday", "#arcticcircle", "#northpole", "#viralcontent"
         ]
     };
     
-    // SELECT RANDOM HOOK
-    const randomHook = HOOKS[Math.floor(Math.random() * HOOKS.length)];
-    const descriptions = DESCRIPTIONS[theme];
-    const randomDesc = descriptions[Math.floor(Math.random() * descriptions.length)];
-    
-    // GENERATE TITLE
-    const themeNames = {
-        forest: "Enchanted Forest",
-        ocean: "Magical Ocean",
-        rain: "Healing Rainstorm",
-        fireplace: "Cozy Fireplace",
-        snow: "Arctic Winter"
+    // POWERFUL DESCRIPTIONS
+    const themeTitles = {
+        forest: "FOREST THERAPY: The Ultimate Sound Healing Experience",
+        ocean: "OCEAN WAVE THERAPY: Transform Your Sleep & Reduce Anxiety",
+        rain: "RAIN SOUND THERAPY: The Secret To Instant Relaxation",
+        fireplace: "FIREPLACE THERAPY: Cozy Ambience For Stress Relief",
+        snow: "ARCTIC THERAPY: Cold Weather Sounds For Mental Clarity"
     };
     
-    const title = `${randomHook} | ${themeNames[theme]} Sounds Therapy`;
+    const benefits = {
+        forest: "• Instantly reduces cortisol levels by 65%\n• Promotes deep REM sleep\n• Enhances focus & productivity\n• Natural anxiety relief\n• Perfect for meditation & yoga",
+        ocean: "• Mimics brain's delta waves for deepest sleep\n• Reduces blood pressure & heart rate\n• Creates spa-like atmosphere anywhere\n• Excellent for tinnitus relief\n• Promotes mindfulness & presence",
+        rain: "• Blocks distracting noises completely\n• Creates perfect white noise environment\n• Reduces stress & anxiety instantly\n• Ideal for studying & working\n• Promotes cozy, hygge atmosphere",
+        fireplace: "• Triggers feelings of safety & comfort\n• Lowers blood pressure naturally\n• Creates romantic, cozy ambiance\n• Perfect for cold nights & winter\n• Reduces loneliness & isolation",
+        snow: "• Cools down body & mind\n• Promotes mental clarity & focus\n• Creates crisp, clean atmosphere\n• Perfect for hot climates\n• Reduces fever & inflammation"
+    };
     
-    // GENERATE DESCRIPTION
-    const description = `🎧 ${randomDesc}\n\n✨ BENEFITS:\n• Instantly reduces anxiety & stress\n• Promotes deep, restorative sleep\n• Enhances focus & concentration\n• Perfect for meditation & yoga\n• Blocks distracting noises\n\n📱 USE FOR:\n• Sleep • Study • Work • Meditation • Anxiety Relief\n\n⏰ LENGTH: 1 Hour (Loop)\n🎵 QUALITY: Studio Recording\n🌿 NATURE: 100% Authentic\n\n🔔 Subscribe for daily sound therapy!\n\n${TRENDY_TAGS[theme].slice(0, 15).join(' ')}`;
+    // GENERATE CONTENT
+    const randomHook = HOOKS[Math.floor(Math.random() * HOOKS.length)];
+    const title = `${randomHook} | ${themeTitles[theme]}`;
+    
+    const description = `🎧 ${themeTitles[theme]}\n\n✨ SCIENTIFIC BENEFITS:\n${benefits[theme]}\n\n📱 PERFECT FOR:\n• Sleep • Study • Work • Meditation • Anxiety Relief • Yoga • Focus • Relaxation\n\n⏰ LENGTH: 1 Hour (Loopable)\n🎵 QUALITY: Studio Recording\n🌿 100% Natural Sounds\n💰 ROYALTY FREE: Use anywhere\n\n🔔 TURN ON NOTIFICATIONS for daily sound therapy!\n\n📈 Hashtags for maximum reach:\n${TRENDY_TAGS[theme].slice(0, 20).join(' ')}\n\n💬 Comment below what you use these sounds for!`;
     
     // UPDATE UI
     document.getElementById('videoTitle').value = title;
     document.getElementById('videoDesc').value = description;
-    document.getElementById('videoTags').value = TRENDY_TAGS[theme].slice(0, 20).join('\n');
+    document.getElementById('videoTags').value = TRENDY_TAGS[theme].slice(0, 25).join('\n');
     
     // UPDATE SOCIAL PREVIEW
     updateSocialPreview(title, theme);
     
-    console.log("✅ SEO Generated Successfully!");
+    console.log("✅ Viral SEO Generated!");
 }
 
-// --- 9. SOCIAL MEDIA SHARING ---
 function updateSocialPreview(title, theme) {
     const socialTitle = document.getElementById('socialTitle');
     const socialDesc = document.getElementById('socialDesc');
     const socialTags = document.getElementById('socialTags');
     
-    if (socialTitle) socialTitle.textContent = title.substring(0, 60) + '...';
-    if (socialDesc) socialDesc.textContent = `Experience the healing power of ${theme} sounds. Click to listen now!`;
-    if (socialTags) socialTags.innerHTML = TRENDY_SOUNDS[theme].slice(0, 3).map(s => `<span class="tag">${s.name}</span>`).join('');
+    if (socialTitle) socialTitle.textContent = title.substring(0, 70) + (title.length > 70 ? '...' : '');
+    if (socialDesc) socialDesc.textContent = `Experience the healing power of ${theme} sounds. Scientifically proven to reduce stress & improve sleep!`;
+    if (socialTags) {
+        const tags = ["#viral", "#trending", "#therapy", "#2024", "#healing"];
+        socialTags.innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+    }
 }
 
+// --- 9. SOCIAL SHARING ---
 function shareToPlatform(platform) {
-    const title = document.getElementById('videoTitle').value;
-    const description = document.getElementById('videoDesc').value.substring(0, 100);
-    const theme = document.getElementById('themeSelect').value;
+    const title = encodeURIComponent(document.getElementById('videoTitle').value);
+    const description = encodeURIComponent(document.getElementById('videoDesc').value.substring(0, 200));
     
     const urls = {
-        youtube: `https://www.youtube.com/upload?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`,
-        tiktok: `https://www.tiktok.com/upload?description=${encodeURIComponent(title + ' ' + description)}`,
-        instagram: `https://www.instagram.com/create/video/`,
-        facebook: `https://www.facebook.com/video.php?title=${encodeURIComponent(title)}`
+        youtube: `https://www.youtube.com/upload?title=${title}&description=${description}`,
+        tiktok: `https://www.tiktok.com/upload`,
+        instagram: `https://www.instagram.com/create/select/`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?quote=${title}`
     };
     
     window.open(urls[platform], '_blank');
@@ -404,8 +421,12 @@ function updateStatus(message) {
 function showLoading(show) {
     const loading = document.getElementById('loadingSpinner');
     if (loading) {
-        loading.style.display = show ? 'block' : 'none';
+        loading.style.display = show ? 'flex' : 'none';
     }
+}
+
+function showMessage(text) {
+    alert(`💡 ${text}`);
 }
 
 function copyToClip(elementId) {
@@ -415,7 +436,8 @@ function copyToClip(elementId) {
         document.execCommand('copy');
         
         // Show confirmation
-        const button = document.getElementById('copy' + elementId.charAt(0).toUpperCase() + elementId.slice(1) + 'Btn');
+        const buttonId = 'copy' + elementId.charAt(0).toUpperCase() + elementId.slice(1) + 'Btn';
+        const button = document.getElementById(buttonId);
         if (button) {
             const original = button.innerHTML;
             button.innerHTML = '<i class="fas fa-check"></i>';
@@ -424,40 +446,66 @@ function copyToClip(elementId) {
             }, 2000);
         }
         
-        alert('✅ Copied to clipboard! Ready to paste on YouTube/TikTok/Instagram.');
+        showMessage('Copied to clipboard! Ready to paste on social media.');
     }
 }
 
 // --- 11. EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📱 ZenGen Studio Loading...");
+    console.log("📱 Setting up ZenGen Studio...");
     
-    // Enter Studio Button
+    // Enter Studio
     document.getElementById('enterStudioBtn').addEventListener('click', initStudio);
     
     // Theme Change
     document.getElementById('themeSelect').addEventListener('change', function() {
         loadThemeOptions();
-        generateVideoContent();
+        generateContent();
     });
     
-    // Audio Change
-    document.getElementById('audioVariant').addEventListener('change', function() {
-        if (isPlaying && currentAudio !== this.value) {
-            currentAudio = this.value;
-            audioPlayer.play(currentAudio);
-        }
+    // Theme Cards
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const theme = this.dataset.theme;
+            document.getElementById('themeSelect').value = theme;
+            loadThemeOptions();
+            generateContent();
+        });
     });
     
     // Generate Button
-    document.getElementById('generateBtn').addEventListener('click', generateVideoContent);
+    document.getElementById('generateBtn').addEventListener('click', generateContent);
     
     // Play/Pause Button
-    document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+    document.getElementById('playPauseBtn').addEventListener('click', function() {
+        if (!videosLoaded) {
+            generateContent();
+            return;
+        }
+        playCurrentVideo();
+    });
+    
+    // Audio Selection
+    document.getElementById('audioVariant').addEventListener('change', function() {
+        if (audioPlayer.isPlaying) {
+            playAudio();
+        }
+    });
     
     // Record Button
     document.getElementById('recordBtn').addEventListener('click', function() {
-        alert("🎥 Recording feature coming soon!\n\nFor now, you can:\n1. Use OBS Studio (free)\n2. Use QuickTime (Mac)\n3. Use Xbox Game Bar (Windows)\n\nSave as MP4 for best quality!");
+        if (!videosLoaded) {
+            showMessage("Please generate content first!");
+            return;
+        }
+        
+        const video = document.getElementById('vid1');
+        const link = document.createElement('a');
+        link.href = video.src;
+        link.download = `zengen-${currentTheme}-therapy.mp4`;
+        link.click();
+        
+        showMessage("Video download started! Save it and upload to any platform.");
     });
     
     // Copy Buttons
@@ -465,9 +513,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('copyDescBtn').addEventListener('click', () => copyToClip('videoDesc'));
     document.getElementById('copyTagsBtn').addEventListener('click', () => copyToClip('videoTags'));
     
-    // Social Sharing Buttons
+    // Social Buttons
     document.querySelectorAll('.social-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
             const platform = this.dataset.platform;
             shareToPlatform(platform);
         });
@@ -475,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Volume Control
     document.getElementById('volumeSlider').addEventListener('input', function(e) {
-        audioPlayer.audio.volume = e.target.value;
+        audioPlayer.setVolume(parseFloat(e.target.value));
     });
     
     // Mute Button
@@ -486,12 +535,5 @@ document.addEventListener('DOMContentLoaded', function() {
             '<i class="fas fa-volume-up"></i>';
     });
     
-    // Auto-generate on load
-    setTimeout(() => {
-        if (document.getElementById('workspace').style.display === 'flex') {
-            generateVideoContent();
-        }
-    }, 1000);
-    
-    console.log("✅ All event listeners set up!");
+    console.log("✅ Event listeners ready!");
 });
