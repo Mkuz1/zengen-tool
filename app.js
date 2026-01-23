@@ -869,4 +869,64 @@ document.addEventListener('DOMContentLoaded', function() {
     if (muteBtn) {
         muteBtn.addEventListener('click', function() {
             const isMuted = audioPlayer.toggleMute();
-            const video = document.getElementById
+            const video = document.getElementById('vid1');
+            if (video) video.muted = isMuted;
+            
+            this.innerHTML = isMuted ? 
+                '<i class="fas fa-volume-mute"></i>' : 
+                '<i class="fas fa-volume-up"></i>';
+        });
+    }
+    
+    // Video events
+    const video = document.getElementById('vid1');
+    if (video) {
+        video.addEventListener('play', () => {
+            updateStatus('▶️ Playing live content');
+        });
+        
+        video.addEventListener('pause', () => {
+            updateStatus('⏸️ Paused');
+        });
+        
+        video.addEventListener('volumechange', function() {
+            localStorage.setItem('videoVolume', this.volume);
+        });
+        
+        // Load saved volume
+        const savedVolume = localStorage.getItem('videoVolume');
+        if (savedVolume) {
+            video.volume = parseFloat(savedVolume);
+            if (volumeSlider) {
+                volumeSlider.value = savedVolume;
+            }
+        }
+    }
+    
+    console.log("✅ ZenGen Live Studio Ready!");
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.1); }
+    }
+    .fa-spin {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
