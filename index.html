@@ -3,65 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen - Relaxing Video Creator</title>
+    <title>ZenGen | Relaxing Video Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 <body>
-    <div class="container">
+    
+    <div class="bg-gradient"></div>
+
+    <div class="glass-container">
         <header>
-            <h1>ZenGen Studio</h1>
-            <p>Create 1-minute relaxing nature videos instantly.</p>
+            <div class="logo">
+                <i class="fa-solid fa-spa"></i> ZenGen
+            </div>
+            <p>AI-Powered Relaxation Video Generator</p>
         </header>
 
-        <div class="controls">
-            <select id="themeSelect">
-                <option value="forest">Forest</option>
-                <option value="snow">Snow</option>
-                <option value="ocean">Ocean</option>
-                <option value="rain">Rain</option>
-                <option value="fireplace">Fireplace</option>
-            </select>
-            <button id="generateBtn" onclick="generateContent()">Find Content</button>
-            <button id="recordBtn" disabled onclick="startRecording()">🔴 Record 1-Min Clip</button>
+        <div class="control-panel">
+            <div class="select-wrapper">
+                <i class="fa-solid fa-layer-group"></i>
+                <select id="themeSelect">
+                    <option value="forest">🌲 Mystic Forest</option>
+                    <option value="ocean">🌊 Deep Ocean</option>
+                    <option value="rain">🌧️ Heavy Rain</option>
+                    <option value="fireplace">🔥 Cozy Fireplace</option>
+                    <option value="snow">❄️ Arctic Snow</option>
+                </select>
+            </div>
+            
+            <button id="generateBtn" onclick="generateContent()" class="btn-primary">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Find Content
+            </button>
         </div>
 
-        <div class="preview-area">
+        <div class="monitor-frame">
             <div id="videoContainer">
                 <video id="mainVideo" crossOrigin="anonymous" loop playsinline muted></video>
-                <div id="loading">Select a theme to start...</div>
+                <div id="loading">
+                    <div class="spinner"></div>
+                    <span>Curating nature scenes...</span>
+                </div>
+                <audio id="bgAudio" crossOrigin="anonymous" loop></audio>
             </div>
-            <audio id="bgAudio" crossOrigin="anonymous" loop></audio>
+            
+            <div class="action-bar">
+                <div class="upload-hint">
+                    <label for="customAudioInput" class="custom-file-upload">
+                        <i class="fa-solid fa-music"></i> Upload Custom MP3
+                    </label>
+                    <input type="file" id="customAudioInput" accept="audio/*" onchange="document.getElementById('bgAudio').src = URL.createObjectURL(this.files[0]); document.getElementById('bgAudio').play();">
+                </div>
+                
+                <button id="recordBtn" disabled onclick="startRecording()" class="btn-record">
+                    <i class="fa-solid fa-circle-dot"></i> Record 1-Min Clip
+                </button>
+            </div>
         </div>
 
         <div class="metadata-panel" id="metaPanel" style="display:none;">
-            <h3>🚀 Video Metadata</h3>
+            <div class="panel-header">
+                <h3><i class="fa-solid fa-tags"></i> SEO & Export</h3>
+            </div>
             
-            <div class="meta-group">
-                <label>Catchy Title:</label>
-                <input type="text" id="videoTitle" readonly>
-                <button onclick="copyToClip('videoTitle')">Copy</button>
+            <div class="meta-grid">
+                <div class="input-group">
+                    <label>Video Title</label>
+                    <div class="copy-input">
+                        <input type="text" id="videoTitle" readonly>
+                        <button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Description</label>
+                    <div class="copy-input">
+                        <textarea id="videoDesc" rows="3" readonly></textarea>
+                        <button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Viral Tags</label>
+                    <div class="copy-input">
+                        <textarea id="videoTags" rows="3" readonly></textarea>
+                        <button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                </div>
             </div>
 
-            <div class="meta-group">
-                <label>Description:</label>
-                <textarea id="videoDesc" rows="3" readonly></textarea>
-                <button onclick="copyToClip('videoDesc')">Copy</button>
-            </div>
-
-            <div class="meta-group">
-                <label>Viral Tags:</label>
-                <textarea id="videoTags" rows="2" readonly></textarea>
-                <button onclick="copyToClip('videoTags')">Copy</button>
-            </div>
-
-            <div class="social-share">
-                <p>Share this tool:</p>
-                <a href="#" id="shareFb" target="_blank">Facebook</a>
-                <a href="#" id="shareTw" target="_blank">X (Twitter)</a>
-                <a href="#" id="shareWa" target="_blank">WhatsApp</a>
+            <div class="social-section" id="socialPanel">
+                <p>🚀 <strong>Quick Upload:</strong></p>
+                <div class="social-icons">
+                    <a href="https://studio.youtube.com" target="_blank" class="s-btn yt"><i class="fa-brands fa-youtube"></i> YouTube</a>
+                    <a href="https://www.tiktok.com/upload" target="_blank" class="s-btn tt"><i class="fa-brands fa-tiktok"></i> TikTok</a>
+                    <a href="https://www.instagram.com/" target="_blank" class="s-btn ig"><i class="fa-brands fa-instagram"></i> Instagram</a>
+                    <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-btn fb"><i class="fa-brands fa-facebook"></i> Facebook</a>
+                </div>
             </div>
         </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
