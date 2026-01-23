@@ -637,7 +637,10 @@ function showLoading(show) {
     if (loading) {
         loading.style.display = show ? 'flex' : 'none';
         if (show) {
-            loading.querySelector('p').textContent = 'Searching Pexels for fresh videos...';
+            const loadingText = loading.querySelector('p');
+            if (loadingText) {
+                loadingText.textContent = 'Searching Pexels for fresh videos...';
+            }
         }
     }
 }
@@ -671,6 +674,32 @@ function showMessage(text) {
             document.body.removeChild(notification);
         }, 300);
     }, 3000);
+}
+
+function copyToClip(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.select();
+        element.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            
+            const buttonId = 'copy' + elementId.charAt(0).toUpperCase() + elementId.slice(1) + 'Btn';
+            const button = document.getElementById(buttonId);
+            if (button) {
+                const original = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    button.innerHTML = original;
+                }, 2000);
+            }
+            
+            showMessage('Copied to clipboard! Ready for social media.');
+        } catch (err) {
+            showMessage('Failed to copy. Please select and copy manually.');
+        }
+    }
 }
 
 function getVideoPoster(theme) {
@@ -840,30 +869,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (muteBtn) {
         muteBtn.addEventListener('click', function() {
             const isMuted = audioPlayer.toggleMute();
-            const video = document.getElementById('vid1');
-            if (video) video.muted = isMuted;
-            
-            this.innerHTML = isMuted ? 
-                '<i class="fas fa-volume-mute"></i>' : 
-                '<i class="fas fa-volume-up"></i>';
-        });
-    }
-    
-    // Video events
-    const video = document.getElementById('vid1');
-    if (video) {
-        video.addEventListener('play', () => {
-            updateStatus('▶️ Playing live content');
-        });
-        
-        video.addEventListener('pause', () => {
-            updateStatus('⏸️ Paused');
-        });
-        
-        video.addEventListener('volumechange', function() {
-            localStorage.setItem('videoVolume', this.volume);
-        });
-        
-        // Load saved volume
-        const savedVolume = localStorage.getItem('videoVolume');
-       
+            const video = document.getElementById
