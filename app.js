@@ -119,23 +119,19 @@ class AudioPlayer {
 const audioEngine = new AudioPlayer();
 
 // --- 3. GLOBAL STATE ---
-const playerA = document.getElementById('vid1');
-const playerB = document.getElementById('vid2');
-const statusPill = document.getElementById('statusPill');
-const statusText = statusPill;
-const recordBtn = document.getElementById('recordBtn');
-const playPauseBtn = document.getElementById('playPauseBtn');
-
 let blobPlaylist = [];
 let audioBlobUrl = null;
 let currentPlaylistIndex = 0;
-let activePlayer = playerA; 
+let activePlayer = null;
 let sequenceInterval = null;
 let isPlaying = false;
 let audioLibraryCache = {};
 let keepAliveInterval = null;
 
-// --- 4. INIT ---
+// --- 4. DOM ELEMENTS ---
+let playerA, playerB, statusPill, recordBtn, playPauseBtn;
+
+// --- 5. INITIALIZATION ---
 async function initStudio() {
     try {
         // Initialize audio with user gesture
@@ -196,14 +192,16 @@ function loadAudioOptions() {
     });
     
     // Enable record button after audio is loaded
-    recordBtn.disabled = false;
+    if (recordBtn) recordBtn.disabled = false;
 }
 
 function togglePlay() {
+    if (!activePlayer) return;
+    
     if (isPlaying) {
         activePlayer.pause();
         audioEngine.audioElement.pause();
-        playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     } else {
         // Resume audio context first
         if (audioEngine.ctx) {
@@ -211,12 +209,12 @@ function togglePlay() {
         }
         activePlayer.play().catch(e => console.log("Video play failed:", e));
         audioEngine.audioElement.play().catch(e => console.log("Audio play failed:", e));
-        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     }
     isPlaying = !isPlaying;
 }
 
-// --- 5. GENERATION ---
+// --- 6. GENERATION ---
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     audioEngine.stop();
@@ -224,9 +222,12 @@ async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     const audioId = document.getElementById('audioVariant').value;
     
-    statusPill.className = 'status-pill active';
-    statusPill.innerHTML = '<div class="dot"></div> Curating...';
-    recordBtn.disabled = true;
+    if (statusPill) {
+        statusPill.className = 'status-pill active';
+        statusPill.innerHTML = '<div class="dot"></div> Curating...';
+    }
+    
+    if (recordBtn) recordBtn.disabled = true;
 
     try {
         // Fetch Video Playlist
@@ -235,12 +236,17 @@ async function generateContent() {
         if (rawUrls.length > 0) {
             blobPlaylist = [];
             for (let i = 0; i < Math.min(rawUrls.length, 4); i++) {
-                statusPill.innerHTML = `<div class="dot"></div> Downloading Video ${i+1}/4...`;
+                if (statusPill) {
+                    statusPill.innerHTML = `<div class="dot"></div> Downloading Video ${i+1}/4...`;
+                }
                 const blob = await fetchBlob(rawUrls[i]);
                 if (blob) blobPlaylist.push(blob);
             }
 
-            statusPill.innerHTML = '<div class="dot"></div> Downloading Audio...';
+            if (statusPill) {
+                statusPill.innerHTML = '<div class="dot"></div> Downloading Audio...';
+            }
+            
             const audioUrl = audioLibraryCache[audioId];
             audioBlobUrl = await fetchBlob(audioUrl);
 
@@ -254,7 +260,8 @@ async function generateContent() {
                 await audioEngine.play(audioBlobUrl);
                 
                 // Show visualizer
-                document.getElementById('audioVisualizer').classList.add('active');
+                const visualizer = document.getElementById('audioVisualizer');
+                if (visualizer) visualizer.classList.add('active');
                 
                 // Generate SEO
                 generateViralSEO(theme);
@@ -263,27 +270,37 @@ async function generateContent() {
                 currentPlaylistIndex = 0;
                 startPingPong();
                 isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
                 
-                statusPill.className = 'status-pill active';
-                statusPill.innerHTML = '<div class="dot"></div> Live';
-                recordBtn.disabled = false;
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                
+                if (statusPill) {
+                    statusPill.className = 'status-pill active';
+                    statusPill.innerHTML = '<div class="dot"></div> Live';
+                }
+                
+                if (recordBtn) recordBtn.disabled = false;
                 
             } else {
                 alert("Download failed. Please try again.");
-                statusPill.className = 'status-pill';
-                statusPill.innerHTML = '<div class="dot"></div> System Ready';
+                if (statusPill) {
+                    statusPill.className = 'status-pill';
+                    statusPill.innerHTML = '<div class="dot"></div> System Ready';
+                }
             }
         } else {
             alert("No videos found for this theme.");
-            statusPill.className = 'status-pill';
-            statusPill.innerHTML = '<div class="dot"></div> System Ready';
+            if (statusPill) {
+                statusPill.className = 'status-pill';
+                statusPill.innerHTML = '<div class="dot"></div> System Ready';
+            }
         }
     } catch (error) {
         console.error("Generation error:", error);
         alert("Error generating content. Please check your connection.");
-        statusPill.className = 'status-pill';
-        statusPill.innerHTML = '<div class="dot"></div> System Ready';
+        if (statusPill) {
+            statusPill.className = 'status-pill';
+            statusPill.innerHTML = '<div class="dot"></div> System Ready';
+        }
     }
 }
 
@@ -298,8 +315,10 @@ async function fetchBlob(url) {
     }
 }
 
-// --- 6. IMPROVED VIDEO ENGINE ---
+// --- 7. IMPROVED VIDEO ENGINE ---
 function startPingPong() {
+    if (!playerA || !playerB) return;
+    
     // Reset players
     playerA.pause();
     playerB.pause();
@@ -328,19 +347,23 @@ function startPingPong() {
         });
     }
     
+    // Clear any existing interval
+    if (sequenceInterval) clearInterval(sequenceInterval);
+    
     // Start monitoring for end
     sequenceInterval = setInterval(() => {
-        const active = playerA.classList.contains('active') ? playerA : playerB;
-        if (!active.duration || isNaN(active.duration)) return;
+        if (!activePlayer || !activePlayer.duration || isNaN(activePlayer.duration)) return;
         
         // Check if video is ending (last 0.5 seconds)
-        if (active.duration - active.currentTime < 0.5) {
+        if (activePlayer.duration - activePlayer.currentTime < 0.5) {
             triggerSwap();
         }
     }, 250); // Check every 250ms
 }
 
 function triggerSwap() {
+    if (!playerA || !playerB) return;
+    
     const active = playerA.classList.contains('active') ? playerA : playerB;
     const next = active === playerA ? playerB : playerA;
     
@@ -374,7 +397,7 @@ function triggerSwap() {
     }
 }
 
-// --- 7. IMPROVED SAFARI RECORDER ---
+// --- 8. IMPROVED SAFARI RECORDER ---
 async function startRecording() {
     // Ensure everything is playing
     if (!isPlaying) {
@@ -434,7 +457,7 @@ async function startRecording() {
     };
     
     mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: options.mimeType });
+        const blob = new Blob(chobs, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -449,10 +472,15 @@ async function startRecording() {
         clearInterval(timerInterval);
         
         // Reset UI
-        recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
-        recordBtn.disabled = false;
-        statusPill.className = 'status-pill active';
-        statusPill.innerHTML = '<div class="dot"></div> Live';
+        if (recordBtn) {
+            recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
+            recordBtn.disabled = false;
+        }
+        
+        if (statusPill) {
+            statusPill.className = 'status-pill active';
+            statusPill.innerHTML = '<div class="dot"></div> Live';
+        }
     };
     
     // Draw frames with buffer to prevent freezing
@@ -470,7 +498,7 @@ async function startRecording() {
         
         try {
             // Draw video frame to buffer
-            if (activePlayer.readyState >= 2 && !activePlayer.paused) {
+            if (activePlayer && activePlayer.readyState >= 2 && !activePlayer.paused) {
                 bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
             }
             
@@ -486,16 +514,21 @@ async function startRecording() {
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
-        recordBtn.innerHTML = `<div class="rec-icon"></div> Recording... ${timeLeft}s`;
+        if (recordBtn) {
+            recordBtn.innerHTML = `<div class="rec-icon"></div> Recording... ${timeLeft}s`;
+        }
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
         }
     }, 1000);
     
     // Update UI
-    recordBtn.disabled = true;
-    statusPill.className = 'status-pill recording';
-    statusPill.innerHTML = '<div class="dot"></div> Recording';
+    if (recordBtn) recordBtn.disabled = true;
+    
+    if (statusPill) {
+        statusPill.className = 'status-pill recording';
+        statusPill.innerHTML = '<div class="dot"></div> Recording';
+    }
     
     // Start recording
     mediaRecorder.start();
@@ -508,7 +541,7 @@ async function startRecording() {
     }, 60000);
 }
 
-// --- 8. UTILS & VIRAL SEO ---
+// --- 9. UTILS & VIRAL SEO ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -573,27 +606,98 @@ function generateViralSEO(theme) {
     const h = hooks[Math.floor(Math.random() * hooks.length)];
     const b = benefits[Math.floor(Math.random() * benefits.length)];
     
-    document.getElementById('videoTitle').value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
-    document.getElementById('videoDesc').value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
+    const titleElement = document.getElementById('videoTitle');
+    const descElement = document.getElementById('videoDesc');
+    const tagsElement = document.getElementById('videoTags');
+    
+    if (titleElement) {
+        titleElement.value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
+    }
+    
+    if (descElement) {
+        descElement.value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
+    }
     
     const themeTags = [`#${theme}`, `#${theme}sounds`, `#${theme}ambience`, `#${theme}asmr`, `#${theme}sleep`, `#real${theme}`, `#${theme}video`];
     const combined = [...themeTags, ...GENERIC_TAGS];
     const shuffled = combined.sort(() => 0.5 - Math.random());
     const finalTags = [...new Set(shuffled)].slice(0, 25).join(' ');
     
-    document.getElementById('videoTags').value = finalTags;
+    if (tagsElement) {
+        tagsElement.value = finalTags;
+    }
 }
 
 function copyToClip(id) {
     const element = document.getElementById(id);
+    if (!element) return;
+    
     element.select();
     element.setSelectionRange(0, 99999); // For mobile
-    document.execCommand("copy");
-    // Visual feedback
-    const original = element.style.backgroundColor;
-    element.style.backgroundColor = "#2a2a2a";
-    setTimeout(() => {
-        element.style.backgroundColor = original;
-    }, 200);
+    
+    try {
+        document.execCommand("copy");
+        // Visual feedback
+        const original = element.style.backgroundColor;
+        element.style.backgroundColor = "#2a2a2a";
+        setTimeout(() => {
+            element.style.backgroundColor = original;
+        }, 200);
+    } catch (err) {
+        console.error("Copy failed:", err);
+    }
 }
+
+// --- 10. EVENT LISTENERS SETUP ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
+    playerA = document.getElementById('vid1');
+    playerB = document.getElementById('vid2');
+    statusPill = document.getElementById('statusPill');
+    recordBtn = document.getElementById('recordBtn');
+    playPauseBtn = document.getElementById('playPauseBtn');
+    
+    // Setup event listeners
+    const enterStudioBtn = document.getElementById('enterStudioBtn');
+    if (enterStudioBtn) {
+        enterStudioBtn.addEventListener('click', initStudio);
+    }
+    
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateContent);
+    }
+    
+    if (recordBtn) {
+        recordBtn.addEventListener('click', startRecording);
+    }
+    
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', togglePlay);
+    }
+    
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', loadAudioOptions);
+    }
+    
+    // Copy buttons
+    const copyTitleBtn = document.getElementById('copyTitleBtn');
+    if (copyTitleBtn) {
+        copyTitleBtn.addEventListener('click', () => copyToClip('videoTitle'));
+    }
+    
+    const copyDescBtn = document.getElementById('copyDescBtn');
+    if (copyDescBtn) {
+        copyDescBtn.addEventListener('click', () => copyToClip('videoDesc'));
+    }
+    
+    const copyTagsBtn = document.getElementById('copyTagsBtn');
+    if (copyTagsBtn) {
+        copyTagsBtn.addEventListener('click', () => copyToClip('videoTags'));
+    }
+    
+    // Initialize audio options on load
+    setTimeout(loadAudioOptions, 100);
+});
 [file content end]
