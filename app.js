@@ -1,40 +1,14 @@
 /**
- * ZenGen - Director's Cut
- * - Recorder: Decoupled Double-Buffer (Fixes Safari Freeze)
- * - SEO: Expanded 15+ Tag Engine
- * - Audio: Real Nature Recordings
+ * ZenGen - Ultimate Edition
+ * - Audio: Pixabay Real Audio (High Fidelity, Natural).
+ * - Recorder: AnimationFrame Loop (Safari Fix).
+ * - SEO: 20+ Tag Generator.
  */
 
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. REAL AUDIO ENGINE ---
-const SOUND_LIBRARY = {
-    forest: {
-        'morning': 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg',
-        'river': 'https://actions.google.com/sounds/v1/water/stream_water.ogg',
-        'crickets': 'https://actions.google.com/sounds/v1/animals/crickets.ogg'
-    },
-    rain: {
-        'heavy': 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',
-        'roof': 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg',
-        'thunder': 'https://actions.google.com/sounds/v1/weather/thunder_crack.ogg'
-    },
-    ocean: {
-        'waves': 'https://actions.google.com/sounds/v1/water/waves_crashing.ogg',
-        'calm': 'https://actions.google.com/sounds/v1/water/river_flow.ogg',
-        'deep': 'https://actions.google.com/sounds/v1/water/ocean_surf.ogg'
-    },
-    fireplace: {
-        'cozy': 'https://actions.google.com/sounds/v1/ambiences/fire.ogg',
-        'roar': 'https://actions.google.com/sounds/v1/ambiences/fire.ogg'
-    },
-    snow: {
-        'wind': 'https://actions.google.com/sounds/v1/weather/wind_strong.ogg',
-        'howl': 'https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg'
-    }
-};
-
+// --- 1. AUDIO ENGINE (Web Audio API + Pixabay) ---
 class AudioPlayer {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -57,20 +31,12 @@ class AudioPlayer {
             this.sourceNode.loop = true; 
             this.sourceNode.connect(this.gainNode);
             this.sourceNode.start(0);
-        } catch(e) { console.error("Audio Error", e); }
+        } catch(e) { console.error("Audio Playback Error", e); }
     }
 }
 const audioEngine = new AudioPlayer();
 
-// --- 2. UI & STATE ---
-const AUDIO_OPTIONS_UI = {
-    forest: [{id:'morning', name:'🐦 Morning Birds'}, {id:'river', name:'💧 Flowing River'}, {id:'crickets', name:'🦗 Night Crickets'}],
-    ocean: [{id:'waves', name:'🌊 Crashing Waves'}, {id:'calm', name:'🌅 Calm Shore'}, {id:'deep', name:'💨 Deep Surf'}],
-    rain: [{id:'heavy', name:'⛈️ Heavy Storm'}, {id:'roof', name:'🏠 Rain on Roof'}, {id:'thunder', name:'⚡ Rolling Thunder'}],
-    fireplace: [{id:'cozy', name:'🔥 Cozy Fire'}, {id:'roar', name:'🪵 Roaring Log'}],
-    snow: [{id:'wind', name:'💨 Strong Wind'}, {id:'howl', name:'❄️ Arctic Howl'}]
-};
-
+// --- 2. GLOBAL STATE ---
 const playerA = document.getElementById('vid1');
 const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
@@ -84,27 +50,47 @@ let currentPlaylistIndex = 0;
 let activePlayer = playerA; 
 let sequenceInterval = null;
 let isPlaying = false;
+let audioOptionsCache = {};
 
-// --- 3. INIT ---
+// --- 3. INIT & AUDIO SEARCH ---
 async function initStudio() {
     try {
         await audioEngine.resume();
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
-        updateAudioOptions();
+        loadAudioOptions(); // Load initial options
     } catch(e) { alert("Audio Engine Failed."); }
 }
 
-function updateAudioOptions() {
+async function loadAudioOptions() {
     const theme = document.getElementById('themeSelect').value;
     const variantSelect = document.getElementById('audioVariant');
+    
+    // Clear & Show Loading
+    variantSelect.innerHTML = '<option>Searching sounds...</option>';
+    
+    // Fetch from Pixabay Audio API
+    const res = await fetch(`https://pixabay.com/api/audio/?key=${PIXABAY_KEY}&q=${theme}&per_page=5&category=nature`);
+    const data = await res.json();
+    
     variantSelect.innerHTML = '';
-    (AUDIO_OPTIONS_UI[theme] || []).forEach(opt => {
-        const el = document.createElement('option');
-        el.value = opt.id;
-        el.innerText = opt.name;
-        variantSelect.appendChild(el);
-    });
+    
+    if (data.hits && data.hits.length > 0) {
+        // Cache the hits so we can get the URL later
+        audioOptionsCache = {};
+        data.hits.forEach(hit => {
+            // Keep names short
+            const name = hit.tags.split(',')[0].toUpperCase(); 
+            audioOptionsCache[hit.id] = hit.audio.url; // Preview URL (MP3)
+            
+            const el = document.createElement('option');
+            el.value = hit.id;
+            el.innerText = `🎵 ${name}`;
+            variantSelect.appendChild(el);
+        });
+    } else {
+        variantSelect.innerHTML = '<option>No sounds found</option>';
+    }
 }
 
 function togglePlay() {
@@ -118,33 +104,39 @@ function togglePlay() {
     isPlaying = !isPlaying;
 }
 
-// --- 4. GENERATION ---
+// --- 4. CONTENT GENERATION ---
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     audioEngine.stop();
+    
     const theme = document.getElementById('themeSelect').value;
-    const variant = document.getElementById('audioVariant').value;
+    const selectedAudioId = document.getElementById('audioVariant').value;
     
     statusPill.className = 'status-pill active';
     statusText.textContent = 'Curating...';
     recordBtn.disabled = true;
 
-    // Fetch Playlist
+    // 1. Fetch Video Playlist
     const rawUrls = await fetchMontagePlaylist(theme, 4);
     
     if (rawUrls.length > 0) {
         blobPlaylist = [];
+        
+        // 2. Download Videos
         for (let i = 0; i < rawUrls.length; i++) {
             statusText.textContent = `Downloading Video ${i+1}/4...`;
             const blob = await fetchBlob(rawUrls[i]);
             if (blob) blobPlaylist.push(blob);
         }
 
+        // 3. Download Audio
         statusText.textContent = `Downloading Audio...`;
-        const soundUrl = SOUND_LIBRARY[theme][variant];
-        audioBlobUrl = await fetchBlob(soundUrl);
+        const audioUrl = audioOptionsCache[selectedAudioId];
+        audioBlobUrl = await fetchBlob(audioUrl); // Download MP3 as blob to bypass CORS/Network issues
 
         if (blobPlaylist.length > 0 && audioBlobUrl) {
+            
+            // Play
             await audioEngine.resume();
             audioEngine.play(audioBlobUrl);
             
@@ -156,7 +148,7 @@ async function generateContent() {
             isPlaying = true;
             playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             
-        } else { alert("Download failed."); }
+        } else { alert("Download failed. Try again."); }
     } else { alert("No videos found."); }
 }
 
@@ -168,7 +160,7 @@ async function fetchBlob(url) {
     } catch (e) { return null; }
 }
 
-// --- 5. PING PONG LOGIC ---
+// --- 5. VIDEO ENGINE (Safe Swap) ---
 function startPingPong() {
     playerA.className = 'active'; playerB.className = 'standby';
     activePlayer = playerA;
@@ -197,24 +189,22 @@ function triggerSwap() {
     });
 }
 
-// --- 6. SAFARI-PROOF RECORDER (Decoupled Double Buffer) ---
+// --- 6. RECORDER (RequestAnimationFrame Fix) ---
 function startRecording() {
     audioEngine.resume();
     if (activePlayer.paused) activePlayer.play();
 
-    // 1. Setup Canvas
     const canvas = document.createElement('canvas');
     canvas.width = 1280; canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    // 2. Setup Audio Stream
     const canvasStream = canvas.captureStream(30);
     const audioDest = audioEngine.ctx.createMediaStreamDestination();
     audioEngine.gainNode.connect(audioDest);
     const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
     
     let options = { mimeType: 'video/webm; codecs=vp9' };
-    if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
+    if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' }; // Safari 14.1+
 
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
@@ -230,23 +220,24 @@ function startRecording() {
         
         recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
         recordBtn.disabled = false;
-        clearInterval(bufferInterval);
+        cancelAnimationFrame(drawId);
         clearInterval(timerInterval);
     };
 
-    // 3. THE FIX: Separate "Buffer" Canvas
+    // THE SAFARI FIX: Animation Loop + Double Buffer
+    let drawId;
     const bufferCanvas = document.createElement('canvas');
     bufferCanvas.width = 1280; bufferCanvas.height = 720;
     const bufferCtx = bufferCanvas.getContext('2d');
 
-    // Interval A: Update Buffer (Only if video is actually moving)
-    const bufferInterval = setInterval(() => {
-        if (activePlayer.readyState >= 2 && !activePlayer.paused && !activePlayer.seeking) {
+    function drawLoop() {
+        if (activePlayer.readyState >= 2 && !activePlayer.paused) {
             bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
         }
-        // Interval B: Draw to Recorder (Always draws the buffer, even if old)
-        ctx.drawImage(bufferCanvas, 0, 0);
-    }, 1000 / 30);
+        ctx.drawImage(bufferCanvas, 0, 0); // Always draw buffer (prevents blank frames)
+        drawId = requestAnimationFrame(drawLoop);
+    }
+    drawLoop();
 
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
@@ -287,48 +278,24 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-const SEO_DATA = {
-    forest: {
-        keys: ["forest sounds", "nature sounds", "birds chirping", "woodland ambience", "forest walk", "nature relaxation", "calm forest", "deep woods", "green noise", "spring forest", "morning nature"],
-        hooks: ["Secret Forest", "Enchanted Woods", "Ancient Trees"]
-    },
-    rain: {
-        keys: ["rain sounds", "heavy rain", "rain on roof", "thunderstorm", "rain for sleep", "cozy rain", "rain ambience", "storm sounds", "dark screen rain", "falling rain", "sleep sounds"],
-        hooks: ["Heavy Rain", "Cozy Storm", "Midnight Rain"]
-    },
-    ocean: {
-        keys: ["ocean waves", "beach sounds", "waves crashing", "sea ambience", "ocean sleep", "calm waves", "tropical beach", "blue ocean", "water sounds", "tide sounds", "shoreline"],
-        hooks: ["Tropical Beach", "Midnight Ocean", "Crystal Waves"]
-    },
-    fireplace: {
-        keys: ["fireplace sounds", "crackling fire", "burning wood", "cozy fireplace", "fire ambience", "winter atmosphere", "warm fire", "relaxing fire", "holiday ambience", "fire sounds", "log cabin"],
-        hooks: ["Crackling Fire", "Cozy Cabin", "Winter Warmth"]
-    },
-    snow: {
-        keys: ["blizzard sounds", "howling wind", "snowstorm", "arctic ambience", "winter sleep", "cold wind", "snow ambience", "winter sounds", "white noise", "snowy night", "frosty wind"],
-        hooks: ["Arctic Blizzard", "Frozen World", "Winter Storm"]
-    }
-};
-
-const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#shorts", "#fyp", "#viral", "#stressrelief", "#calm", "#focus", "#study", "#insomnia", "#healing", "#peace"];
+const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#shorts", "#fyp", "#viral", "#stressrelief", "#calm", "#focus", "#study", "#insomnia", "#healing", "#peace", "#zen", "#mindfulness", "#deepfocus", "#studymusic", "#backgroundnoise"];
 
 function generateViralSEO(theme) {
-    const data = SEO_DATA[theme];
-    const hook = data.hooks[Math.floor(Math.random() * data.hooks.length)];
+    const hooks = ["Secret", "Enchanted", "Deep", "Cozy", "Midnight", "Ancient", "Dreamy", "Magical"];
+    const benefits = ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Focus", "Stop Overthinking"];
     
-    // Title
-    document.getElementById('videoTitle').value = `${hook} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
+    const h = hooks[Math.floor(Math.random()*hooks.length)];
+    const b = benefits[Math.floor(Math.random()*benefits.length)];
     
-    // Description
-    document.getElementById('videoDesc').value = `Enjoy this ${hook.toLowerCase()} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
+    document.getElementById('videoTitle').value = `${h} ${theme.toUpperCase()} Sounds for Sleep & Relaxation (No Talking)`;
+    document.getElementById('videoDesc').value = `Enjoy this ${h.toLowerCase()} ${theme} ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ${theme.toUpperCase()}\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#${theme} #relax #sleep`;
     
-    // 15+ Tags
-    const specificTags = data.keys.map(k => `#${k.replace(/\s+/g, '')}`);
-    const mixed = [...specificTags, ...GENERIC_TAGS];
-    const shuffled = mixed.sort(() => 0.5 - Math.random());
-    const finalTags = [...new Set(shuffled)].slice(0, 20).join(' '); // Ensure 20 tags
+    // Generate 20+ tags
+    const themeTags = [`#${theme}`, `#${theme}sounds`, `#${theme}ambience`, `#${theme}asmr`, `#${theme}sleep`, `#real${theme}`, `#${theme}video`];
+    const combined = [...themeTags, ...GENERIC_TAGS];
+    const shuffled = combined.sort(() => 0.5 - Math.random());
+    const finalTags = [...new Set(shuffled)].slice(0, 25).join(' ');
     
     document.getElementById('videoTags').value = finalTags;
 }
-
 function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
