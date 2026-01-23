@@ -1,0 +1,96 @@
+:root {
+    --primary: #2d8f85;
+    --dark: #1a1a1a;
+    --light: #f4f4f4;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark);
+    color: var(--light);
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin: 0;
+}
+
+.container {
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+}
+
+select, button {
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 5px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button {
+    background-color: var(--primary);
+    color: white;
+    font-weight: bold;
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+#videoContainer {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    height: 360px;
+    background: black;
+    margin: 20px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #333;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.metadata-panel {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.meta-group {
+    margin-bottom: 15px;
+}
+
+.meta-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.meta-group input, .meta-group textarea {
+    width: 80%;
+    padding: 8px;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 4px;
+}
+
+.social-share a {
+    color: var(--primary);
+    margin-right: 15px;
+    text-decoration: none;
+}
