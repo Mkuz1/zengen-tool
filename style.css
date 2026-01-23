@@ -1,3 +1,4 @@
+/* --- 1. GLOBAL VARIABLES --- */
 :root {
     --bg-dark: #050505;
     --panel-bg: #111111;
@@ -20,7 +21,7 @@ body {
     height: 100vh;
 }
 
-/* 1. SPLASH SCREEN */
+/* --- 2. SPLASH SCREEN (Enter Studio) --- */
 .splash-screen {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -29,10 +30,12 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    transition: opacity 0.5s ease;
 }
 .splash-content { text-align: center; }
-.splash-content h1 { font-weight: 800; letter-spacing: -1px; margin: 20px 0 5px 0; }
-.splash-content p { color: var(--text-muted); margin-bottom: 30px; }
+.splash-content i { color: var(--text-main); margin-bottom: 20px; }
+.splash-content h1 { font-weight: 800; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2rem; }
+.splash-content p { color: var(--text-muted); margin-bottom: 30px; font-size: 0.9rem; }
 .btn-enter {
     background: white; color: black; border: none; padding: 15px 40px;
     font-size: 1rem; font-weight: 700; border-radius: 6px; cursor: pointer;
@@ -40,13 +43,14 @@ body {
 }
 .btn-enter:hover { transform: scale(1.05); }
 
-/* 2. WORKSPACE */
+/* --- 3. WORKSPACE LAYOUT --- */
 .workspace {
     display: flex;
     flex-direction: column;
     height: 100vh;
 }
 
+/* Navbar */
 nav {
     height: 60px;
     border-bottom: 1px solid var(--border);
@@ -56,18 +60,18 @@ nav {
     padding: 0 30px;
     background: var(--panel-bg);
 }
-.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
-.brand span { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; margin-left: 8px; color: #aaa; }
+.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+.brand span { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; color: #aaa; }
 
 .status-pill {
-    font-size: 0.8rem; background: #000; padding: 5px 12px; border-radius: 20px;
+    font-size: 0.8rem; background: #000; padding: 6px 14px; border-radius: 20px;
     border: 1px solid #333; display: flex; align-items: center; gap: 8px; color: var(--text-muted);
 }
-.dot { width: 6px; height: 6px; background: #444; border-radius: 50%; }
+.dot { width: 8px; height: 8px; background: #444; border-radius: 50%; }
 .status-pill.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .status-pill.recording .dot { background: var(--record-red); box-shadow: 0 0 10px var(--record-red); }
 
-/* 3. MAIN LAYOUT */
+/* Main Grid */
 .main-layout {
     display: grid;
     grid-template-columns: 300px 1fr 350px; /* Sidebar | Video | Meta */
@@ -75,6 +79,7 @@ nav {
     overflow: hidden;
 }
 
+/* --- 4. SIDEBAR CONTROLS --- */
 aside {
     padding: 30px;
     background: var(--panel-bg);
@@ -82,39 +87,44 @@ aside {
     display: flex;
     flex-direction: column;
     gap: 25px;
+    overflow-y: auto;
 }
 .meta-sidebar { border-right: none; border-left: 1px solid var(--border); }
 
-/* Control Styling */
-label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
+.control-group label {
+    display: block; font-size: 0.7rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
+}
 
 .custom-select { position: relative; }
 select {
     width: 100%; background: #000; border: 1px solid #333; color: white;
     padding: 12px 15px; border-radius: 6px; appearance: none; font-family: var(--font);
-    cursor: pointer;
+    cursor: pointer; font-size: 0.95rem;
 }
 .custom-select i { position: absolute; right: 15px; top: 15px; pointer-events: none; font-size: 0.8rem; color: #666; }
 
+/* Buttons */
 button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
 
-.btn-primary { background: #222; color: white; border: 1px solid #333; }
+.btn-primary { background: #222; color: white; border: 1px solid #333; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .btn-primary:hover { background: #333; border-color: #555; }
 
 .btn-record { background: var(--primary); color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.btn-record:disabled { opacity: 0.5; cursor: not-allowed; }
-.rec-icon { width: 10px; height: 10px; background: var(--record-red); border-radius: 50%; }
+.btn-record:disabled { opacity: 0.5; cursor: not-allowed; background: #555; }
+.rec-icon { width: 12px; height: 12px; background: var(--record-red); border-radius: 50%; }
 
 .divider { height: 1px; background: #222; margin: 10px 0; }
 .hint { font-size: 0.75rem; color: #555; text-align: center; margin-top: 10px; }
 
-/* 4. MONITOR (VIDEO AREA) */
+/* --- 5. MONITOR & VISUALIZER --- */
 .monitor-section {
     background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
+    position: relative;
 }
 .video-wrapper {
     width: 100%;
@@ -124,49 +134,75 @@ button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; curso
     border: 1px solid #333;
     position: relative;
     overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 video { width: 100%; height: 100%; object-fit: cover; }
 
-/* Visualizer (Simple CSS Animation) */
+/* Visualizer Bars */
 .visualizer-overlay {
     position: absolute; bottom: 20px; right: 20px;
-    display: flex; gap: 3px; align-items: flex-end;
-    height: 20px; opacity: 0; transition: opacity 0.3s;
+    display: flex; gap: 4px; align-items: flex-end;
+    height: 30px; opacity: 0; transition: opacity 0.3s;
 }
 .visualizer-overlay.active { opacity: 1; }
-.bar { width: 4px; background: white; animation: bounce 1s infinite; }
-.bar:nth-child(1) { height: 10px; animation-delay: 0.1s; }
-.bar:nth-child(2) { height: 16px; animation-delay: 0.3s; }
-.bar:nth-child(3) { height: 8px; animation-delay: 0.2s; }
-.bar:nth-child(4) { height: 14px; animation-delay: 0.4s; }
+
+.bar { 
+    width: 6px; 
+    background: rgba(255, 255, 255, 0.9); 
+    border-radius: 2px;
+    min-height: 4px;
+}
+
+/* Only animate when active class is present */
+.visualizer-overlay.active .bar {
+    animation: bounce 1s infinite ease-in-out;
+}
+
+.bar:nth-child(1) { height: 10px; animation-duration: 0.8s; }
+.bar:nth-child(2) { height: 20px; animation-duration: 1.2s; }
+.bar:nth-child(3) { height: 15px; animation-duration: 0.5s; }
+.bar:nth-child(4) { height: 25px; animation-duration: 0.9s; }
 
 @keyframes bounce {
-    0%, 100% { transform: scaleY(1); }
-    50% { transform: scaleY(1.5); }
+    0%, 100% { transform: scaleY(0.5); transform-origin: bottom; }
+    50% { transform: scaleY(1.2); transform-origin: bottom; }
 }
 
-/* 5. METADATA INPUTS */
-.input-row { display: flex; background: #000; border: 1px solid #333; border-radius: 4px; }
+/* --- 6. METADATA & SOCIALS --- */
+.meta-header h3 { margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-main); }
+
+.meta-field { margin-bottom: 20px; }
+.input-row { display: flex; background: #000; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
 .input-row input, .input-row textarea {
-    width: 100%; background: transparent; border: none; color: white; padding: 10px; font-family: var(--font); font-size: 0.9rem;
+    width: 100%; background: transparent; border: none; color: white; padding: 12px; 
+    font-family: var(--font); font-size: 0.85rem; resize: none;
 }
+.input-row input:focus, .input-row textarea:focus { outline: none; background: #0a0a0a; }
+
 .input-row button {
-    width: 40px; background: transparent; color: #555; border-left: 1px solid #333; padding: 0;
+    width: 45px; background: transparent; color: #555; border-left: 1px solid #333; padding: 0;
+    transition: all 0.2s;
 }
 .input-row button:hover { color: white; background: #111; }
 
-.social-grid { display: flex; gap: 10px; }
+/* Upload Shortcuts */
+.upload-shortcuts label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+.social-grid { display: flex; gap: 8px; }
 .s-link {
-    flex: 1; height: 40px; display: flex; align-items: center; justify-content: center;
-    background: #222; border-radius: 4px; color: #aaa; transition: 0.2s;
+    flex: 1; height: 35px; display: flex; align-items: center; justify-content: center;
+    background: #222; border-radius: 4px; color: #aaa; transition: 0.2s; text-decoration: none;
 }
-.s-link:hover { color: white; background: #333; }
+.s-link:hover { color: white; background: #333; transform: translateY(-2px); }
 .yt:hover { background: #ff0000; }
-.tt:hover { background: #000; border: 1px solid #333; }
+.tt:hover { background: #000; border: 1px solid #444; }
+.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.fb:hover { background: #1877F2; }
 
-/* Mobile */
+/* --- 7. MOBILE RESPONSIVENESS --- */
 @media (max-width: 900px) {
-    .main-layout { grid-template-columns: 1fr; overflow-y: auto; }
-    aside, .monitor-section { height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-    .video-wrapper { aspect-ratio: 16/9; }
+    .main-layout { grid-template-columns: 1fr; overflow-y: auto; height: auto; display: block; }
+    aside, .monitor-section { height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
+    .video-wrapper { aspect-ratio: 16/9; max-width: 100%; }
+    .workspace { height: auto; overflow: auto; }
 }
