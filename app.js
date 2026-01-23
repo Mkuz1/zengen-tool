@@ -1,13 +1,14 @@
-[file name]: app.js
-[file content begin]
 /**
  * ZenGen - Bulletproof Edition
+ * - Audio: Hardcoded High-Fidelity Library (No API Failures).
+ * - Recorder: "Frame Stamping" Engine (Safari Immune).
+ * - SEO: 20+ Tag Viral Engine.
  */
 
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// SIMPLIFIED AUDIO LIBRARY - NO EMOJIS, NO SPECIAL CHARACTERS
+// --- 1. RELIABLE AUDIO LIBRARY ---
 const STATIC_AUDIO_LIBRARY = {
     forest: [
         { id: 'forest_morning', name: 'Morning Birds', url: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' },
@@ -34,7 +35,7 @@ const STATIC_AUDIO_LIBRARY = {
     ]
 };
 
-// AUDIO PLAYER
+// --- 2. AUDIO PLAYER ---
 class AudioPlayer {
     constructor() {
         this.ctx = null;
@@ -85,9 +86,10 @@ class AudioPlayer {
         }
     }
 }
+
 const audioEngine = new AudioPlayer();
 
-// GLOBAL STATE
+// --- 3. GLOBAL STATE ---
 let blobPlaylist = [];
 let audioBlobUrl = null;
 let currentPlaylistIndex = 0;
@@ -96,10 +98,10 @@ let sequenceInterval = null;
 let isPlaying = false;
 let audioLibraryCache = {};
 
-// DOM ELEMENTS
+// --- 4. DOM ELEMENTS ---
 let playerA, playerB, statusPill, recordBtn, playPauseBtn;
 
-// INITIALIZATION
+// --- 5. INITIALIZATION ---
 async function initStudio() {
     try {
         await audioEngine.init();
@@ -155,7 +157,7 @@ function togglePlay() {
     isPlaying = !isPlaying;
 }
 
-// GENERATION
+// --- 6. GENERATION ---
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     audioEngine.stop();
@@ -250,7 +252,7 @@ async function fetchBlob(url) {
     }
 }
 
-// VIDEO ENGINE
+// --- 7. VIDEO ENGINE ---
 function startPingPong() {
     if (!playerA || !playerB) return;
     
@@ -318,7 +320,7 @@ function triggerSwap() {
     }
 }
 
-// RECORDER
+// --- 8. RECORDER ---
 async function startRecording() {
     if (!isPlaying) {
         togglePlay();
@@ -335,11 +337,12 @@ async function startRecording() {
     const ctx = canvas.getContext('2d');
     
     const canvasStream = canvas.captureStream(30);
-    const audioStream = audioEngine.audioElement.captureStream ? audioEngine.audioElement.captureStream() : null;
     
     let combinedStream;
-    if (audioStream) {
-        combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
+    if (audioEngine.ctx) {
+        const audioDest = audioEngine.ctx.createMediaStreamDestination();
+        audioEngine.gainNode.connect(audioDest);
+        combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
     } else {
         combinedStream = canvasStream;
     }
@@ -420,7 +423,7 @@ async function startRecording() {
     }, 60000);
 }
 
-// UTILS
+// --- 9. UTILS ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -488,7 +491,7 @@ function generateViralSEO(theme) {
     }
     
     if (descElement) {
-        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\\n\\nTheme: ' + theme.toUpperCase() + '\\nAudio: Real Nature Recording\\nQuality: HD\\n\\n#' + theme + ' #relax #sleep';
+        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\n\nTheme: ' + theme.toUpperCase() + '\nAudio: Real Nature Recording\nQuality: HD\n\n#' + theme + ' #relax #sleep';
     }
     
     const themeTags = ['#' + theme, '#' + theme + 'sounds', '#' + theme + 'ambience', '#' + theme + 'asmr', '#' + theme + 'sleep', '#real' + theme, '#' + theme + 'video'];
@@ -521,7 +524,7 @@ function copyToClip(id) {
     }
 }
 
-// EVENT LISTENERS
+// --- 10. EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', function() {
     playerA = document.getElementById('vid1');
     playerB = document.getElementById('vid2');
@@ -569,4 +572,3 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setTimeout(loadAudioOptions, 100);
 });
-[file content end]
