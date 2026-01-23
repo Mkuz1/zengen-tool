@@ -1,15 +1,48 @@
 /**
- * ZenGen - "Montage Studio" Final
- * - Video: Dual-Player Ping-Pong (Seamless Transitions)
- * - Audio: Procedural Nature Engine (Infinite, Non-Repeating)
- * - Recorder: Global State Tracking (Fixes "Frozen Video" bug)
+ * ZenGen - Studio Ultimate
+ * - Video: Dual-Player with Cache-Busting (Fixes "Freeze" bug).
+ * - Audio: Procedural Nature Engine (Infinite, Non-Repeating).
+ * - SEO: Viral-style Title/Tag generator.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ENGINE ---
+// --- 1. VIRAL SEO ENGINE ---
+const SEO_ENGINE = {
+    forest: {
+        hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"],
+        benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Stop Overthinking", "Heal Your Mind"],
+        keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds", "#4k", "#naturehealing", "#greennoise"]
+    },
+    rain: {
+        hooks: ["Heavy", "Torrential", "Cozy", "Midnight", "Roof"],
+        benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia", "Brain Massage", "Sleep in 3 Minutes"],
+        keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm", "#pluviophile", "#sleeprain", "#darkscreen"]
+    },
+    ocean: {
+        hooks: ["Tropical", "Midnight", "Crystal Clear", "Deep Blue", "Isolated"],
+        benefits: ["Calm Your Nerves", "Drift Away", "Lucid Dreaming", "Theta Waves", "Deep Meditation"],
+        keywords: ["#oceanwaves", "#beachasmr", "#wavesounds", "#seascape", "#waternoise", "#tides", "#blue"]
+    },
+    fireplace: {
+        hooks: ["Crackling", "Roaring", "Warm", "Winter", "Log Cabin"],
+        benefits: ["Cozy Vibes", "Warm Your Soul", "Stress Relief", "Holiday Ambience", "Deep Relaxation"],
+        keywords: ["#fireplace", "#cracklingfire", "#firesounds", "#cozyambience", "#wintervibes", "#fireasmr", "#burningwood"]
+    },
+    snow: {
+        hooks: ["Arctic", "Blizzard", "Howling", "Frozen", "White"],
+        benefits: ["Cool Down", "Winter Sleep", "Focus Isolation", "Block Out Noise", "Deep Hibernation"],
+        keywords: ["#blizzard", "#snowstorm", "#arcticwind", "#winterambience", "#snowfall", "#coldwind", "#white"]
+    },
+    generic: {
+        suffixes: ["(No Talking)", "(Dark Screen)", "ASMR", "4K Ultra HD", "8D Audio", "Binaural Beats"],
+        tags: ["#shorts", "#fyp", "#viral", "#trending", "#sleep", "#meditation", "#satisfying", "#stressrelief"]
+    }
+};
+
+// --- 2. PROCEDURAL AUDIO ENGINE ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -19,6 +52,7 @@ class NatureSynth {
         this.loopTimer = null; 
     }
     async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
+    
     stop() {
         if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
         this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
@@ -93,7 +127,7 @@ class NatureSynth {
 }
 const synth = new NatureSynth();
 
-// --- 2. GLOBAL STATE ---
+// --- 3. GLOBAL STATE ---
 const playerA = document.getElementById('vid1');
 const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
@@ -102,31 +136,28 @@ const recordBtn = document.getElementById('recordBtn');
 
 let currentPlaylist = [];
 let currentIndex = 0;
-// CRITICAL: We track the ACTIVE player in a variable for the recorder
-let currentPlayer = playerA; 
+let currentPlayer = playerA;
 
-// --- 3. INIT ---
+// --- 4. INIT ---
 async function initStudio() {
     try {
         await synth.resume();
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
         
-        // Setup Ping-Pong Listeners
         playerA.onended = () => swapPlayers(playerA, playerB);
         playerB.onended = () => swapPlayers(playerB, playerA);
         
     } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 4. GENERATE MONTAGE ---
+// --- 5. GENERATE CONTENT ---
 async function generateContent() {
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
-    // UI
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Building Playlist...';
+    statusText.textContent = 'Curating Viral Montage...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
@@ -134,7 +165,6 @@ async function generateContent() {
     currentPlaylist = await fetchMontagePlaylist(theme, 4);
     
     if (currentPlaylist.length > 0) {
-        // Start Audio
         synth.resume();
         if(theme==='rain') synth.playRain();
         else if(theme==='snow') synth.playSnow();
@@ -143,9 +173,10 @@ async function generateContent() {
         else if(theme==='forest') synth.playForest();
         
         document.getElementById('audioVisualizer').classList.add('active');
-        generateSEO(theme);
         
-        // Start Video Sequence
+        // Generate NEW Viral SEO
+        generateViralSEO(theme);
+        
         currentIndex = 0;
         startVideoSequence();
         
@@ -154,58 +185,53 @@ async function generateContent() {
     }
 }
 
-// --- 5. PING-PONG LOGIC ---
+// --- 6. PING-PONG VIDEO ENGINE (Anti-Freeze) ---
 function startVideoSequence() {
-    // 1. Reset Players
     playerA.className = 'active';
     playerB.className = 'standby';
-    currentPlayer = playerA; // Recorder will look at A
+    currentPlayer = playerA;
 
-    // 2. Load Clip 0 into A
     loadClip(playerA, 0);
-    playerA.play();
+    playerA.play().then(() => {
+        statusText.textContent = 'Live Sequence';
+        recordBtn.disabled = false;
+    }).catch(e => console.log("Play interrupted"));
 
-    // 3. Preload Clip 1 into B
-    if (currentPlaylist.length > 1) {
-        loadClip(playerB, 1);
-    }
-    
-    statusText.textContent = 'Playing Sequence';
-    recordBtn.disabled = false;
+    if (currentPlaylist.length > 1) loadClip(playerB, 1);
 }
 
 function loadClip(videoEl, index) {
-    // Wrap around playlist
     const safeIndex = index % currentPlaylist.length;
-    videoEl.src = currentPlaylist[safeIndex];
+    // CRITICAL FIX: Add timestamp to force fresh CORS headers (prevents freezing)
+    const uniqueUrl = currentPlaylist[safeIndex] + (currentPlaylist[safeIndex].includes('?') ? '&' : '?') + `t=${Date.now()}`;
+    videoEl.src = uniqueUrl;
     videoEl.load();
 }
 
 function swapPlayers(endingPlayer, nextPlayer) {
-    // 1. Update Recorder Target IMMEDIATELY
-    currentPlayer = nextPlayer;
-
-    // 2. Visual Swap
-    endingPlayer.className = 'standby';
-    nextPlayer.className = 'active';
-    
-    // 3. Play Next
-    nextPlayer.play();
-
-    // 4. Preload Future Clip
-    currentIndex++;
-    loadClip(endingPlayer, currentIndex + 1);
+    // 1. Play Next FIRST to ensure it's ready
+    nextPlayer.play().then(() => {
+        // 2. Only swap if play succeeded
+        endingPlayer.className = 'standby';
+        nextPlayer.className = 'active';
+        currentPlayer = nextPlayer;
+        
+        // 3. Preload next
+        currentIndex++;
+        loadClip(endingPlayer, currentIndex + 1);
+    }).catch(e => {
+        console.error("Swap failed, re-loading");
+        loadClip(nextPlayer, currentIndex + 1);
+    });
 }
 
-// --- 6. RECORDER (Smart & Robust) ---
+// --- 7. SMART RECORDER ---
 function startRecording() {
     synth.resume();
     if (currentPlayer.paused) currentPlayer.play();
 
-    // FIXED CANVAS SIZE (HD)
     const canvas = document.createElement('canvas');
-    canvas.width = 1280; 
-    canvas.height = 720; 
+    canvas.width = 1280; canvas.height = 720;
     const ctx = canvas.getContext('2d');
     const canvasStream = canvas.captureStream(30);
 
@@ -236,18 +262,13 @@ function startRecording() {
         clearInterval(timerInterval);
     };
 
-    // CRITICAL FIX: The loop always draws 'currentPlayer'
-    // This variable is updated by swapPlayers the instant the video changes.
+    // Robust Draw Loop
     const drawInterval = setInterval(() => {
-        try {
-            // Only draw if we have a valid image (prevents black frames)
-            if (currentPlayer.readyState >= 2) {
-                ctx.drawImage(currentPlayer, 0, 0, canvas.width, canvas.height);
-            }
-        } catch(e) { console.log("Frame drop"); }
+        if (currentPlayer.readyState >= 2) {
+            ctx.drawImage(currentPlayer, 0, 0, canvas.width, canvas.height);
+        }
     }, 1000 / 30);
 
-    // Countdown UI
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
@@ -257,11 +278,10 @@ function startRecording() {
 
     mediaRecorder.start();
     recordBtn.disabled = true;
-    
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 7. FETCHERS & SEO ---
+// --- 8. FETCHERS ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -281,7 +301,6 @@ async function fetchMontagePlaylist(query, count) {
         }
     } catch(e){}
     
-    // Fallback if needed
     if (list.length < count) {
         try {
             const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15`);
@@ -292,19 +311,39 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-const SEO_DATA = {
-    titles: { adj: ["Relaxing","Deep","Peaceful"], noun: ["Ambience","Atmosphere","Escape"], act: ["for Sleep","for Focus"] },
-    tags: { common: ["#shorts","#nature","#peace"], themes: { forest:["#forest"], rain:["#rain"], ocean:["#ocean"], snow:["#snow"], fireplace:["#fire"] } }
-};
+// --- 9. VIRAL SEO GENERATOR ---
+function generateViralSEO(theme) {
+    const data = SEO_ENGINE[theme];
+    const generic = SEO_ENGINE.generic;
+    
+    // 1. Build Viral Title
+    const hook = data.hooks[Math.floor(Math.random() * data.hooks.length)];
+    const benefit = data.benefits[Math.floor(Math.random() * data.benefits.length)];
+    const suffix = generic.suffixes[Math.floor(Math.random() * generic.suffixes.length)];
+    const title = `${hook} ${theme.toUpperCase()} Sounds ${benefit} ${suffix}`;
+    
+    // 2. Build Description
+    const desc = `Experience the ${hook.toLowerCase()} power of ${theme} sounds. 
+This video is designed to help you ${benefit.toLowerCase()}. 
+Pure nature atmosphere with NO talking and NO loops.
 
-function generateSEO(theme) {
-    const t = SEO_DATA.titles;
-    const adj = t.adj[Math.floor(Math.random()*t.adj.length)];
-    const noun = t.noun[Math.floor(Math.random()*t.noun.length)];
-    const act = t.act[Math.floor(Math.random()*t.act.length)];
-    document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase()+theme.slice(1)} ${noun} ${act}`;
-    document.getElementById('videoDesc').value = `Pure ${theme} ambience. No music. #${theme}`;
-    const tags = [...(SEO_DATA.tags.themes[theme]||[]), ...SEO_DATA.tags.common];
-    document.getElementById('videoTags').value = [...new Set(tags.sort(()=>.5-Math.random()))].slice(0,15).join(' ');
+✅ Features:
+- ${suffix}
+- High Definition Audio
+- Natural Stress Relief
+
+👇 SUBSCRIBE for more ${theme} sounds!
+#${theme} #relax`;
+
+    // 3. Build Viral Tags (Mix specific + generic)
+    const specificTags = data.keywords;
+    const genericTags = generic.tags;
+    const pool = [...specificTags, ...genericTags];
+    const selectedTags = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
+
+    document.getElementById('videoTitle').value = title;
+    document.getElementById('videoDesc').value = desc;
+    document.getElementById('videoTags').value = selectedTags;
 }
+
 function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
