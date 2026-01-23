@@ -1,14 +1,14 @@
 /**
- * ZenGen - "Safari Pro" Edition
- * - CSS: Uses Z-Index swapping instead of Opacity (Forces Safari to decode).
- * - JS: "Safe Handoff" ensures recorder only switches when target is moving.
+ * ZenGen - Studio Pro (Final Build)
+ * - Audio: Selectable Variants (Birds/Wind/Rain Types).
+ * - Recorder: Frame Hold Logic prevents Safari freezes.
+ * - Video: Safe Handoff (0.3s pre-swap) for seamless montage.
  */
 
-// --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ---
+// --- 1. PROCEDURAL AUDIO ENGINE ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -18,105 +18,165 @@ class NatureSynth {
         this.loopTimer = null; 
     }
     async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
+    
     stop() {
         if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
         this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
         this.activeNodes = [];
     }
-    playRain() { this.runNoise(0.8, 400 + Math.random()*800); }
-    playSnow() { this.runNoise(0.5, 200 + Math.random()*300); }
-    playForest() { this.runNoise(0.3, 500 + Math.random()*300); this.birdLoop(); }
-    playOcean() {
+
+    playTheme(theme, variant) {
         this.stop();
+        if (theme === 'forest') this.forest(variant);
+        else if (theme === 'rain') this.rain(variant);
+        else if (theme === 'ocean') this.ocean(variant);
+        else if (theme === 'fireplace') this.fire(variant);
+        else if (theme === 'snow') this.snow(variant);
+    }
+
+    forest(variant) {
+        const windVol = variant === 'windy' ? 0.6 : 0.3;
+        this.runNoise(windVol, 500);
+        if (variant !== 'windy') {
+            const birdRate = variant === 'morning' ? 1000 : 4000;
+            const birdPitch = variant === 'night' ? 600 : 1500;
+            this.birdLoop(birdRate, birdPitch);
+        }
+    }
+    rain(variant) {
+        const vol = variant === 'heavy' ? 0.8 : 0.4;
+        const freq = variant === 'heavy' ? 400 : 1200;
+        this.runNoise(vol, freq);
+    }
+    ocean(variant) {
         const noise = this.createPinkNoise(0.4);
         const gain = this.ctx.createGain();
         const lfo = this.ctx.createOscillator();
-        lfo.type = 'sine'; lfo.frequency.value = 0.1 + Math.random()*0.2;
+        lfo.type = 'sine'; lfo.frequency.value = variant === 'storm' ? 0.4 : 0.1;
         const lfoGain = this.ctx.createGain();
         lfoGain.gain.value = 0.3; 
         lfo.connect(lfoGain); lfoGain.connect(gain.gain);
         noise.connect(gain); gain.connect(this.master); lfo.start();
         this.activeNodes.push(noise, lfo);
     }
-    playFire() {
-        this.stop();
-        const noise = this.createBrownNoise(0.7);
-        const crackle = this.ctx.createScriptProcessor(4096, 1, 1);
-        crackle.onaudioprocess = (e) => {
-            const out = e.outputBuffer.getChannelData(0);
-            for(let i=0; i<out.length; i++) out[i] = (Math.random() > 0.992) ? Math.random()*0.5 : 0;
-        };
-        crackle.connect(this.master); noise.connect(this.master);
-        this.activeNodes.push(noise, crackle);
+    fire(variant) {
+        this.runNoise(0.7, 100);
+        this.crackler(variant === 'roaring' ? 0.95 : 0.99);
+    }
+    snow(variant) {
+        const freq = variant === 'blizzard' ? 400 : 200;
+        this.runNoise(0.5, freq);
     }
     runNoise(vol, freq) {
-        this.stop();
         const noise = this.createPinkNoise(vol);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass'; filter.frequency.value = freq;
         noise.connect(filter); filter.connect(this.master);
         this.activeNodes.push(noise);
     }
-    birdLoop() {
+    birdLoop(interval, pitchBase) {
         const chirp = () => {
             if(this.ctx.state === 'suspended') return;
             const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
-            const f = 1500+Math.random()*1500;
+            const f = pitchBase + Math.random() * 500;
             osc.frequency.setValueAtTime(f, this.ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(f/2, this.ctx.currentTime+0.1);
             g.gain.setValueAtTime(0.1, this.ctx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
             osc.connect(g); g.connect(this.master);
             osc.start(); osc.stop(this.ctx.currentTime+0.2);
-            this.loopTimer = setTimeout(chirp, 1000+Math.random()*4000);
+            this.loopTimer = setTimeout(chirp, interval + Math.random()*2000);
         }; chirp();
     }
-    createPinkNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
-    createBrownNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
-    noiseNode(vol, size, algo) {
-        const n = this.ctx.createScriptProcessor(size, 1, 1);
+    crackler(density) {
+        const c = this.ctx.createScriptProcessor(4096, 1, 1);
+        c.onaudioprocess = e => {
+            const o = e.outputBuffer.getChannelData(0);
+            for(let i=0; i<o.length; i++) o[i] = (Math.random() > density) ? Math.random()*0.5 : 0;
+        };
+        c.connect(this.master); this.activeNodes.push(c);
+    }
+    createPinkNoise(v) { return this.noiseNode(v, (l,w)=> (l+(0.02*w))/1.02); }
+    createBrownNoise(v) { return this.noiseNode(v, (l,w)=> (l+(0.02*w))/1.02); }
+    noiseNode(vol, algo) {
+        const n = this.ctx.createScriptProcessor(4096, 1, 1);
         let last = 0;
         n.onaudioprocess = e => {
             const o = e.outputBuffer.getChannelData(0);
-            for(let i=0; i<size; i++) { const w = Math.random()*2-1; o[i] = algo(last, w); last = o[i]; o[i]*=3.5; }
+            for(let i=0; i<4096; i++) { const w = Math.random()*2-1; o[i] = algo(last, w); last = o[i]; o[i]*=3.5; }
         };
         const g = this.ctx.createGain(); g.gain.value = vol; n.connect(g); return n;
     }
 }
 const synth = new NatureSynth();
 
-// --- 2. GLOBAL STATE ---
+// --- 2. UI & STATE ---
+const AUDIO_OPTIONS = {
+    forest: [{id:'morning', name:'🐦 Morning Birds'}, {id:'windy', name:'🍃 Windy Trees'}, {id:'night', name:'🦗 Night Crickets'}],
+    ocean: [{id:'calm', name:'🌅 Calm Shore'}, {id:'storm', name:'⛈️ Rough Storm'}, {id:'deep', name:'🌊 Deep Underwater'}],
+    rain: [{id:'light', name:'🌧️ Light Shower'}, {id:'heavy', name:'⛈️ Heavy Storm'}],
+    fireplace: [{id:'cozy', name:'🔥 Cozy Embers'}, {id:'roaring', name:'🪵 Roaring Fire'}],
+    snow: [{id:'calm', name:'❄️ Gentle Snow'}, {id:'blizzard', name:'💨 Blizzard'}]
+};
+
 const playerA = document.getElementById('vid1');
 const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
 const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
+const playPauseBtn = document.getElementById('playPauseBtn');
 
 let blobPlaylist = [];
 let currentPlaylistIndex = 0;
-let renderSource = playerA; // The player currently being drawn to canvas
+let activePlayer = playerA; 
 let sequenceInterval = null;
+let isPlaying = false;
 
-// --- 3. INIT ---
+// --- 3. STARTUP ---
 async function initStudio() {
     try {
         await synth.resume();
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
-    } catch(e) { alert("Audio Engine Failed. Refresh."); }
+        updateAudioOptions();
+    } catch(e) { alert("Audio Engine Failed."); }
 }
 
-// --- 4. GENERATE CONTENT ---
+function updateAudioOptions() {
+    const theme = document.getElementById('themeSelect').value;
+    const variantSelect = document.getElementById('audioVariant');
+    variantSelect.innerHTML = '';
+    AUDIO_OPTIONS[theme].forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt.id;
+        el.innerText = opt.name;
+        variantSelect.appendChild(el);
+    });
+}
+
+function togglePlay() {
+    if (isPlaying) {
+        activePlayer.pause(); synth.ctx.suspend();
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    } else {
+        activePlayer.play(); synth.ctx.resume();
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    }
+    isPlaying = !isPlaying;
+}
+
+// --- 4. GENERATION ---
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     synth.stop();
     const theme = document.getElementById('themeSelect').value;
+    const variant = document.getElementById('audioVariant').value;
     
     statusPill.className = 'status-pill active';
-    statusText.textContent = 'Curating...';
+    statusText.textContent = 'Downloading...';
     recordBtn.disabled = true;
-    document.getElementById('audioVisualizer').classList.remove('active');
 
+    // 1. Fetch Playlist
     const rawUrls = await fetchMontagePlaylist(theme, 4);
     
     if (rawUrls.length > 0) {
@@ -128,25 +188,20 @@ async function generateContent() {
         }
 
         if (blobPlaylist.length > 0) {
+            // 2. Play
             synth.resume();
-            if(theme==='rain') synth.playRain();
-            else if(theme==='snow') synth.playSnow();
-            else if(theme==='ocean') synth.playOcean();
-            else if(theme==='fireplace') synth.playFire();
-            else if(theme==='forest') synth.playForest();
+            synth.playTheme(theme, variant);
             
             document.getElementById('audioVisualizer').classList.add('active');
             generateViralSEO(theme);
             
             currentPlaylistIndex = 0;
             startPingPong();
+            isPlaying = true;
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             
-        } else {
-            alert("Download failed.");
-        }
-    } else {
-        alert("No videos found.");
-    }
+        } else { alert("Download failed."); }
+    } else { alert("No videos found."); }
 }
 
 async function fetchVideoAsBlob(url) {
@@ -157,66 +212,40 @@ async function fetchVideoAsBlob(url) {
     } catch (e) { return null; }
 }
 
-// --- 5. SAFARI-PROOF PING PONG ---
+// --- 5. PING PONG LOGIC ---
 function startPingPong() {
-    // Reset
-    playerA.className = 'active';
-    playerB.className = 'standby';
-    renderSource = playerA;
-
-    playerA.src = blobPlaylist[0];
-    playerA.play();
-    
-    if (blobPlaylist.length > 1) {
-        playerB.src = blobPlaylist[1];
-        playerB.load(); // Just load, don't play yet
-    }
+    playerA.className = 'active'; playerB.className = 'standby';
+    activePlayer = playerA;
+    playerA.src = blobPlaylist[0]; playerA.play();
+    if (blobPlaylist.length > 1) { playerB.src = blobPlaylist[1]; playerB.load(); }
 
     statusText.textContent = 'Live';
     recordBtn.disabled = false;
 
-    // WATCHDOG
+    // Watchdog
     sequenceInterval = setInterval(() => {
-        // Look at the active player
         const active = playerA.classList.contains('active') ? playerA : playerB;
         if (!active.duration) return;
-
-        // Trigger swap 0.3s before end
-        if (active.duration - active.currentTime < 0.3) {
-            triggerSwap();
-        }
+        if (active.duration - active.currentTime < 0.3) triggerSwap();
     }, 100);
 }
 
 function triggerSwap() {
     const active = playerA.classList.contains('active') ? playerA : playerB;
     const next = active === playerA ? playerB : playerA;
-
-    // 1. Play Next
     next.play().then(() => {
-        // 2. ONLY after it starts playing, we switch visual state
-        // This ensures Safari doesn't freeze the recorder
-        active.className = 'standby';
-        next.className = 'active';
-        
-        // 3. Update the recorder target
-        renderSource = next;
-
-        // 4. Preload future clip into old player
+        active.className = 'standby'; next.className = 'active';
+        activePlayer = next;
         currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-        const futureIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
-        active.src = blobPlaylist[futureIndex];
-        active.load();
-        
-    }).catch(e => console.error("Swap failed", e));
+        const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
+        active.src = blobPlaylist[nextIndex]; active.load();
+    });
 }
 
-// --- 6. RECORDER (Frame Holding) ---
+// --- 6. RECORDER (Frame Hold) ---
 function startRecording() {
     synth.resume();
-    // Ensure both are ready (Safari check)
-    if (playerA.paused && playerA.classList.contains('active')) playerA.play();
-    if (playerB.paused && playerB.classList.contains('active')) playerB.play();
+    if (activePlayer.paused) activePlayer.play();
 
     const canvas = document.createElement('canvas');
     canvas.width = 1280; canvas.height = 720;
@@ -225,7 +254,6 @@ function startRecording() {
 
     const audioDest = synth.ctx.createMediaStreamDestination();
     synth.master.connect(audioDest);
-    
     const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
     
     let options = { mimeType: 'video/webm; codecs=vp9' };
@@ -233,7 +261,6 @@ function startRecording() {
 
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
-
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     
     mediaRecorder.onstop = () => {
@@ -250,14 +277,20 @@ function startRecording() {
         clearInterval(timerInterval);
     };
 
-    // SAFARI SAFE DRAW LOOP
+    // FRAME HOLD LOGIC (Crucial for Safari)
+    // We draw to a buffer. If the video player goes blank (during swap), we stop updating the buffer
+    // but keep drawing the OLD buffer to the canvas. This creates a "Frozen" last frame instead of a black screen.
+    const bufferCanvas = document.createElement('canvas');
+    bufferCanvas.width = 1280; bufferCanvas.height = 720;
+    const bufferCtx = bufferCanvas.getContext('2d');
+
     const drawInterval = setInterval(() => {
-        // We only draw the 'renderSource' if it is actually ready.
-        // If it's swapping, we simply keep the last frame (don't clearRect),
-        // effectively "holding" the image until the new video is ready.
-        if (renderSource.readyState >= 2) {
-            ctx.drawImage(renderSource, 0, 0, canvas.width, canvas.height);
+        // Only update the buffer if the player has valid data and is playing
+        if (activePlayer.readyState >= 2 && !activePlayer.paused) {
+            bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
         }
+        // Always copy buffer to final recorder (Smooths over gaps)
+        ctx.drawImage(bufferCanvas, 0, 0);
     }, 1000 / 30);
 
     let timeLeft = 60;
@@ -272,7 +305,7 @@ function startRecording() {
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
 
-// --- 7. FETCHERS & SEO (Standard) ---
+// --- 7. UTILS & SEO ---
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
@@ -300,12 +333,12 @@ async function fetchMontagePlaylist(query, count) {
 }
 
 const SEO_ENGINE = {
-    forest: { hooks: ["Secret", "Enchanted", "Ancient", "Misty", "Deep"], benefits: ["Relieve Anxiety", "Cure Insomnia", "Instant Calm"], keywords: ["#forestsounds", "#natureasmr", "#woodland", "#birds"] },
-    rain: { hooks: ["Heavy", "Torrential", "Cozy", "Midnight"], benefits: ["Deep Sleep Instantly", "Focus for Studying", "Beat Insomnia"], keywords: ["#heavyrain", "#rainonroof", "#thundersounds", "#rainstorm"] },
-    ocean: { hooks: ["Tropical", "Midnight", "Crystal Clear", "Deep Blue"], benefits: ["Calm Your Nerves", "Drift Away", "Theta Waves"], keywords: ["#oceanwaves", "#beachasmr", "#wavesounds", "#seascape"] },
-    fireplace: { hooks: ["Crackling", "Roaring", "Warm", "Winter"], benefits: ["Cozy Vibes", "Warm Your Soul", "Stress Relief"], keywords: ["#fireplace", "#cracklingfire", "#firesounds", "#cozyambience"] },
-    snow: { hooks: ["Arctic", "Blizzard", "Howling", "Frozen"], benefits: ["Cool Down", "Winter Sleep", "Focus Isolation"], keywords: ["#blizzard", "#snowstorm", "#arcticwind", "#winterambience"] },
-    generic: { suffixes: ["(No Talking)", "(Dark Screen)", "ASMR", "4K Ultra HD", "8D Audio"], tags: ["#shorts", "#fyp", "#viral", "#trending", "#sleep"] }
+    forest: { hooks: ["Secret", "Enchanted", "Ancient"], benefits: ["Relieve Anxiety", "Cure Insomnia"], keywords: ["#forestsounds", "#natureasmr"] },
+    rain: { hooks: ["Heavy", "Torrential", "Cozy"], benefits: ["Deep Sleep Instantly", "Focus"], keywords: ["#heavyrain", "#rainonroof"] },
+    ocean: { hooks: ["Tropical", "Midnight"], benefits: ["Calm Your Nerves", "Drift Away"], keywords: ["#oceanwaves", "#beachasmr"] },
+    fireplace: { hooks: ["Crackling", "Warm"], benefits: ["Cozy Vibes", "Stress Relief"], keywords: ["#fireplace", "#cracklingfire"] },
+    snow: { hooks: ["Arctic", "Blizzard"], benefits: ["Cool Down", "Winter Sleep"], keywords: ["#blizzard", "#snowstorm"] },
+    generic: { suffixes: ["(No Talking)", "ASMR", "4K"], tags: ["#shorts", "#viral", "#sleep"] }
 };
 
 function generateViralSEO(theme) {
