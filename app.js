@@ -2,15 +2,12 @@
 [file content begin]
 /**
  * ZenGen - Bulletproof Edition
- * - Audio: Hardcoded High-Fidelity Library (No API Failures).
- * - Recorder: "Frame Stamping" Engine (Safari Immune).
- * - SEO: 20+ Tag Viral Engine.
  */
 
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. RELIABLE AUDIO LIBRARY ---
+// SIMPLIFIED AUDIO LIBRARY - NO EMOJIS, NO SPECIAL CHARACTERS
 const STATIC_AUDIO_LIBRARY = {
     forest: [
         { id: 'forest_morning', name: 'Morning Birds', url: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' },
@@ -37,7 +34,7 @@ const STATIC_AUDIO_LIBRARY = {
     ]
 };
 
-// --- 2. IMPROVED AUDIO PLAYER ---
+// AUDIO PLAYER
 class AudioPlayer {
     constructor() {
         this.ctx = null;
@@ -78,47 +75,19 @@ class AudioPlayer {
     
     async play(blobUrl) {
         this.stop();
-        
-        // Use HTML5 Audio as primary - more reliable across browsers
         this.audioElement.src = blobUrl;
         this.audioElement.volume = 0.7;
-        
         const playPromise = this.audioElement.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.log("Audio autoplay prevented, will play after user interaction");
+                console.log("Audio autoplay prevented");
             });
         }
-        
-        // Also set up Web Audio for recording
-        if (this.isInitialized && blobUrl) {
-            try {
-                const response = await fetch(blobUrl);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-                this.sourceNode = this.ctx.createBufferSource();
-                this.sourceNode.buffer = audioBuffer;
-                this.sourceNode.loop = true;
-                this.sourceNode.connect(this.gainNode);
-                this.sourceNode.start(0);
-            } catch(e) {
-                console.error("Web Audio playback failed:", e);
-            }
-        }
-    }
-    
-    getAudioStream() {
-        if (this.ctx && this.sourceNode) {
-            const dest = this.ctx.createMediaStreamDestination();
-            this.gainNode.connect(dest);
-            return dest.stream;
-        }
-        return null;
     }
 }
 const audioEngine = new AudioPlayer();
 
-// --- 3. GLOBAL STATE ---
+// GLOBAL STATE
 let blobPlaylist = [];
 let audioBlobUrl = null;
 let currentPlaylistIndex = 0;
@@ -126,28 +95,20 @@ let activePlayer = null;
 let sequenceInterval = null;
 let isPlaying = false;
 let audioLibraryCache = {};
-let keepAliveInterval = null;
 
-// --- 4. DOM ELEMENTS ---
+// DOM ELEMENTS
 let playerA, playerB, statusPill, recordBtn, playPauseBtn;
 
-// --- 5. INITIALIZATION ---
+// INITIALIZATION
 async function initStudio() {
     try {
-        // Initialize audio with user gesture
         await audioEngine.init();
-        
-        // Start keep-alive for AudioContext
-        startAudioKeepAlive();
-        
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('workspace').style.display = 'flex';
-            // Pre-load some audio
             loadAudioOptions();
         }, 500);
-        
     } catch(e) {
         console.error("Initialization error:", e);
         alert("Studio initialized with limited audio features");
@@ -159,23 +120,6 @@ async function initStudio() {
     }
 }
 
-function startAudioKeepAlive() {
-    // Keep audio context alive by periodically playing silent sound
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
-    
-    keepAliveInterval = setInterval(async () => {
-        if (audioEngine.ctx && audioEngine.ctx.state === 'running') {
-            // Create a tiny silent buffer to keep context alive
-            const buffer = audioEngine.ctx.createBuffer(1, 1, 22050);
-            const source = audioEngine.ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioEngine.ctx.destination);
-            source.start();
-            source.stop(audioEngine.ctx.currentTime + 0.001);
-        }
-    }, 5000); // Every 5 seconds
-}
-
 function loadAudioOptions() {
     const theme = document.getElementById('themeSelect').value;
     const variantSelect = document.getElementById('audioVariant');
@@ -184,14 +128,12 @@ function loadAudioOptions() {
     const sounds = STATIC_AUDIO_LIBRARY[theme] || [];
     sounds.forEach(sound => {
         audioLibraryCache[sound.id] = sound.url;
-        
         const el = document.createElement('option');
         el.value = sound.id;
         el.innerText = sound.name;
         variantSelect.appendChild(el);
     });
     
-    // Enable record button after audio is loaded
     if (recordBtn) recordBtn.disabled = false;
 }
 
@@ -203,7 +145,6 @@ function togglePlay() {
         audioEngine.audioElement.pause();
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     } else {
-        // Resume audio context first
         if (audioEngine.ctx) {
             audioEngine.ctx.resume();
         }
@@ -214,7 +155,7 @@ function togglePlay() {
     isPlaying = !isPlaying;
 }
 
-// --- 6. GENERATION ---
+// GENERATION
 async function generateContent() {
     if (sequenceInterval) clearInterval(sequenceInterval);
     audioEngine.stop();
@@ -230,7 +171,6 @@ async function generateContent() {
     if (recordBtn) recordBtn.disabled = true;
 
     try {
-        // Fetch Video Playlist
         const rawUrls = await fetchMontagePlaylist(theme, 4);
         
         if (rawUrls.length > 0) {
@@ -251,22 +191,17 @@ async function generateContent() {
             audioBlobUrl = await fetchBlob(audioUrl);
 
             if (blobPlaylist.length > 0 && audioBlobUrl) {
-                // Ensure audio context is running
                 if (audioEngine.ctx) {
                     await audioEngine.ctx.resume();
                 }
                 
-                // Play audio
                 await audioEngine.play(audioBlobUrl);
                 
-                // Show visualizer
                 const visualizer = document.getElementById('audioVisualizer');
                 if (visualizer) visualizer.classList.add('active');
                 
-                // Generate SEO
                 generateViralSEO(theme);
                 
-                // Start video playback
                 currentPlaylistIndex = 0;
                 startPingPong();
                 isPlaying = true;
@@ -315,11 +250,10 @@ async function fetchBlob(url) {
     }
 }
 
-// --- 7. IMPROVED VIDEO ENGINE ---
+// VIDEO ENGINE
 function startPingPong() {
     if (!playerA || !playerB) return;
     
-    // Reset players
     playerA.pause();
     playerB.pause();
     playerA.currentTime = 0;
@@ -329,36 +263,29 @@ function startPingPong() {
     playerB.className = 'standby';
     activePlayer = playerA;
     
-    // Load and play first video
     playerA.src = blobPlaylist[0];
     playerA.load();
     
-    // Preload second video
     if (blobPlaylist.length > 1) {
         playerB.src = blobPlaylist[1];
         playerB.load();
     }
     
-    // Play with user interaction
     const playPromise = playerA.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => {
-            console.log("Autoplay prevented, waiting for user interaction");
+            console.log("Autoplay prevented");
         });
     }
     
-    // Clear any existing interval
     if (sequenceInterval) clearInterval(sequenceInterval);
     
-    // Start monitoring for end
     sequenceInterval = setInterval(() => {
         if (!activePlayer || !activePlayer.duration || isNaN(activePlayer.duration)) return;
-        
-        // Check if video is ending (last 0.5 seconds)
         if (activePlayer.duration - activePlayer.currentTime < 0.5) {
             triggerSwap();
         }
-    }, 250); // Check every 250ms
+    }, 250);
 }
 
 function triggerSwap() {
@@ -367,28 +294,22 @@ function triggerSwap() {
     const active = playerA.classList.contains('active') ? playerA : playerB;
     const next = active === playerA ? playerB : playerA;
     
-    // Ensure next video is loaded
     if (next.readyState < 2) {
-        console.log("Next video not ready yet, delaying swap");
         setTimeout(triggerSwap, 100);
         return;
     }
     
-    // Play next video
     const playPromise = next.play();
     
     if (playPromise !== undefined) {
         playPromise.then(() => {
-            // Swap visibility
             active.className = 'standby';
             next.className = 'active';
             activePlayer = next;
             
-            // Update playlist index
             currentPlaylistIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
             const nextIndex = (currentPlaylistIndex + 1) % blobPlaylist.length;
             
-            // Preload the video after next
             active.src = blobPlaylist[nextIndex];
             active.load();
         }).catch(error => {
@@ -397,54 +318,35 @@ function triggerSwap() {
     }
 }
 
-// --- 8. IMPROVED SAFARI RECORDER ---
+// RECORDER
 async function startRecording() {
-    // Ensure everything is playing
     if (!isPlaying) {
         togglePlay();
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // Resume audio context
     if (audioEngine.ctx) {
         await audioEngine.ctx.resume();
     }
     
-    // Setup canvas for frame capture
     const canvas = document.createElement('canvas');
     canvas.width = 1280;
     canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    // Setup audio stream
-    let audioStream;
-    if (audioEngine.ctx && audioEngine.getAudioStream()) {
-        audioStream = audioEngine.getAudioStream();
+    const canvasStream = canvas.captureStream(30);
+    const audioStream = audioEngine.audioElement.captureStream ? audioEngine.audioElement.captureStream() : null;
+    
+    let combinedStream;
+    if (audioStream) {
+        combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
     } else {
-        // Fallback: Create silent audio track
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const dst = oscillator.connect(audioContext.createMediaStreamDestination());
-        oscillator.start();
-        audioStream = dst.stream;
+        combinedStream = canvasStream;
     }
     
-    // Setup video stream from canvas
-    const canvasStream = canvas.captureStream(30);
-    
-    // Combine streams
-    const combinedStream = new MediaStream([
-        ...canvasStream.getVideoTracks(),
-        ...audioStream.getAudioTracks()
-    ]);
-    
-    // Setup recorder
     let options = { mimeType: 'video/webm;codecs=vp9' };
     if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         options = { mimeType: 'video/mp4;codecs=avc1' };
-    }
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'video/webm' };
     }
     
     const mediaRecorder = new MediaRecorder(combinedStream, options);
@@ -466,12 +368,10 @@ async function startRecording() {
         a.click();
         document.body.removeChild(a);
         
-        // Cleanup
         URL.revokeObjectURL(url);
         clearInterval(frameInterval);
         clearInterval(timerInterval);
         
-        // Reset UI
         if (recordBtn) {
             recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
             recordBtn.disabled = false;
@@ -483,34 +383,16 @@ async function startRecording() {
         }
     };
     
-    // Draw frames with buffer to prevent freezing
-    const bufferCanvas = document.createElement('canvas');
-    bufferCanvas.width = 1280;
-    bufferCanvas.height = 720;
-    const bufferCtx = bufferCanvas.getContext('2d');
-    
-    let lastFrameTime = 0;
     const frameInterval = setInterval(() => {
-        const currentTime = Date.now();
-        
-        // Only update at ~30fps
-        if (currentTime - lastFrameTime < 33) return;
-        
         try {
-            // Draw video frame to buffer
             if (activePlayer && activePlayer.readyState >= 2 && !activePlayer.paused) {
-                bufferCtx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(activePlayer, 0, 0, canvas.width, canvas.height);
             }
-            
-            // Draw buffer to output canvas
-            ctx.drawImage(bufferCanvas, 0, 0);
-            lastFrameTime = currentTime;
         } catch (e) {
             console.log("Frame capture error:", e);
         }
-    }, 33); // ~30 FPS
+    }, 33);
     
-    // Timer
     let timeLeft = 60;
     const timerInterval = setInterval(() => {
         timeLeft--;
@@ -522,7 +404,6 @@ async function startRecording() {
         }
     }, 1000);
     
-    // Update UI
     if (recordBtn) recordBtn.disabled = true;
     
     if (statusPill) {
@@ -530,10 +411,8 @@ async function startRecording() {
         statusPill.innerHTML = '<div class="dot"></div> Recording';
     }
     
-    // Start recording
     mediaRecorder.start();
     
-    // Stop after 60 seconds
     setTimeout(() => {
         if (mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -541,12 +420,11 @@ async function startRecording() {
     }, 60000);
 }
 
-// --- 9. UTILS & VIRAL SEO ---
+// UTILS
 async function fetchMontagePlaylist(query, count) {
     let list = [];
     const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
     
-    // Try Pexels first
     try {
         const page = Math.floor(Math.random() * 5) + 1;
         const res = await fetch('https://api.pexels.com/videos/search?query=' + encodeURIComponent(query) + '&per_page=10&page=' + page + '&orientation=landscape', {
@@ -562,7 +440,6 @@ async function fetchMontagePlaylist(query, count) {
             
             fresh.forEach(v => {
                 seen.add(v.id);
-                // Try to get HD version first, fallback to any
                 const hdFile = v.video_files.find(f => f.width === 1280) ||
                                v.video_files.find(f => f.width >= 1280) ||
                                v.video_files[0];
@@ -575,7 +452,6 @@ async function fetchMontagePlaylist(query, count) {
         console.warn("Pexels API failed:", e);
     }
     
-    // If we need more videos, try Pixabay
     if (list.length < count) {
         try {
             const res = await fetch('https://pixabay.com/api/videos/?key=' + PIXABAY_KEY + '&q=' + encodeURIComponent(query) + '&per_page=10');
@@ -597,14 +473,11 @@ async function fetchMontagePlaylist(query, count) {
     return list;
 }
 
-const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#shorts", "#fyp", "#viral", "#stressrelief", "#calm", "#focus", "#study", "#insomnia", "#healing", "#peace", "#zen", "#mindfulness", "#deepfocus", "#studymusic", "#backgroundnoise"];
-
 function generateViralSEO(theme) {
     const hooks = ["Secret", "Enchanted", "Deep", "Cozy", "Midnight", "Ancient", "Dreamy", "Magical"];
     const benefits = ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Focus", "Stop Overthinking"];
     
     const h = hooks[Math.floor(Math.random() * hooks.length)];
-    const b = benefits[Math.floor(Math.random() * benefits.length)];
     
     const titleElement = document.getElementById('videoTitle');
     const descElement = document.getElementById('videoDesc');
@@ -615,10 +488,11 @@ function generateViralSEO(theme) {
     }
     
     if (descElement) {
-        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\n\n🍃 Theme: ' + theme.toUpperCase() + '\n🎧 Audio: Real Nature Recording\n✨ Quality: HD\n\n#' + theme + ' #relax #sleep';
+        descElement.value = 'Enjoy this ' + h.toLowerCase() + ' ' + theme + ' ambience. Perfect for sleep, study, and meditation.\\n\\nTheme: ' + theme.toUpperCase() + '\\nAudio: Real Nature Recording\\nQuality: HD\\n\\n#' + theme + ' #relax #sleep';
     }
     
     const themeTags = ['#' + theme, '#' + theme + 'sounds', '#' + theme + 'ambience', '#' + theme + 'asmr', '#' + theme + 'sleep', '#real' + theme, '#' + theme + 'video'];
+    const GENERIC_TAGS = ["#asmr", "#sleep", "#meditation", "#relaxing", "#nature", "#shorts", "#fyp", "#viral", "#stressrelief", "#calm", "#focus", "#study", "#insomnia", "#healing", "#peace", "#zen", "#mindfulness", "#deepfocus", "#studymusic", "#backgroundnoise"];
     const combined = [...themeTags, ...GENERIC_TAGS];
     const shuffled = combined.sort(() => 0.5 - Math.random());
     const finalTags = [...new Set(shuffled)].slice(0, 25).join(' ');
@@ -633,11 +507,10 @@ function copyToClip(id) {
     if (!element) return;
     
     element.select();
-    element.setSelectionRange(0, 99999); // For mobile
+    element.setSelectionRange(0, 99999);
     
     try {
         document.execCommand("copy");
-        // Visual feedback
         const original = element.style.backgroundColor;
         element.style.backgroundColor = "#2a2a2a";
         setTimeout(() => {
@@ -648,16 +521,14 @@ function copyToClip(id) {
     }
 }
 
-// --- 10. EVENT LISTENERS SETUP ---
+// EVENT LISTENERS
 document.addEventListener('DOMContentLoaded', function() {
-    // Get DOM elements
     playerA = document.getElementById('vid1');
     playerB = document.getElementById('vid2');
     statusPill = document.getElementById('statusPill');
     recordBtn = document.getElementById('recordBtn');
     playPauseBtn = document.getElementById('playPauseBtn');
     
-    // Setup event listeners
     const enterStudioBtn = document.getElementById('enterStudioBtn');
     if (enterStudioBtn) {
         enterStudioBtn.addEventListener('click', initStudio);
@@ -681,7 +552,6 @@ document.addEventListener('DOMContentLoaded', function() {
         themeSelect.addEventListener('change', loadAudioOptions);
     }
     
-    // Copy buttons
     const copyTitleBtn = document.getElementById('copyTitleBtn');
     if (copyTitleBtn) {
         copyTitleBtn.addEventListener('click', function() { copyToClip('videoTitle'); });
@@ -697,7 +567,6 @@ document.addEventListener('DOMContentLoaded', function() {
         copyTagsBtn.addEventListener('click', function() { copyToClip('videoTags'); });
     }
     
-    // Initialize audio options on load
     setTimeout(loadAudioOptions, 100);
 });
 [file content end]
