@@ -1,38 +1,50 @@
 /**
- * ZenGen - Final Stability Fix
- * - Video: Pixabay/Pexels API
- * - Audio: CORS-Friendly Open Source CDN (No API keys needed for audio)
- * - SEO: Auto-generated
+ * ZenGen - Blob Loader Edition
+ * Fixes "403/404" errors by downloading audio as a local blob before playing.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. RELIABLE AUDIO LIBRARY (Direct CDN Links) ---
-// We use raw.githack.com to ensure correct CORS headers for recording
+// --- 1. ROBUST AUDIO LIBRARY (Google + Wikimedia Backups) ---
 const AUDIO_LIBRARY = {
-    forest: "https://raw.githack.com/remvze/moodist/main/public/sounds/forest.mp3",
-    rain: "https://raw.githack.com/remvze/moodist/main/public/sounds/rain.mp3",
-    fireplace: "https://raw.githack.com/remvze/moodist/main/public/sounds/campfire.mp3",
-    ocean: "https://raw.githack.com/remvze/moodist/main/public/sounds/waves.mp3",
-    snow: "https://raw.githack.com/remvze/moodist/main/public/sounds/wind.mp3"
+    forest: [
+        "https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/e/e0/Forest_Ambience_-_Start.ogg"
+    ],
+    rain: [
+        "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/4/4b/Rain_on_windowsill.ogg"
+    ],
+    fireplace: [
+        "https://actions.google.com/sounds/v1/ambiences/fire.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/d/d4/Fire_burning_in_a_fireplace.ogg"
+    ],
+    ocean: [
+        "https://actions.google.com/sounds/v1/water/waves_crashing.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/7/7b/Ocean_Waves.ogg"
+    ],
+    snow: [
+        "https://actions.google.com/sounds/v1/weather/strong_wind_whistling.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/0/07/Wind_in_trees.ogg"
+    ]
 };
 
 // --- 2. SEO DATA ---
 const SEO_DATA = {
     titles: {
-        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil", "Dreamy", "Restorative"],
-        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape", "Retreat", "Haven"],
-        actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying", "for Yoga", "for Deep Rest"]
+        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil", "Dreamy"],
+        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape"],
+        actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying", "for Yoga"]
     },
     tags: {
-        common: ["#shorts", "#relaxation", "#meditation", "#sleep", "#asmr", "#nature", "#peace", "#calm", "#mindfulness", "#wellness"],
-        forest: ["#forest", "#woods", "#birds", "#nature", "#green", "#camping", "#wildlife", "#trees"],
-        rain: ["#rain", "#rainstorm", "#thunder", "#rainyday", "#sleepsounds", "#storm", "#heavyrain"],
-        fireplace: ["#fireplace", "#fire", "#burning", "#warmth", "#cozy", "#winter", "#cracklingfire"],
-        ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer", "#water", "#seascape"],
-        snow: ["#snow", "#winter", "#blizzard", "#cold", "#white", "#arctic", "#wind"]
+        common: ["#shorts", "#relaxation", "#meditation", "#sleep", "#asmr", "#nature", "#peace", "#calm", "#mindfulness"],
+        forest: ["#forest", "#woods", "#birds", "#nature", "#green", "#camping", "#wildlife"],
+        rain: ["#rain", "#rainstorm", "#thunder", "#rainyday", "#sleepsounds", "#storm"],
+        fireplace: ["#fireplace", "#fire", "#burning", "#warmth", "#cozy", "#winter"],
+        ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer", "#water"],
+        snow: ["#snow", "#winter", "#blizzard", "#cold", "#white", "#arctic"]
     }
 };
 
@@ -47,7 +59,7 @@ let audioCtx;
 let audioDest;      
 let audioSource;    
 
-// --- 4. INITIALIZATION (Required for Recording) ---
+// --- 4. INITIALIZATION ---
 async function initStudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -61,7 +73,6 @@ async function initStudio() {
             audioSource.connect(audioCtx.destination);
         }
 
-        // Hide splash screen
         const splash = document.getElementById('startScreen');
         splash.style.opacity = '0';
         setTimeout(() => {
@@ -70,75 +81,85 @@ async function initStudio() {
         }, 500);
         
     } catch(e) {
-        alert("Audio Engine Failed: " + e.message);
+        alert("Audio Engine Failed. Please Refresh.");
     }
 }
 
-// --- 5. MAIN LOGIC ---
+// --- 5. MAIN LOGIC (BLOB LOADER) ---
 async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     
-    // Reset UI
+    // UI Updates
     if(statusPill) statusPill.className = 'status-pill active';
-    if(statusText) statusText.textContent = 'Fetching Content...';
+    if(statusText) statusText.textContent = 'Downloading Media...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
     try {
-        // A. Fetch Video (Pixabay/Pexels)
+        // A. Fetch Video
         let videoUrl = await fetchPexelsVideo(theme);
         if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
 
-        // B. Set Audio (Direct Link)
-        // Add random query param to prevent caching issues
-        const audioUrl = AUDIO_LIBRARY[theme] + "?t=" + Date.now();
+        // B. Fetch Audio as BLOB (The Fix)
+        const audioBlobUrl = await fetchAudioAsBlob(theme);
 
-        if (videoUrl) {
+        if (videoUrl && audioBlobUrl) {
             videoEl.crossOrigin = "anonymous";
-            audioEl.crossOrigin = "anonymous";
+            // No crossOrigin needed for blob URLs, they are local
             
             videoEl.src = videoUrl;
-            audioEl.src = audioUrl;
+            audioEl.src = audioBlobUrl;
 
-            // C. Play Video & Generate SEO
+            // C. Play
             videoEl.onloadeddata = () => {
                 videoEl.play();
                 generateSEO(theme);
             };
 
-            // D. Play Audio
             audioEl.onloadeddata = () => {
                 audioEl.play().then(() => {
                      document.getElementById('audioVisualizer').classList.add('active');
                      recordBtn.disabled = false;
                      if(statusPill) {
                          statusPill.className = 'status-pill active';
-                         statusText.textContent = 'Playing';
+                         statusText.textContent = 'Studio Ready';
                      }
-                }).catch(e => console.log("Autoplay waiting for interaction"));
-            };
-
-            audioEl.onerror = () => {
-                console.warn("Audio failed to load.");
-                if(statusPill) {
-                    statusPill.className = 'status-pill';
-                    statusText.textContent = 'Audio Error';
-                }
-                // Allow video recording even if audio fails
-                recordBtn.disabled = false;
+                }).catch(e => console.log("Autoplay waiting for click"));
             };
 
         } else {
-            alert("No video found for this theme.");
+            alert("Could not load media. Please try again.");
         }
     } catch (error) {
         console.error("App Error:", error);
     }
 }
 
-// --- 6. VIDEO API FETCHERS ---
-const usedVideoIds = new Set();
+// --- 6. THE NEW BLOB DOWNLOADER ---
+async function fetchAudioAsBlob(theme) {
+    const urls = AUDIO_LIBRARY[theme];
+    
+    for (let url of urls) {
+        try {
+            // We fetch the file manually first
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Network response was not ok");
+            
+            // Convert to Blob (Local File)
+            const blob = await response.blob();
+            
+            // Create a temporary local URL (e.g., blob:https://yoursite/1234...)
+            return URL.createObjectURL(blob);
+        } catch (error) {
+            console.log(`Source failed: ${url}, trying next...`);
+        }
+    }
+    console.error("All audio sources failed for this theme.");
+    return null;
+}
 
+// --- 7. VIDEO FETCHERS ---
+const usedVideoIds = new Set();
 async function fetchPexelsVideo(query) {
     try {
         const page = Math.floor(Math.random() * 10) + 1;
@@ -151,6 +172,7 @@ async function fetchPexelsVideo(query) {
             const pool = fresh.length ? fresh : data.videos;
             const vid = pool[Math.floor(Math.random() * pool.length)];
             usedVideoIds.add(vid.id);
+            // Prefer HD
             return vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
         }
     } catch (e) { console.log('Pexels skipped'); } return null;
@@ -165,25 +187,21 @@ async function fetchPixabayVideo(query) {
     } catch (e) { console.log('Pixabay skipped'); } return null;
 }
 
-// --- 7. SEO ENGINE ---
+// --- 8. SEO ENGINE ---
 function generateSEO(theme) {
     const t = SEO_DATA.titles;
     const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
     const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
     const action = t.actions[Math.floor(Math.random() * t.actions.length)];
     
-    // Title
-    const titleText = `${adj} ${theme.charAt(0).toUpperCase() + theme.slice(1)} ${noun} ${action}`;
-    document.getElementById('videoTitle').value = titleText;
+    document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase() + theme.slice(1)} ${noun} ${action}`;
     
-    // Description
     document.getElementById('videoDesc').value = `Experience the ${adj.toLowerCase()} ${theme} ${noun.toLowerCase()}. 
 Designed ${action.toLowerCase()}. 
 Pure natural soundscape (no music).
 
 #${theme} #relax #nature`;
     
-    // Tags
     const tags = [...SEO_DATA.tags[theme], ...SEO_DATA.tags.common];
     const uniqueTags = [...new Set(tags.sort(() => .5 - Math.random()))].slice(0, 15).join(' ');
     document.getElementById('videoTags').value = uniqueTags;
@@ -193,14 +211,13 @@ function copyToClip(id) {
     const el = document.getElementById(id);
     el.select();
     document.execCommand("copy");
-    // Visual feedback
     const btn = el.nextElementSibling;
     const oldIcon = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     setTimeout(() => btn.innerHTML = oldIcon, 1500);
 }
 
-// --- 8. RECORDER (MP4 Support) ---
+// --- 9. RECORDER (MP4 Support) ---
 function startRecording() {
     if (!audioCtx || audioCtx.state === 'suspended') audioCtx && audioCtx.resume();
 
@@ -238,7 +255,7 @@ function startRecording() {
         recordBtn.disabled = false;
         if(statusPill) {
              statusPill.className = 'status-pill active';
-             statusText.textContent = 'Ready';
+             statusText.textContent = 'Studio Ready';
         }
         clearInterval(drawInterval);
     };
