@@ -457,7 +457,7 @@ async function startRecording() {
     };
     
     mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: options.mimeType }); // FIXED: chobs → chunks
+        const blob = new Blob(chunks, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
