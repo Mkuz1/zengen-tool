@@ -3,174 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Bulletproof</title>
+    <title>ZenGen Studio | Optimized</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Audio Help Modal */
-        .audio-help {
-            display: none;
+        /* Performance Optimizations */
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        video {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000;
+        }
+        
+        /* Audio Status Indicator */
+        .audio-status {
             position: fixed;
-            top: 20px;
+            top: 70px;
             right: 20px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            z-index: 10000;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            max-width: 300px;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .audio-help-content {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .audio-help-icon {
-            font-size: 24px;
-            color: #ffd700;
-        }
-        
-        .audio-help-text {
-            flex: 1;
-        }
-        
-        .audio-help-text strong {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        
-        .audio-help-text p {
-            margin: 0;
-            font-size: 12px;
-            opacity: 0.9;
-        }
-        
-        .audio-help-close {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .audio-help-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Volume Control */
-        .volume-control {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 20;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
             display: flex;
             align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 8px;
+            border: 1px solid #333;
         }
         
-        .volume-control button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 5px;
-            font-size: 16px;
+        .audio-status i {
+            color: #3b82f6;
         }
         
-        .volume-slider {
-            width: 80px;
-            height: 4px;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            outline: none;
+        .audio-status.muted i {
+            color: #ef4444;
         }
         
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-        }
-        
-        /* Mac Compatibility Notice */
-        .mac-notice {
+        /* Performance Warning */
+        .performance-warning {
             display: none;
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(17, 17, 17, 0.95);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
             z-index: 1000;
-            border: 1px solid #3b82f6;
             font-size: 12px;
             text-align: center;
             max-width: 400px;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Recording Quality Selector */
+        .quality-selector {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+        
+        .quality-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .quality-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .quality-option.selected {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
 
-    <!-- Audio Help Modal -->
-    <div id="audioHelp" class="audio-help">
-        <div class="audio-help-content">
-            <div class="audio-help-icon">
-                <i class="fas fa-volume-up"></i>
-            </div>
-            <div class="audio-help-text">
-                <strong>🔊 Audio Help</strong>
-                <p>Click the Play button to enable sound. Some browsers require user interaction for audio playback.</p>
-            </div>
-            <button class="audio-help-close" onclick="this.parentElement.parentElement.style.display='none'">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+    <!-- Audio Status -->
+    <div id="audioStatus" class="audio-status">
+        <i class="fas fa-volume-mute"></i>
+        <span>Click Play to enable audio</span>
     </div>
 
-    <!-- Mac Compatibility Notice -->
-    <div id="macNotice" class="mac-notice">
-        <i class="fas fa-apple"></i> For best Mac compatibility, videos will be saved as MP4 format.
+    <!-- Performance Warning -->
+    <div id="performanceWarning" class="performance-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        Recording in progress - For best performance, close other applications
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Processing...</p>
     </div>
 
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
             <i class="fa-solid fa-wave-square fa-3x"></i>
             <h1>ZenGen Studio</h1>
-            <p>Initialize Audio Engine & Enter Workspace</p>
+            <p>Optimized Audio & Video Engine</p>
             <button id="enterStudioBtn" class="btn-enter">Enter Studio</button>
+            <p style="font-size: 11px; margin-top: 20px; opacity: 0.7;">
+                <i class="fas fa-lightbulb"></i> Tip: Allow audio autoplay for best experience
+            </p>
         </div>
     </div>
 
     <div id="workspace" class="workspace" style="display: none;">
         <nav>
-            <div class="brand"><i class="fa-solid fa-layer-group"></i> ZenGen <span>PRO</span></div>
+            <div class="brand"><i class="fa-solid fa-layer-group"></i> ZenGen <span>OPTIMIZED</span></div>
             <div class="status-pill" id="statusPill"><div class="dot"></div> System Ready</div>
         </nav>
 
@@ -203,34 +190,56 @@
 
                 <div class="control-group">
                     <button id="generateBtn" class="btn-primary">
-                        <i class="fa-solid fa-rotate"></i> Create Montage
+                        <i class="fa-solid fa-rotate"></i> Generate Content
                     </button>
+                    <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
+                        Downloads 2 short videos for better performance
+                    </p>
                 </div>
                 
                 <div class="divider"></div>
 
                 <div class="control-group">
                     <button id="recordBtn" disabled class="btn-record">
-                        <div class="rec-icon"></div> Record (1 Min)
+                        <div class="rec-icon"></div> Record 60s Video
                     </button>
+                    
+                    <div class="quality-selector">
+                        <p style="font-size: 11px; margin-bottom: 8px; opacity: 0.7;">
+                            <i class="fas fa-cog"></i> Recording Quality
+                        </p>
+                        <div class="quality-option selected" data-quality="balanced">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <strong>Balanced</strong>
+                                <div style="font-size: 10px; opacity: 0.7;">Best performance</div>
+                            </div>
+                        </div>
+                        <div class="quality-option" data-quality="high">
+                            <i class="far fa-circle"></i>
+                            <div>
+                                <strong>High Quality</strong>
+                                <div style="font-size: 10px; opacity: 0.7;">May cause lag</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Volume Control -->
-                <div class="volume-control">
-                    <button id="muteBtn">
-                        <i class="fas fa-volume-up"></i>
+                <!-- Audio Test Button -->
+                <div class="control-group">
+                    <button id="audioTestBtn" style="background: #333; color: white; margin-top: 10px;">
+                        <i class="fas fa-volume-up"></i> Test Audio
                     </button>
-                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
                 </div>
             </aside>
 
             <main class="monitor-section">
                 <div class="video-wrapper">
-                    <video id="vid1" class="active" crossorigin="anonymous" playsinline muted></video>
-                    <video id="vid2" class="standby" crossorigin="anonymous" playsinline muted></video>
+                    <video id="vid1" class="active" crossorigin="anonymous" playsinline preload="auto"></video>
+                    <video id="vid2" class="standby" crossorigin="anonymous" playsinline preload="auto"></video>
                     
                     <div class="playback-controls">
-                        <button id="playPauseBtn"><i class="fa-solid fa-pause"></i></button>
+                        <button id="playPauseBtn"><i class="fa-solid fa-play"></i></button>
                     </div>
 
                     <div id="audioVisualizer" class="visualizer-overlay">
@@ -239,137 +248,7 @@
                         <div class="bar"></div>
                         <div class="bar"></div>
                     </div>
-                </div>
-            </main>
-
-            <aside class="meta-sidebar" id="metaPanel">
-                <div class="meta-header"><h3><i class="fa-solid fa-chart-line"></i> SEO Metadata</h3></div>
-                <div class="meta-field">
-                    <label>Title</label>
-                    <div class="input-row">
-                        <input type="text" id="videoTitle" readonly>
-                        <button id="copyTitleBtn"><i class="fa-regular fa-copy"></i></button>
-                    </div>
-                </div>
-                <div class="meta-field">
-                    <label>Description</label>
-                    <div class="input-row">
-                        <textarea id="videoDesc" rows="5" readonly></textarea>
-                        <button id="copyDescBtn"><i class="fa-regular fa-copy"></i></button>
-                    </div>
-                </div>
-                <div class="meta-field">
-                    <label>Tags (20+)</label>
-                    <div class="input-row">
-                        <textarea id="videoTags" rows="6" readonly></textarea>
-                        <button id="copyTagsBtn"><i class="fa-regular fa-copy"></i></button>
-                    </div>
-                </div>
-                <div class="upload-shortcuts">
-                    <label><i class="fa-solid fa-share-nodes"></i> Share To</label>
-                    <div class="social-grid">
-                        <a href="https://studio.youtube.com" target="_blank" class="s-link yt">
-                            <i class="fa-brands fa-youtube"></i>
-                        </a>
-                        <a href="https://www.tiktok.com/upload" target="_blank" class="s-link tt">
-                            <i class="fa-brands fa-tiktok"></i>
-                        </a>
-                        <a href="https://www.instagram.com/" target="_blank" class="s-link ig">
-                            <i class="fa-brands fa-instagram"></i>
-                        </a>
-                        <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-link fb">
-                            <i class="fa-brands fa-facebook"></i>
-                        </a>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </div>
-    
-    <script src="app.js"></script>
-    <script>
-    // Additional audio controls
-    document.addEventListener('DOMContentLoaded', function() {
-        // Volume control
-        const volumeSlider = document.getElementById('volumeSlider');
-        const muteBtn = document.getElementById('muteBtn');
-        let isMuted = false;
-        let previousVolume = 0.8;
-        
-        if (volumeSlider && muteBtn) {
-            volumeSlider.addEventListener('input', function() {
-                const volume = parseFloat(this.value);
-                if (window.audioEngine && window.audioEngine.audioElement) {
-                    window.audioEngine.audioElement.volume = volume;
-                    if (window.audioEngine.gainNode) {
-                        window.audioEngine.gainNode.gain.value = volume;
-                    }
                     
-                    // Update mute button icon
-                    if (volume === 0) {
-                        muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                        isMuted = true;
-                    } else {
-                        muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                        isMuted = false;
-                    }
-                    
-                    // Save volume
-                    previousVolume = volume;
-                }
-            });
-            
-            muteBtn.addEventListener('click', function() {
-                if (window.audioEngine && window.audioEngine.audioElement) {
-                    if (isMuted) {
-                        // Unmute
-                        window.audioEngine.audioElement.volume = previousVolume;
-                        if (window.audioEngine.gainNode) {
-                            window.audioEngine.gainNode.gain.value = previousVolume;
-                        }
-                        volumeSlider.value = previousVolume;
-                        muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                        isMuted = false;
-                    } else {
-                        // Mute
-                        previousVolume = window.audioEngine.audioElement.volume;
-                        window.audioEngine.audioElement.volume = 0;
-                        if (window.audioEngine.gainNode) {
-                            window.audioEngine.gainNode.gain.value = 0;
-                        }
-                        volumeSlider.value = 0;
-                        muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                        isMuted = true;
-                    }
-                }
-            });
-        }
-        
-        // Show audio help after 3 seconds if no interaction
-        setTimeout(() => {
-            if (!window.isPlaying) {
-                document.getElementById('audioHelp').style.display = 'block';
-            }
-        }, 3000);
-        
-        // Show Mac notice if on Mac
-        if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
-            document.getElementById('macNotice').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('macNotice').style.display = 'none';
-            }, 5000);
-        }
-        
-        // Auto-hide audio help when user interacts
-        document.addEventListener('click', function() {
-            const audioHelp = document.getElementById('audioHelp');
-            if (audioHelp.style.display === 'block') {
-                setTimeout(() => {
-                    audioHelp.style.display = 'none';
-                }, 1000);
-            }
-        });
-    });
-    </script>
-</body>
-</html>
+                    <!-- Audio Indicator -->
+                    <div style="position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                        <i class="fas fa-headphones"></i> Audio: <
