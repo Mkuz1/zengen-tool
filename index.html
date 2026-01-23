@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Pro</title>
+    <title>ZenGen Studio | AI Nature Video Generator</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +19,7 @@
         <div class="splash-content">
             <i class="fa-solid fa-wave-square fa-3x"></i>
             <h1>ZenGen Studio</h1>
-            <p>Initialize Audio Engine & Enter Workspace</p>
+            <p>Initialize Procedural Audio Engine & Enter Workspace</p>
             <button onclick="initStudio()" class="btn-enter">Enter Studio</button>
         </div>
     </div>
@@ -22,8 +27,13 @@
     <div id="workspace" class="workspace" style="display: none;">
         
         <nav>
-            <div class="brand"><i class="fa-solid fa-layer-group"></i> ZenGen <span>PRO</span></div>
-            <div class="status-pill" id="statusPill"><div class="dot"></div>Ready</div>
+            <div class="brand">
+                <i class="fa-solid fa-layer-group"></i> ZenGen <span>PRO</span>
+            </div>
+            
+            <div class="status-pill" id="statusPill">
+                <div class="dot"></div> Ready
+            </div>
         </nav>
 
         <div class="main-layout">
@@ -62,9 +72,14 @@
             <main class="monitor-section">
                 <div class="video-wrapper">
                     <video id="mainVideo" crossOrigin="anonymous" loop playsinline muted></video>
+                    
                     <div id="audioVisualizer" class="visualizer-overlay">
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
                     </div>
+                    
                     <audio id="bgAudio" crossOrigin="anonymous" loop></audio>
                 </div>
             </main>
@@ -77,37 +92,38 @@
                 <div class="meta-field">
                     <label>Generated Title</label>
                     <div class="input-row">
-                        <input type="text" id="videoTitle" readonly>
-                        <button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button>
+                        <input type="text" id="videoTitle" readonly placeholder="Title will appear here...">
+                        <button onclick="copyToClip('videoTitle')" title="Copy Title"><i class="fa-regular fa-copy"></i></button>
                     </div>
                 </div>
 
                 <div class="meta-field">
                     <label>Description</label>
                     <div class="input-row">
-                        <textarea id="videoDesc" rows="4" readonly></textarea>
-                        <button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button>
+                        <textarea id="videoDesc" rows="5" readonly placeholder="Description will appear here..."></textarea>
+                        <button onclick="copyToClip('videoDesc')" title="Copy Description"><i class="fa-regular fa-copy"></i></button>
                     </div>
                 </div>
 
                 <div class="meta-field">
-                    <label>Viral Tags</label>
+                    <label>Viral Tags (15 Unique)</label>
                     <div class="input-row">
-                        <textarea id="videoTags" rows="4" readonly></textarea>
-                        <button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button>
+                        <textarea id="videoTags" rows="4" readonly placeholder="#tags #will #appear #here"></textarea>
+                        <button onclick="copyToClip('videoTags')" title="Copy Tags"><i class="fa-regular fa-copy"></i></button>
                     </div>
                 </div>
 
                 <div class="upload-shortcuts">
-                    <label>Quick Upload</label>
+                    <label>Quick Upload Shortcuts</label>
                     <div class="social-grid">
-                        <a href="https://studio.youtube.com" target="_blank" class="s-link yt"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="https://www.tiktok.com/upload" target="_blank" class="s-link tt"><i class="fa-brands fa-tiktok"></i></a>
-                        <a href="https://www.instagram.com/" target="_blank" class="s-link ig"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-link fb"><i class="fa-brands fa-facebook"></i></a>
+                        <a href="https://studio.youtube.com" target="_blank" class="s-link yt" title="Upload to YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="https://www.tiktok.com/upload" target="_blank" class="s-link tt" title="Upload to TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                        <a href="https://www.instagram.com/" target="_blank" class="s-link ig" title="Upload to Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/latest/composer" target="_blank" class="s-link fb" title="Upload to Facebook"><i class="fa-brands fa-facebook"></i></a>
                     </div>
                 </div>
             </aside>
+
         </div>
     </div>
 
