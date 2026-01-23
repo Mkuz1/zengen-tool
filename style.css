@@ -1,86 +1,224 @@
+/* --- 1. GLOBAL VARIABLES --- */
 :root {
-    --bg-dark: #050505;
-    --panel-bg: #111111;
-    --border: #222;
-    --primary: #ffffff;
-    --accent: #3b82f6;
-    --record-red: #ef4444;
-    --text-main: #e5e5e5;
-    --text-muted: #737373;
+    --bg-dark: #050505;       /* Deepest Black */
+    --panel-bg: #111111;      /* Slightly lighter for panels */
+    --border: #222;           /* Subtle borders */
+    --primary: #ffffff;       /* White text/accents */
+    --accent: #3b82f6;        /* Professional Blue (for Active states) */
+    --record-red: #ef4444;    /* Recording Red */
+    --text-main: #e5e5e5;     /* Main text color */
+    --text-muted: #737373;    /* Muted text color */
     --font: 'Manrope', sans-serif;
 }
 
+/* --- 2. BASE RESET --- */
 body {
-    margin: 0; background-color: var(--bg-dark); font-family: var(--font); color: var(--text-main);
-    overflow: hidden; height: 100vh;
+    margin: 0;
+    background-color: var(--bg-dark);
+    font-family: var(--font);
+    color: var(--text-main);
+    overflow: hidden; /* Prevent scrolling, app-like feel */
+    height: 100vh;
 }
 
-/* SPLASH */
+/* --- 3. SPLASH SCREEN (Enter Studio) --- */
 .splash-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
-    display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s;
+    position: fixed;
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease;
 }
 .splash-content { text-align: center; }
-.btn-enter { background: white; color: black; border: none; padding: 15px 40px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+.splash-content i { color: var(--text-main); margin-bottom: 20px; }
+.splash-content h1 { font-weight: 800; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2rem; }
+.splash-content p { color: var(--text-muted); margin-bottom: 30px; font-size: 0.9rem; }
+.btn-enter {
+    background: white; color: black; border: none; padding: 15px 40px;
+    font-size: 1rem; font-weight: 700; border-radius: 6px; cursor: pointer;
+    transition: transform 0.2s;
+}
+.btn-enter:hover { transform: scale(1.05); }
 
-/* LAYOUT */
-.workspace { display: flex; flex-direction: column; height: 100vh; }
-nav { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; background: var(--panel-bg); }
-.brand { font-weight: 800; font-size: 1.2rem; }
-.brand span { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; margin-left: 8px; color: #aaa; }
+/* --- 4. WORKSPACE LAYOUT --- */
+.workspace {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
 
-.status-pill { font-size: 0.8rem; background: #000; padding: 6px 14px; border-radius: 20px; border: 1px solid #333; display: flex; align-items: center; gap: 8px; }
+/* Navigation Bar */
+nav {
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    background: var(--panel-bg);
+}
+.brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+.brand span { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; color: #aaa; }
+
+/* Status Indicator Pill */
+.status-pill {
+    font-size: 0.8rem; background: #000; padding: 6px 14px; border-radius: 20px;
+    border: 1px solid #333; display: flex; align-items: center; gap: 8px; color: var(--text-muted);
+}
 .dot { width: 8px; height: 8px; background: #444; border-radius: 50%; }
 .status-pill.active .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .status-pill.recording .dot { background: var(--record-red); box-shadow: 0 0 10px var(--record-red); }
 
-.main-layout { display: grid; grid-template-columns: 300px 1fr 350px; flex: 1; overflow: hidden; }
-
-/* CONTROLS */
-aside { padding: 30px; background: var(--panel-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 25px; overflow-y: auto; }
-.meta-sidebar { border-right: none; border-left: 1px solid var(--border); }
-label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
-select { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 6px; appearance: none; cursor: pointer; }
-button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
-.btn-primary { background: #222; color: white; border: 1px solid #333; }
-.btn-primary:hover { background: #333; }
-.btn-record { background: var(--primary); color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.rec-icon { width: 12px; height: 12px; background: var(--record-red); border-radius: 50%; }
-
-/* VIDEO MONITOR (PING PONG STACKING) */
-.monitor-section { background: #000; display: flex; align-items: center; justify-content: center; padding: 40px; }
-.video-wrapper {
-    width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #111; border: 1px solid #333;
-    position: relative; /* Critical */
+/* Main Grid Layout */
+.main-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 350px; /* Sidebar | Monitor | Meta */
+    flex: 1;
     overflow: hidden;
 }
 
-.video-wrapper video {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s;
+/* --- 5. SIDEBARS (Controls & Metadata) --- */
+aside {
+    padding: 30px;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto; /* Scrollable if content overflows */
 }
-.video-wrapper video.active { opacity: 1; z-index: 2; }
-.video-wrapper video.standby { opacity: 0; z-index: 1; }
+.meta-sidebar { border-right: none; border-left: 1px solid var(--border); }
 
-.visualizer-overlay { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 4px; align-items: flex-end; height: 30px; z-index: 10; opacity: 0; }
+/* Input Styling */
+.control-group label, .meta-field label {
+    display: block; font-size: 0.7rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
+}
+
+/* Custom Select Dropdown */
+.custom-select { position: relative; }
+select {
+    width: 100%; background: #000; border: 1px solid #333; color: white;
+    padding: 12px 15px; border-radius: 6px; appearance: none; font-family: var(--font);
+    cursor: pointer; font-size: 0.95rem;
+}
+.custom-select i { position: absolute; right: 15px; top: 15px; pointer-events: none; font-size: 0.8rem; color: #666; }
+
+/* Buttons */
+button { width: 100%; padding: 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; }
+
+.btn-primary { background: #222; color: white; border: 1px solid #333; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-primary:hover { background: #333; border-color: #555; }
+
+.btn-record { background: var(--primary); color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-record:disabled { opacity: 0.5; cursor: not-allowed; background: #555; }
+.rec-icon { width: 12px; height: 12px; background: var(--record-red); border-radius: 50%; }
+
+.divider { height: 1px; background: #222; margin: 10px 0; }
+.hint { font-size: 0.75rem; color: #555; text-align: center; margin-top: 10px; }
+
+/* --- 6. VIDEO MONITOR (THE DUAL-PLAYER STACK) --- */
+.monitor-section {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    position: relative;
+}
+
+.video-wrapper {
+    width: 100%;
+    max-width: 900px;
+    aspect-ratio: 16/9;
+    background: #111;
+    border: 1px solid #333;
+    position: relative; /* Essential for absolute positioning of children */
+    overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* Stacking the Videos */
+.video-wrapper video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: opacity 0.2s ease-in-out; /* Smooth cross-fade */
+}
+
+/* Active Player: Fully Visible */
+.video-wrapper video.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* Standby Player: Hidden (Safari Hack applied here) */
+.video-wrapper video.standby {
+    opacity: 0.01; /* Must be > 0 to keep Safari from pausing it */
+    z-index: 1;
+}
+
+/* Visualizer Bars */
+.visualizer-overlay {
+    position: absolute; bottom: 20px; right: 20px;
+    display: flex; gap: 4px; align-items: flex-end;
+    height: 30px; opacity: 0; transition: opacity 0.3s;
+    z-index: 10;
+}
 .visualizer-overlay.active { opacity: 1; }
 .visualizer-overlay.active .bar { animation: bounce 1s infinite ease-in-out; }
-.bar { width: 6px; background: rgba(255, 255, 255, 0.9); min-height: 4px; }
+
+.bar { 
+    width: 6px; background: rgba(255, 255, 255, 0.9); 
+    border-radius: 2px; min-height: 4px; 
+}
 .bar:nth-child(1) { animation-duration: 0.8s; }
 .bar:nth-child(2) { animation-duration: 1.2s; }
 .bar:nth-child(3) { animation-duration: 0.5s; }
 .bar:nth-child(4) { animation-duration: 0.9s; }
-@keyframes bounce { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1.2); } }
 
-/* METADATA */
+@keyframes bounce { 
+    0%, 100% { transform: scaleY(0.5); transform-origin: bottom; } 
+    50% { transform: scaleY(1.2); transform-origin: bottom; } 
+}
+
+/* --- 7. METADATA INPUTS --- */
 .input-row { display: flex; background: #000; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
-.input-row input, .input-row textarea { width: 100%; background: transparent; border: none; color: white; padding: 12px; resize: none; }
-.input-row button { width: 45px; background: transparent; border-left: 1px solid #333; color: #555; cursor: pointer; }
-.input-row button:hover { color: white; background: #111; }
-.social-grid { display: flex; gap: 8px; }
-.s-link { flex: 1; height: 35px; display: flex; align-items: center; justify-content: center; background: #222; border-radius: 4px; color: #aaa; text-decoration: none; }
-.s-link:hover { color: white; background: #333; }
+.input-row input, .input-row textarea {
+    width: 100%; background: transparent; border: none; color: white; padding: 12px; 
+    font-family: var(--font); font-size: 0.85rem; resize: none;
+}
+.input-row input:focus, .input-row textarea:focus { outline: none; background: #0a0a0a; }
 
+.input-row button {
+    width: 45px; background: transparent; color: #555; border-left: 1px solid #333; padding: 0;
+    transition: all 0.2s; cursor: pointer;
+}
+.input-row button:hover { color: white; background: #111; }
+
+/* Social Icons */
+.upload-shortcuts label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+.social-grid { display: flex; gap: 8px; }
+.s-link {
+    flex: 1; height: 35px; display: flex; align-items: center; justify-content: center;
+    background: #222; border-radius: 4px; color: #aaa; transition: 0.2s; text-decoration: none;
+}
+.s-link:hover { color: white; background: #333; transform: translateY(-2px); }
+.yt:hover { background: #ff0000; }
+.tt:hover { background: #000; border: 1px solid #444; }
+.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.fb:hover { background: #1877F2; }
+
+/* --- 8. MOBILE RESPONSIVENESS --- */
 @media (max-width: 900px) {
-    .main-layout { grid-template-columns: 1fr; overflow-y: auto; display: block; }
-    aside, .monitor-section { height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-layout { grid-template-columns: 1fr; overflow-y: auto; height: auto; display: block; }
+    aside, .monitor-section { height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
+    .video-wrapper { aspect-ratio: 16/9; max-width: 100%; }
+    .workspace { height: auto; overflow: auto; }
 }
