@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Seamless Montage</title>
+    <title>ZenGen Studio | Pro Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -14,7 +14,7 @@
         <div class="splash-content">
             <i class="fa-solid fa-wave-square fa-3x"></i>
             <h1>ZenGen Studio</h1>
-            <p>Initialize Engine & Enter Workspace</p>
+            <p>Initialize Audio Engine & Enter Workspace</p>
             <button onclick="initStudio()" class="btn-enter">Enter Studio</button>
         </div>
     </div>
@@ -27,25 +27,38 @@
 
         <div class="main-layout">
             <aside class="sidebar">
+                
                 <div class="control-group">
-                    <label>THEME</label>
+                    <label>1. VISUAL THEME</label>
                     <div class="custom-select">
-                        <select id="themeSelect">
-                            <option value="forest">🌲 Forest Ambience</option>
-                            <option value="ocean">🌊 Ocean Waves</option>
-                            <option value="rain">🌧️ Heavy Rain</option>
-                            <option value="fireplace">🔥 Crackling Fire</option>
-                            <option value="snow">❄️ Arctic Wind</option>
+                        <select id="themeSelect" onchange="updateAudioOptions()">
+                            <option value="forest">🌲 Forest</option>
+                            <option value="ocean">🌊 Ocean</option>
+                            <option value="rain">🌧️ Rain</option>
+                            <option value="fireplace">🔥 Fireplace</option>
+                            <option value="snow">❄️ Snow</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
                 </div>
+
+                <div class="control-group">
+                    <label>2. SOUND VARIANT</label>
+                    <div class="custom-select">
+                        <select id="audioVariant">
+                            </select>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+
                 <div class="control-group">
                     <button id="generateBtn" onclick="generateContent()" class="btn-primary">
                         <i class="fa-solid fa-rotate"></i> Create Montage
                     </button>
                 </div>
+                
                 <div class="divider"></div>
+
                 <div class="control-group">
                     <button id="recordBtn" disabled onclick="startRecording()" class="btn-record">
                         <div class="rec-icon"></div> Record (1 Min)
@@ -58,6 +71,10 @@
                     <video id="vid1" class="active" crossOrigin="anonymous" playsinline muted></video>
                     <video id="vid2" class="standby" crossOrigin="anonymous" playsinline muted></video>
                     
+                    <div class="playback-controls">
+                        <button onclick="togglePlay()" id="playPauseBtn"><i class="fa-solid fa-pause"></i></button>
+                    </div>
+
                     <div id="audioVisualizer" class="visualizer-overlay">
                         <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                     </div>
@@ -66,18 +83,31 @@
 
             <aside class="meta-sidebar" id="metaPanel">
                 <div class="meta-header"><h3>SEO Metadata</h3></div>
+                
                 <div class="meta-field">
                     <label>Title</label>
-                    <div class="input-row"><input type="text" id="videoTitle" readonly><button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row">
+                        <input type="text" id="videoTitle" readonly>
+                        <button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
                 </div>
+
                 <div class="meta-field">
                     <label>Description</label>
-                    <div class="input-row"><textarea id="videoDesc" rows="5" readonly></textarea><button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row">
+                        <textarea id="videoDesc" rows="5" readonly></textarea>
+                        <button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
                 </div>
+
                 <div class="meta-field">
                     <label>Tags</label>
-                    <div class="input-row"><textarea id="videoTags" rows="4" readonly></textarea><button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row">
+                        <textarea id="videoTags" rows="4" readonly></textarea>
+                        <button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button>
+                    </div>
                 </div>
+
                 <div class="upload-shortcuts">
                     <label>Upload To</label>
                     <div class="social-grid">
