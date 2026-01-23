@@ -1,13 +1,8 @@
-/**
- * ZenGen - Final Audio Fix
- * Fixes: Silent video export by strictly routing AudioContext
- */
-
-// --- 1. CONFIGURATION ---
+// --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 2. AUDIO SOURCES (CDN) ---
+// NATURAL SOUNDS ONLY (Strictly enforced)
 const AUDIO_LIBRARY = {
     forest: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/forest.mp3"],
     rain: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/rain.mp3"],
@@ -16,11 +11,11 @@ const AUDIO_LIBRARY = {
     snow: ["https://cdn.jsdelivr.net/gh/remvze/moodist@main/public/sounds/wind.mp3"] 
 };
 
-// --- 3. SEO DATA ---
+// SEO DATA
 const SEO_DATA = {
     titles: {
-        adjectives: ["Relaxing", "Calming", "Deep", "Peaceful", "Soothing", "Instant", "Pure"],
-        nouns: ["Ambience", "Atmosphere", "Vibes", "Meditation", "Escape", "Therapy"],
+        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil"],
+        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape"],
         actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying"]
     },
     tags: {
@@ -33,176 +28,170 @@ const SEO_DATA = {
     }
 };
 
-// --- 4. GLOBAL VARIABLES ---
+// GLOBALS
 const videoEl = document.getElementById('mainVideo');
 const audioEl = document.getElementById('bgAudio');
-const loadingEl = document.getElementById('loading');
+const statusPill = document.getElementById('statusPill');
+const statusText = statusPill.childNodes[1]; 
 const recordBtn = document.getElementById('recordBtn');
-const socialPanel = document.getElementById('socialPanel');
 
-// Global Audio Context (Must be reused)
+// AUDIO ENGINE GLOBALS
 let audioCtx;
-let audioSource;
-let audioDest;
+let audioDest;      // Stream destination for Recorder
+let audioSource;    // The node connecting the HTML <audio> to the Context
 
-// --- 5. MAIN LOGIC ---
+// --- 1. INITIALIZATION (The Audio Fix) ---
+async function initStudio() {
+    // A. Start Audio Context on User Gesture
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await audioCtx.resume(); // Force "Running" state
 
+    // B. Setup Routing Logic (Once)
+    // 1. Create Destination for Recorder
+    audioDest = audioCtx.createMediaStreamDestination();
+    
+    // 2. Create Source from <audio> element
+    if (!audioSource) {
+        audioSource = audioCtx.createMediaElementSource(audioEl);
+        
+        // 3. Connect Graph: Source -> Recorder Destination -> Speakers
+        audioSource.connect(audioDest);
+        audioSource.connect(audioCtx.destination);
+    }
+
+    // C. Transition UI
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('workspace').style.display = 'flex';
+}
+
+// --- 2. GENERATE CONTENT ---
 async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     
-    // UI Reset
-    loadingEl.style.display = 'flex';
-    loadingEl.querySelector('span').innerText = 'Mixing audio & video...';
+    // UI Updates
+    statusPill.className = 'status-pill active';
+    statusText.textContent = "Fetching content...";
     recordBtn.disabled = true;
-    if(socialPanel) socialPanel.style.display = 'none';
+    document.getElementById('audioVisualizer').classList.remove('active');
 
     try {
-        // A. Wake up Audio Context (CRITICAL FIX FOR SOUND)
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
+        // Fetch Video
+        let videoUrl = await fetchPexelsVideo(theme);
+        if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
 
-        // B. Fetch Content
-        let videoData = await fetchPexelsVideo(theme);
-        if (!videoData) videoData = await fetchPixabayVideo(theme);
-        const audioUrl = AUDIO_LIBRARY[theme][0] + "?nocache=" + Date.now();
+        // Fetch Audio (Always first from library)
+        const audioUrl = AUDIO_LIBRARY[theme][0] + "?t=" + Date.now();
 
-        if (videoData) {
-            // C. Setup Player
+        if (videoUrl) {
             videoEl.crossOrigin = "anonymous";
             audioEl.crossOrigin = "anonymous";
             
-            videoEl.src = videoData;
+            videoEl.src = videoUrl;
             audioEl.src = audioUrl;
-            
-            // Ensure volume is up
-            audioEl.volume = 1.0;
 
-            // D. Wait for Load
+            // Wait for load
             await Promise.all([
-                new Promise((resolve) => {
-                    videoEl.onloadeddata = resolve;
-                    videoEl.play();
-                }),
-                new Promise((resolve) => {
-                    audioEl.onloadeddata = resolve;
-                    audioEl.play().catch(e => console.log("Autoplay caught", e));
-                })
+                new Promise(r => videoEl.onloadeddata = r),
+                new Promise(r => audioEl.onloadeddata = r)
             ]);
 
-            loadingEl.style.display = 'none';
-            recordBtn.disabled = false;
+            // Play & Confirm
+            videoEl.play();
+            audioEl.play()
+                .then(() => {
+                    // Show Visualizer if audio plays
+                    document.getElementById('audioVisualizer').classList.add('active');
+                    statusText.textContent = "Playing";
+                    recordBtn.disabled = false;
+                })
+                .catch(e => {
+                    console.error("Autoplay failed:", e);
+                    statusText.textContent = "Click Play needed";
+                });
             
-            // E. SEO
             generateSEO(theme);
-            if(socialPanel) socialPanel.style.display = 'block';
-            
         }
     } catch (error) {
         console.error(error);
-        loadingEl.querySelector('span').innerText = 'Error loading content.';
+        statusText.textContent = "Error loading";
     }
 }
 
-// --- 6. API FETCHERS ---
+// --- 3. FETCHERS ---
 const usedVideoIds = new Set();
-
 async function fetchPexelsVideo(query) {
     try {
-        const randomPage = Math.floor(Math.random() * 10) + 1;
-        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=10&page=${randomPage}&orientation=landscape`, {
+        const page = Math.floor(Math.random() * 10) + 1;
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=10&page=${page}&orientation=landscape`, {
             headers: { Authorization: PEXELS_KEY }
         });
         const data = await res.json();
         if (data.videos?.length > 0) {
-            const newVideos = data.videos.filter(v => !usedVideoIds.has(v.id));
-            const pool = newVideos.length > 0 ? newVideos : data.videos;
-            const video = pool[Math.floor(Math.random() * pool.length)];
-            usedVideoIds.add(video.id);
-            const file = video.video_files.find(f => f.width === 1280) || video.video_files[0];
-            return file.link;
+            const fresh = data.videos.filter(v => !usedVideoIds.has(v.id));
+            const pool = fresh.length ? fresh : data.videos;
+            const vid = pool[Math.floor(Math.random() * pool.length)];
+            usedVideoIds.add(vid.id);
+            return vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
         }
-    } catch (e) { console.log('Pexels skipped'); }
-    return null;
+    } catch (e) {} return null;
 }
 
 async function fetchPixabayVideo(query) {
     try {
-        const randomPage = Math.floor(Math.random() * 5) + 1;
-        const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=10&page=${randomPage}`);
+        const page = Math.floor(Math.random() * 5) + 1;
+        const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=10&page=${page}`);
         const data = await res.json();
-        if (data.hits.length > 0) {
-            return data.hits[Math.floor(Math.random() * data.hits.length)].videos.medium.url;
-        }
-    } catch (e) { console.log('Pixabay skipped'); }
-    return null;
+        if (data.hits.length) return data.hits[Math.floor(Math.random() * data.hits.length)].videos.medium.url;
+    } catch (e) {} return null;
 }
 
-// --- 7. SEO GENERATOR ---
+// --- 4. SEO GENERATOR ---
 function generateSEO(theme) {
     const t = SEO_DATA.titles;
     const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
     const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
     const action = t.actions[Math.floor(Math.random() * t.actions.length)];
     
-    document.getElementById('metaPanel').style.display = 'block';
     document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase() + theme.slice(1)} ${noun} ${action}`;
-    document.getElementById('videoDesc').value = `Enjoy ${adj} ${theme} ${noun}. Natural sounds only. #${theme}`;
+    document.getElementById('videoDesc').value = `Enjoy this ${adj.toLowerCase()} ${theme} ${noun.toLowerCase()}. Pure nature sounds, no music. #${theme} #relax`;
     
-    const pool = [...SEO_DATA.tags[theme], ...SEO_DATA.tags.common];
-    document.getElementById('videoTags').value = [...new Set(pool.sort(() => 0.5 - Math.random()))].slice(0, 15).join(' ');
+    const tags = [...SEO_DATA.tags[theme], ...SEO_DATA.tags.common];
+    document.getElementById('videoTags').value = [...new Set(tags.sort(() => .5 - Math.random()))].slice(0, 15).join(' ');
 }
 
 function copyToClip(id) {
     document.getElementById(id).select();
     document.execCommand("copy");
+    statusText.textContent = "Copied to clipboard!";
+    setTimeout(() => statusText.textContent = "Ready", 2000);
 }
 
-// --- 8. RECORDING (AUDIO FIX) ---
-
+// --- 5. RECORDING (AUDIO-SAFE) ---
 function startRecording() {
-    // 1. Initialize Audio Context if missing
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // 2. Create Media Stream Destination (The "Recorder Input")
-    if (!audioDest) audioDest = audioCtx.createMediaStreamDestination();
+    // Safety check
+    if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    // 3. Connect Audio Element to Context (If not already connected)
-    // We wrap this in try/catch because connecting the same node twice throws an error
-    try {
-        if (!audioSource) {
-            audioSource = audioCtx.createMediaElementSource(audioEl);
-            audioSource.connect(audioDest);       // Connect to Recorder
-            audioSource.connect(audioCtx.destination); // Connect to Speakers (so you can hear it)
-        }
-    } catch (e) {
-        console.log("Audio node already connected, reusing...");
-    }
-
-    // 4. Create Canvas Stream (Video)
+    // Setup Video Stream
     const canvas = document.createElement('canvas');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
     const ctx = canvas.getContext('2d');
     const canvasStream = canvas.captureStream(30);
 
-    // 5. Combine Video + Audio (The Critical Mix)
-    // We strictly pull the audio track from the 'audioDest' we created above
-    const audioTrack = audioDest.stream.getAudioTracks()[0];
-    const combinedTracks = [...canvasStream.getVideoTracks()];
-    
-    if (audioTrack) {
-        combinedTracks.push(audioTrack);
-    } else {
-        alert("Warning: Audio track not detected. Please try reloading the page.");
+    // COMBINE: Video Stream + The Audio Destination Stream (which we connected in init)
+    const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...audioDest.stream.getAudioTracks() // This is the Clean Audio Feed
+    ];
+
+    if (audioDest.stream.getAudioTracks().length === 0) {
+        alert("Audio Engine not active. Refresh and click 'Enter Studio'.");
+        return;
     }
 
     const combinedStream = new MediaStream(combinedTracks);
-
-    // 6. Start Recorder (MP4 Preferred)
+    
+    // Format Logic
     let options = { mimeType: 'video/webm; codecs=vp9' };
     let ext = 'webm';
     if (MediaRecorder.isTypeSupported('video/mp4')) { options = { mimeType: 'video/mp4' }; ext = 'mp4'; }
@@ -211,31 +200,29 @@ function startRecording() {
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
 
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-    
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const theme = document.getElementById('themeSelect').value;
-        a.download = `ZenGen-${theme}-${Date.now()}.${ext}`;
+        a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.${ext}`;
         a.click();
         
-        recordBtn.innerText = "Record 1-Min Clip";
+        recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
         recordBtn.disabled = false;
+        statusPill.className = 'status-pill active';
+        statusText.textContent = "Export Complete";
         clearInterval(drawInterval);
     };
 
-    // Animation Loop
-    const drawInterval = setInterval(() => {
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    }, 1000 / 30);
+    const drawInterval = setInterval(() => ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height), 1000/30);
 
     mediaRecorder.start();
     recordBtn.innerText = "Recording... (Wait 60s)";
     recordBtn.disabled = true;
-
-    // Stop after 60s
+    statusPill.className = 'status-pill recording';
+    statusText.textContent = "Recording in progress...";
+    
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
