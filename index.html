@@ -1,3 +1,5 @@
+[file name]: index.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +17,7 @@
             <i class="fa-solid fa-wave-square fa-3x"></i>
             <h1>ZenGen Studio</h1>
             <p>Initialize Audio Engine & Enter Workspace</p>
-            <button onclick="initStudio()" class="btn-enter">Enter Studio</button>
+            <button id="enterStudioBtn" class="btn-enter">Enter Studio</button>
         </div>
     </div>
 
@@ -31,7 +33,7 @@
                 <div class="control-group">
                     <label>1. VISUAL THEME</label>
                     <div class="custom-select">
-                        <select id="themeSelect" onchange="loadAudioOptions()">
+                        <select id="themeSelect">
                             <option value="forest">🌲 Forest</option>
                             <option value="ocean">🌊 Ocean</option>
                             <option value="rain">🌧️ Rain</option>
@@ -52,7 +54,7 @@
                 </div>
 
                 <div class="control-group">
-                    <button id="generateBtn" onclick="generateContent()" class="btn-primary">
+                    <button id="generateBtn" class="btn-primary">
                         <i class="fa-solid fa-rotate"></i> Create Montage
                     </button>
                 </div>
@@ -60,7 +62,7 @@
                 <div class="divider"></div>
 
                 <div class="control-group">
-                    <button id="recordBtn" disabled onclick="startRecording()" class="btn-record">
+                    <button id="recordBtn" disabled class="btn-record">
                         <div class="rec-icon"></div> Record (1 Min)
                     </button>
                 </div>
@@ -72,7 +74,7 @@
                     <video id="vid2" class="standby" crossOrigin="anonymous" playsinline muted></video>
                     
                     <div class="playback-controls">
-                        <button onclick="togglePlay()" id="playPauseBtn"><i class="fa-solid fa-pause"></i></button>
+                        <button id="playPauseBtn"><i class="fa-solid fa-pause"></i></button>
                     </div>
 
                     <div id="audioVisualizer" class="visualizer-overlay">
@@ -85,15 +87,15 @@
                 <div class="meta-header"><h3>SEO Metadata</h3></div>
                 <div class="meta-field">
                     <label>Title</label>
-                    <div class="input-row"><input type="text" id="videoTitle" readonly><button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row"><input type="text" id="videoTitle" readonly><button id="copyTitleBtn"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
                 <div class="meta-field">
                     <label>Description</label>
-                    <div class="input-row"><textarea id="videoDesc" rows="5" readonly></textarea><button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row"><textarea id="videoDesc" rows="5" readonly></textarea><button id="copyDescBtn"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
                 <div class="meta-field">
                     <label>Tags (20+)</label>
-                    <div class="input-row"><textarea id="videoTags" rows="6" readonly></textarea><button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button></div>
+                    <div class="input-row"><textarea id="videoTags" rows="6" readonly></textarea><button id="copyTagsBtn"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
                 <div class="upload-shortcuts">
                     <label>Share To</label>
@@ -110,3 +112,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+[file content end]
