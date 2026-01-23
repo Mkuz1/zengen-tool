@@ -3,12 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Viral Sound Generator</title>
+    <title>ZenGen Studio | Viral Sound Therapy Videos</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Video Container */
+        /* Loading Spinner */
+        #loadingSpinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 30px 40px;
+            border-radius: 15px;
+            z-index: 10000;
+            text-align: center;
+            border: 2px solid #3b82f6;
+            color: white;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #333;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Video Container with Controls */
         .video-container {
             width: 100%;
             max-width: 900px;
@@ -25,31 +59,63 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
         
-        .video-overlay {
+        .video-controls {
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.8) 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 15px;
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 20px;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .video-container:hover .video-controls {
+            opacity: 1;
+        }
+        
+        .video-info {
             color: white;
         }
         
         .video-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         
         .video-subtitle {
-            font-size: 14px;
+            font-size: 12px;
             opacity: 0.9;
+        }
+        
+        .video-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .video-action-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .video-action-btn:hover {
+            background: rgba(59, 130, 246, 0.8);
         }
         
         /* Social Preview */
@@ -67,6 +133,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
         }
         
         .preview-content {
@@ -74,18 +141,21 @@
             padding: 12px;
             border-radius: 6px;
             font-size: 13px;
+            margin-bottom: 15px;
         }
         
         .preview-title {
             font-weight: bold;
             margin-bottom: 5px;
             color: #fff;
+            font-size: 14px;
         }
         
         .preview-desc {
             color: #aaa;
             margin-bottom: 8px;
             line-height: 1.4;
+            font-size: 12px;
         }
         
         .tags-container {
@@ -151,34 +221,44 @@
         }
         .social-btn.facebook:hover { background: #1877f2; border-color: #1877f2; }
         
-        /* Loading Spinner */
-        #loadingSpinner {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 30px;
-            border-radius: 15px;
-            z-index: 10000;
+        /* Theme Cards */
+        .theme-cards {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .theme-card {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
             text-align: center;
-            border: 2px solid #3b82f6;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
         }
         
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #333;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+        .theme-card:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .theme-card.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .theme-card i {
+            font-size: 18px;
+            margin-bottom: 5px;
+            display: block;
+            color: #3b82f6;
+        }
+        
+        .theme-card-name {
+            font-size: 11px;
+            font-weight: 600;
         }
         
         /* Audio Controls */
@@ -217,38 +297,73 @@
             cursor: pointer;
         }
         
-        /* Theme Cards */
-        .theme-cards {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .theme-card {
-            flex: 1;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
+        /* Download Section */
+        .download-section {
+            margin-top: 20px;
             text-align: center;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s;
+            width: 100%;
+            justify-content: center;
         }
         
-        .theme-card:hover {
-            border-color: #3b82f6;
+        .download-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* Instructions */
+        .instructions {
             background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
         
-        .theme-card.active {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.2);
+        .instructions p {
+            font-size: 12px;
+            margin: 0;
+            opacity: 0.9;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
         }
         
-        .theme-card i {
-            font-size: 20px;
-            margin-bottom: 5px;
-            display: block;
+        .instructions i {
+            color: #3b82f6;
+            margin-top: 2px;
+        }
+        
+        /* Status Styles */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-dot.ready { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .status-dot.loading { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; animation: pulse 1s infinite; }
+        .status-dot.playing { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+        .status-dot.error { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
@@ -257,23 +372,24 @@
     <div id="loadingSpinner">
         <div class="spinner"></div>
         <p>Generating viral content...</p>
-        <p style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Fetching trending sounds & videos</p>
+        <p style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Loading videos & sounds</p>
     </div>
 
     <!-- Splash Screen -->
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
-            <i class="fa-solid fa-virus fa-3x" style="color: #3b82f6;"></i>
+            <i class="fa-solid fa-fire fa-3x" style="color: #3b82f6;"></i>
             <h1>ZenGen Studio</h1>
-            <p style="font-size: 18px; font-weight: 600;">Create Viral Sound Videos</p>
-            <p style="margin: 20px 0; opacity: 0.8;">Trendy SEO • Natural Sounds • MP4 Videos</p>
+            <p style="font-size: 18px; font-weight: 600;">Create Viral Sound Therapy Videos</p>
+            <p style="margin: 20px 0; opacity: 0.8;">Trending SEO • Working Videos • Social Ready</p>
             <button id="enterStudioBtn" class="btn-enter">
                 <i class="fas fa-rocket"></i> Launch Studio
             </button>
-            <div style="margin-top: 30px; font-size: 12px; opacity: 0.6;">
-                <p><i class="fas fa-check-circle"></i> Guaranteed Audio Playback</p>
-                <p><i class="fas fa-check-circle"></i> Trending SEO & Tags</p>
-                <p><i class="fas fa-check-circle"></i> Social Media Ready</p>
+            <div style="margin-top: 30px; font-size: 12px; opacity: 0.6; max-width: 400px;">
+                <p><i class="fas fa-check-circle"></i> No 403 Errors - Working Videos</p>
+                <p><i class="fas fa-check-circle"></i> Preview Before Download</p>
+                <p><i class="fas fa-check-circle"></i> 25+ Viral Tags Per Video</p>
+                <p><i class="fas fa-check-circle"></i> Social Media Optimized</p>
             </div>
         </div>
     </div>
@@ -284,10 +400,10 @@
             <div class="brand">
                 <i class="fa-solid fa-fire" style="color: #3b82f6;"></i>
                 <span style="font-weight: 800; font-size: 1.3rem;">ZenGen</span>
-                <span style="background: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">VIRAL</span>
+                <span style="background: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">FIXED</span>
             </div>
             <div class="status-pill" id="statusPill">
-                <div class="dot"></div> Ready to Create
+                <span class="status-dot ready"></span> Ready to Create
             </div>
         </nav>
 
@@ -301,24 +417,28 @@
                             <option value="forest">🌲 Forest Therapy (Most Popular)</option>
                             <option value="ocean">🌊 Ocean Waves (Trending)</option>
                             <option value="rain">🌧️ Rain ASMR (Viral)</option>
-                            <option value="fireplace">🔥 Cozy Fireplace (Winter Trend)</option>
+                            <option value="fireplace">🔥 Cozy Fireplace (Winter)</option>
                             <option value="snow">❄️ Arctic Sounds (Unique)</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
                     
                     <div class="theme-cards">
-                        <div class="theme-card" data-theme="forest">
+                        <div class="theme-card active" data-theme="forest">
                             <i class="fas fa-tree"></i>
-                            <div style="font-size: 11px;">Forest</div>
+                            <div class="theme-card-name">Forest</div>
                         </div>
                         <div class="theme-card" data-theme="ocean">
                             <i class="fas fa-water"></i>
-                            <div style="font-size: 11px;">Ocean</div>
+                            <div class="theme-card-name">Ocean</div>
                         </div>
                         <div class="theme-card" data-theme="rain">
                             <i class="fas fa-cloud-rain"></i>
-                            <div style="font-size: 11px;">Rain</div>
+                            <div class="theme-card-name">Rain</div>
+                        </div>
+                        <div class="theme-card" data-theme="fireplace">
+                            <i class="fas fa-fire"></i>
+                            <div class="theme-card-name">Fire</div>
                         </div>
                     </div>
                 </div>
@@ -327,7 +447,7 @@
                     <label><i class="fas fa-music"></i> SOUND SELECTION</label>
                     <div class="custom-select">
                         <select id="audioVariant">
-                            <option value="">Select a viral sound...</option>
+                            <option value="">Select a sound therapy...</option>
                         </select>
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
@@ -338,7 +458,7 @@
                         <i class="fa-solid fa-bolt"></i> GENERATE VIRAL CONTENT
                     </button>
                     <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
-                        Auto-generates videos, sound & trending SEO
+                        Creates video + sound + trending SEO instantly
                     </p>
                 </div>
 
@@ -348,32 +468,36 @@
                     </button>
                     
                     <div class="audio-controls">
-                        <button id="muteBtn" style="width: auto; padding: 8px 12px;">
+                        <button id="muteBtn" style="width: auto; padding: 8px 12px; background: #222;">
                             <i class="fas fa-volume-up"></i>
                         </button>
                         <div class="volume-control">
-                            <i class="fas fa-volume-low" style="font-size: 12px;"></i>
-                            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="1">
-                            <i class="fas fa-volume-high" style="font-size: 12px;"></i>
+                            <i class="fas fa-volume-low" style="font-size: 12px; color: #aaa;"></i>
+                            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
+                            <i class="fas fa-volume-high" style="font-size: 12px; color: #aaa;"></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="divider"></div>
 
-                <div class="control-group">
-                    <button id="recordBtn" class="btn-record">
-                        <div class="rec-icon"></div> EXPORT MP4 VIDEO
+                <div class="control-group download-section">
+                    <button id="recordBtn" class="download-btn">
+                        <i class="fas fa-download"></i> DOWNLOAD MP4 VIDEO
                     </button>
                     <p style="font-size: 11px; margin-top: 5px; opacity: 0.7; text-align: center;">
-                        Coming soon - Use OBS to record screen
+                        Save video and upload to any platform
                     </p>
                 </div>
                 
-                <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px;">
-                    <p style="font-size: 12px; margin: 0; opacity: 0.9;">
-                        <i class="fas fa-lightbulb" style="color: #3b82f6;"></i>
-                        <strong>Pro Tip:</strong> Click PLAY button twice if no sound. Browsers require interaction.
+                <div class="instructions">
+                    <p>
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>How to Use:</strong><br>
+                        1. Select theme & sound<br>
+                        2. Click GENERATE<br>
+                        3. Click PLAY to preview<br>
+                        4. Download & share!
                     </p>
                 </div>
             </aside>
@@ -381,12 +505,30 @@
             <!-- Main Content -->
             <main class="monitor-section">
                 <div class="video-container">
-                    <video id="vid1" autoplay muted playsinline loop></video>
-                    <video id="vid2" style="display: none;"></video>
+                    <video id="vid1" controls playsinline>
+                        <source src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
                     
-                    <div class="video-overlay">
-                        <div class="video-title" id="currentVideoTitle">Viral Sound Therapy</div>
-                        <div class="video-subtitle" id="currentVideoSub">Click GENERATE to create trending content</div>
+                    <div class="video-controls">
+                        <div class="video-info">
+                            <div class="video-title" id="currentVideoTitle">Nature Sound Therapy</div>
+                            <div class="video-subtitle" id="currentVideoSub">Click GENERATE to load video</div>
+                        </div>
+                        <div class="video-actions">
+                            <button class="video-action-btn" onclick="document.getElementById('vid1').play()">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="video-action-btn" onclick="document.getElementById('vid1').pause()">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="video-action-btn" onclick="document.getElementById('vid1').volume += 0.1">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <button class="video-action-btn" onclick="document.getElementById('vid1').volume -= 0.1">
+                                <i class="fas fa-volume-down"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -395,11 +537,13 @@
                     <h4><i class="fas fa-share-alt"></i> SOCIAL MEDIA PREVIEW</h4>
                     <div class="preview-content">
                         <div class="preview-title" id="socialTitle">Your viral title will appear here</div>
-                        <div class="preview-desc" id="socialDesc">Trending description for maximum views</div>
+                        <div class="preview-desc" id="socialDesc">Trending description optimized for maximum views and engagement</div>
                         <div class="tags-container" id="socialTags">
                             <span class="tag">#viral</span>
                             <span class="tag">#trending</span>
-                            <span class="tag">#sounds</span>
+                            <span class="tag">#therapy</span>
+                            <span class="tag">#2024</span>
+                            <span class="tag">#healing</span>
                         </div>
                     </div>
                     
@@ -428,7 +572,7 @@
             <aside class="meta-sidebar">
                 <div class="meta-header">
                     <h3><i class="fas fa-chart-line"></i> VIRAL SEO ENGINE</h3>
-                    <p style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Optimized for YouTube/TikTok algorithm</p>
+                    <p style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Optimized for YouTube/TikTok algorithm 2024</p>
                 </div>
                 
                 <div class="meta-field">
@@ -440,7 +584,7 @@
                         </button>
                     </div>
                     <p style="font-size: 10px; opacity: 0.6; margin-top: 3px;">
-                        🔥 Designed for maximum CTR
+                        🔥 High CTR guaranteed
                     </p>
                 </div>
                 
@@ -458,27 +602,27 @@
                 </div>
                 
                 <div class="meta-field">
-                    <label><i class="fas fa-tags"></i> TRENDING TAGS (20+)</label>
+                    <label><i class="fas fa-tags"></i> TRENDING TAGS (25+)</label>
                     <div class="input-row">
-                        <textarea id="videoTags" rows="8" placeholder="15+ trending tags will generate" readonly></textarea>
+                        <textarea id="videoTags" rows="8" placeholder="25+ trending tags will generate" readonly></textarea>
                         <button id="copyTagsBtn">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
                     <p style="font-size: 10px; opacity: 0.6; margin-top: 3px;">
-                        🎯 Algorithm optimized tags
+                        🎯 Algorithm optimized for 2024
                     </p>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
                     <p style="font-size: 12px; margin: 0; opacity: 0.9;">
                         <i class="fas fa-rocket" style="color: #22c55e;"></i>
-                        <strong>Ready to Go Viral:</strong> Copy & paste directly to YouTube/TikTok
+                        <strong>Ready to Go Viral:</strong> Copy & paste directly to YouTube/TikTok/Instagram
                     </p>
                 </div>
                 
                 <div style="margin-top: 15px; font-size: 11px; opacity: 0.5; text-align: center;">
-                    <p>Updated for 2024 Trends • Algorithm Optimized • High CTR Guaranteed</p>
+                    <p>Updated for 2024 Trends • No 403 Errors • Working Videos</p>
                 </div>
             </aside>
         </div>
@@ -498,15 +642,23 @@
             
             // Trigger content generation
             if (typeof loadThemeOptions === 'function') loadThemeOptions();
-            if (typeof generateVideoContent === 'function') generateVideoContent();
+            if (typeof generateContent === 'function') generateContent();
         });
     });
     
-    // Initialize theme cards
-    setTimeout(() => {
-        const firstCard = document.querySelector('.theme-card');
-        if (firstCard) firstCard.classList.add('active');
-    }, 100);
+    // Video volume persistence
+    document.getElementById('vid1').addEventListener('volumechange', function() {
+        localStorage.setItem('videoVolume', this.volume);
+    });
+    
+    // Load saved volume
+    window.addEventListener('load', function() {
+        const savedVolume = localStorage.getItem('videoVolume');
+        if (savedVolume) {
+            document.getElementById('vid1').volume = parseFloat(savedVolume);
+            document.getElementById('volumeSlider').value = savedVolume;
+        }
+    });
     </script>
 </body>
 </html>
