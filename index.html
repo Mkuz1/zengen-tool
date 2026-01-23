@@ -3,156 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenGen Studio | Natural Sounds & MP4 Videos</title>
+    <title>ZenGen Studio | Natural Sounds</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Audio Controls */
-        .audio-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
-        }
-        
-        .audio-preview {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .audio-preview:hover {
-            background: rgba(59, 130, 246, 0.2);
-        }
-        
-        .audio-preview i {
-            color: #3b82f6;
-        }
-        
-        .audio-status-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .audio-status-indicator.playing {
-            background: rgba(34, 197, 94, 0.7);
-        }
-        
-        /* MP4 Badge */
-        .mp4-badge {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(59, 130, 246, 0.9);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        
-        /* Theme Preview */
-        .theme-preview {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-        
-        .theme-sample {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            overflow: hidden;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border 0.2s;
-        }
-        
-        .theme-sample:hover {
-            border-color: #3b82f6;
-        }
-        
-        .theme-sample.active {
-            border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-        
-        /* Loading Overlay */
-        #loadingOverlay {
+        /* Simple loading indicator */
+        #loading {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
             color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 10000;
         }
         
-        .loading-text {
-            margin-top: 20px;
-            font-size: 18px;
+        /* Status message */
+        .status-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
         }
         
-        .loading-subtext {
-            margin-top: 10px;
-            font-size: 14px;
-            opacity: 0.7;
-            max-width: 300px;
-            text-align: center;
-        }
-        
-        /* Video Info */
-        .video-info {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            max-width: 200px;
+        /* Simple controls */
+        .simple-control {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">Loading...</div>
-        <div class="loading-subtext" id="loadingSubtext">Please wait</div>
+    <!-- Loading indicator -->
+    <div id="loading">
+        <i class="fas fa-spinner fa-spin"></i> Loading...
     </div>
+    
+    <!-- Status message -->
+    <div class="status-message" id="statusMsg"></div>
 
+    <!-- Splash Screen -->
     <div id="startScreen" class="splash-screen">
         <div class="splash-content">
-            <i class="fa-solid fa-mountain fa-3x"></i>
+            <i class="fa-solid fa-leaf fa-3x"></i>
             <h1>ZenGen Studio</h1>
-            <p>Royalty-Free Natural Sounds & MP4 Videos</p>
-            <button id="enterStudioBtn" class="btn-enter">Enter Studio</button>
-            <div style="margin-top: 30px; font-size: 12px; opacity: 0.7; max-width: 400px;">
-                <i class="fas fa-check-circle"></i> Features:<br>
-                • Royalty-free natural sounds from Mixkit.co<br>
-                • MP4 video output (YouTube/TikTok/Instagram ready)<br>
-                • SEO-optimized metadata<br>
-                • No
+            <p>Natural Sounds Generator</p>
+            <button id="enterStudioBtn" class="btn-enter">
+                <i class="fas fa-play"></i> Enter Studio
+            </button>
+            <p style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
+                Click the button above to start
+            </p>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div id="workspace" class="workspace" style="display: none;">
+        <nav>
+            <div class="brand">
+                <i class="fa-solid fa-spa"></i> ZenGen Studio
+            </div>
+            <div class="status-pill" id="statusPill">
+                <div class="dot"></div> Ready
+            </div>
+        </nav>
+
+        <div class="main-layout">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <div class="control-group">
+                    <label><i class="fas fa-palette"></i> SELECT THEME</label>
+                    <div class="custom-select">
+                        <select id="themeSelect">
+                            <option value="forest">🌲 Forest</option>
+                            <option value="ocean">🌊 Ocean</option>
+                            <option value="rain">🌧️ Rain</option>
+                            <option value="fireplace">🔥 Fireplace</option>
+                            <option value="snow">❄️ Snow</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label><i class="fas fa-music"></i> SELECT SOUND</label>
+                    <div class="custom-select">
+                        <select id="audioVariant">
+                            <option value="">Choose a sound...</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button id="playPauseBtn" class="btn-primary">
+                        <i class="fa-solid fa-play"></i> Play/Pause Audio
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <button id="generateBtn" class="btn-primary">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Content
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <button id="recordBtn" disabled class="btn-record">
+                        <div class="rec-icon"></div> Record MP4 (Coming Soon)
+                    </button>
+                    <p style="font-size: 11px; margin-top: 5px; opacity: 0.7;">
+                        Recording feature in development
+                    </p>
+                </div>
+                
+                <div class="simple-control">
+                    <p style="font-size: 12px; margin: 0; opacity: 0.8;">
+                        <i class="fas fa-info-circle"></i> Audio works after clicking Play
+                    </p>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="monitor-section">
+                <div class="video-wrapper">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; text-align: center;">
+                        <div>
+                            <i class="fas fa-headphones fa-3x" style="margin-bottom: 20px;"></i>
+                            <h3>Audio Workspace</h3>
+                            <p>Select a theme and sound, then click Play</p>
+                            <p style="font-size: 12px; margin-top: 10px;">
+                                Natural sounds from Mixkit.co
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Sidebar -->
+            <aside class="meta-sidebar">
+                <div class="meta-header">
+                    <h3><i class="fas fa-chart-line"></i> SEO METADATA</h3>
+                </div>
+                
+                <div class="meta-field">
+                    <label>Title</label>
+                    <div class="input-row">
+                        <input type="text" id="videoTitle" placeholder="Title will appear here" readonly>
+                        <button id="copyTitleBtn">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="meta-field">
+                    <label>Description</label>
+                    <div class="input-row">
+                        <textarea id="videoDescription" rows="4" placeholder="Description will appear here" readonly></textarea>
+                        <button id="copyDescBtn">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="meta-field">
+                    <label>Tags</label>
+                    <div class="input-row">
+                        <textarea id="videoTags" rows="3" placeholder="Tags will appear here" readonly></textarea>
+                        <button id="copyTagsBtn">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="upload-shortcuts">
+                    <label><i class="fas fa-share"></i> EXPORT</label>
+                    <div class="social-grid">
+                        <a href="#" class="s-link" style="background: #333;">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        <a href="#" class="s-link" style="background: #333;">
+                            <i class="fas fa-copy"></i> Copy All
+                        </a>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 5px;">
+                    <p style="font-size: 11px; margin: 0; opacity: 0.8;">
+                        <i class="fas fa-lightbulb"></i> 
+                        <strong>Tip:</strong> Use the Play button to test audio. Some browsers require user interaction.
+                    </p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+    // Additional simple functions
+    function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+    
+    function showStatus(text) {
+        const msg = document.getElementById('statusMsg');
+        msg.textContent = text;
+        msg.style.display = 'block';
+        setTimeout(() => {
+            msg.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Audio test function
+    document.addEventListener('click', function() {
+        // This helps with audio autoplay policies
+        console.log("User clicked, audio should work now");
+    });
+    </script>
+</body>
+</html>
