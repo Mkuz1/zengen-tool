@@ -20,14 +20,12 @@
     </div>
 
     <div id="workspace" class="workspace" style="display: none;">
-        
         <nav>
             <div class="brand"><i class="fa-solid fa-layer-group"></i> ZenGen <span>PRO</span></div>
             <div class="status-pill" id="statusPill"><div class="dot"></div> Ready</div>
         </nav>
 
         <div class="main-layout">
-            
             <aside class="sidebar">
                 <div class="control-group">
                     <label>THEME</label>
@@ -42,20 +40,16 @@
                         <i class="fa-solid fa-chevron-down"></i>
                     </div>
                 </div>
-
                 <div class="control-group">
                     <button id="generateBtn" onclick="generateContent()" class="btn-primary">
                         <i class="fa-solid fa-rotate"></i> Create Montage
                     </button>
                 </div>
-
                 <div class="divider"></div>
-
                 <div class="control-group">
                     <button id="recordBtn" disabled onclick="startRecording()" class="btn-record">
                         <div class="rec-icon"></div> Record (1 Min)
                     </button>
-                    <p class="hint">Export: Seamless MP4</p>
                 </div>
             </aside>
 
@@ -72,31 +66,18 @@
 
             <aside class="meta-sidebar" id="metaPanel">
                 <div class="meta-header"><h3>SEO Metadata</h3></div>
-                
                 <div class="meta-field">
                     <label>Title</label>
-                    <div class="input-row">
-                        <input type="text" id="videoTitle" readonly>
-                        <button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button>
-                    </div>
+                    <div class="input-row"><input type="text" id="videoTitle" readonly><button onclick="copyToClip('videoTitle')"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
-
                 <div class="meta-field">
                     <label>Description</label>
-                    <div class="input-row">
-                        <textarea id="videoDesc" rows="5" readonly></textarea>
-                        <button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button>
-                    </div>
+                    <div class="input-row"><textarea id="videoDesc" rows="5" readonly></textarea><button onclick="copyToClip('videoDesc')"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
-
                 <div class="meta-field">
                     <label>Tags</label>
-                    <div class="input-row">
-                        <textarea id="videoTags" rows="4" readonly></textarea>
-                        <button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button>
-                    </div>
+                    <div class="input-row"><textarea id="videoTags" rows="4" readonly></textarea><button onclick="copyToClip('videoTags')"><i class="fa-regular fa-copy"></i></button></div>
                 </div>
-
                 <div class="upload-shortcuts">
                     <label>Upload To</label>
                     <div class="social-grid">
