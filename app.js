@@ -35,7 +35,7 @@ const STATIC_AUDIO_LIBRARY = {
     ]
 };
 
-// --- 2. AUDIO PLAYER ---
+// --- 2. FIXED AUDIO PLAYER ---
 class AudioPlayer {
     constructor() {
         this.ctx = null;
@@ -44,6 +44,7 @@ class AudioPlayer {
         this.isInitialized = false;
         this.audioElement = new Audio();
         this.audioElement.loop = true;
+        this.audioElement.volume = 0.8;
     }
     
     async init() {
@@ -52,9 +53,15 @@ class AudioPlayer {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
             this.gainNode = this.ctx.createGain();
             this.gainNode.connect(this.ctx.destination);
+            this.gainNode.gain.value = 0.8;
+            
+            if (this.ctx.state === 'suspended') {
+                await this.ctx.resume();
+            }
+            
             this.isInitialized = true;
         } catch(e) {
-            console.warn("Web Audio API not available, falling back to HTML5 Audio");
+            console.warn("Web Audio API not available:", e);
         }
     }
     
@@ -66,8 +73,10 @@ class AudioPlayer {
     
     stop() {
         if (this.sourceNode) {
-            try { this.sourceNode.stop(); } catch(e){}
-            this.sourceNode.disconnect();
+            try { 
+                this.sourceNode.stop(); 
+                this.sourceNode.disconnect();
+            } catch(e){}
             this.sourceNode = null;
         }
         this.audioElement.pause();
@@ -76,13 +85,44 @@ class AudioPlayer {
     
     async play(blobUrl) {
         this.stop();
+        
         this.audioElement.src = blobUrl;
-        this.audioElement.volume = 0.7;
-        const playPromise = this.audioElement.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Audio autoplay prevented");
-            });
+        
+        try {
+            await this.audioElement.play();
+            
+            if (this.isInitialized && blobUrl) {
+                try {
+                    const response = await fetch(blobUrl);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                    
+                    this.sourceNode = this.ctx.createBufferSource();
+                    this.sourceNode.buffer = audioBuffer;
+                    this.sourceNode.loop = true;
+                    this.sourceNode.connect(this.gainNode);
+                    this.sourceNode.start(0);
+                } catch(e) {
+                    console.warn("Web Audio playback failed:", e);
+                }
+            }
+        } catch(e) {
+            console.error("Audio playback failed:", e);
+        }
+    }
+    
+    getAudioStream() {
+        try {
+            const recordCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const mediaElementSource = recordCtx.createMediaElementSource(this.audioElement);
+            const dest = recordCtx.createMediaStreamDestination();
+            mediaElementSource.connect(dest);
+            mediaElementSource.connect(recordCtx.destination);
+            
+            return dest.stream;
+        } catch(e) {
+            console.error("Failed to create audio stream:", e);
+            return null;
         }
     }
 }
@@ -104,20 +144,25 @@ let playerA, playerB, statusPill, recordBtn, playPauseBtn;
 // --- 5. INITIALIZATION ---
 async function initStudio() {
     try {
-        await audioEngine.init();
+        document.addEventListener('click', async function enableAudio() {
+            await audioEngine.init();
+            document.removeEventListener('click', enableAudio);
+        }, { once: true });
+        
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('workspace').style.display = 'flex';
             loadAudioOptions();
         }, 500);
+        
     } catch(e) {
         console.error("Initialization error:", e);
-        alert("Studio initialized with limited audio features");
         document.getElementById('startScreen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('workspace').style.display = 'flex';
+            loadAudioOptions();
         }, 500);
     }
 }
@@ -150,8 +195,17 @@ function togglePlay() {
         if (audioEngine.ctx) {
             audioEngine.ctx.resume();
         }
-        activePlayer.play().catch(e => console.log("Video play failed:", e));
-        audioEngine.audioElement.play().catch(e => console.log("Audio play failed:", e));
+        
+        activePlayer.play().catch(e => {
+            console.log("Video play failed:", e);
+        });
+        
+        audioEngine.audioElement.play().then(() => {
+            console.log("Audio started");
+        }).catch(e => {
+            console.log("Audio play failed:", e);
+        });
+        
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     }
     isPlaying = !isPlaying;
@@ -276,7 +330,7 @@ function startPingPong() {
     const playPromise = playerA.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => {
-            console.log("Autoplay prevented");
+            console.log("Video autoplay prevented");
         });
     }
     
@@ -320,11 +374,11 @@ function triggerSwap() {
     }
 }
 
-// --- 8. RECORDER ---
+// --- 8. MAC-COMPATIBLE RECORDER ---
 async function startRecording() {
     if (!isPlaying) {
         togglePlay();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     if (audioEngine.ctx) {
@@ -336,20 +390,61 @@ async function startRecording() {
     canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    const canvasStream = canvas.captureStream(30);
-    
-    let combinedStream;
-    if (audioEngine.ctx) {
-        const audioDest = audioEngine.ctx.createMediaStreamDestination();
-        audioEngine.gainNode.connect(audioDest);
-        combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
-    } else {
-        combinedStream = canvasStream;
+    let audioStream;
+    try {
+        if (typeof audioEngine.audioElement.captureStream === 'function') {
+            audioStream = audioEngine.audioElement.captureStream();
+        } else if (audioEngine.ctx) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audioEngine.audioElement);
+            const dest = audioCtx.createMediaStreamDestination();
+            source.connect(dest);
+            source.connect(audioCtx.destination);
+            audioStream = dest.stream;
+        } else {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const dest = audioCtx.createMediaStreamDestination();
+            oscillator.connect(dest);
+            oscillator.start();
+            audioStream = dest.stream;
+        }
+    } catch(e) {
+        console.error("Audio stream creation failed:", e);
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const dest = audioCtx.createMediaStreamDestination();
+        oscillator.connect(dest);
+        oscillator.start();
+        audioStream = dest.stream;
     }
     
-    let options = { mimeType: 'video/webm;codecs=vp9' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'video/mp4;codecs=avc1' };
+    const canvasStream = canvas.captureStream(30);
+    
+    const combinedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioStream.getAudioTracks()
+    ]);
+    
+    let options;
+    
+    const testMimeTypes = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4;codecs=h264,aac',
+        'video/webm;codecs=vp9,opus',
+        'video/webm'
+    ];
+    
+    for (const mimeType of testMimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+            options = { mimeType: mimeType };
+            console.log("Using mimeType:", mimeType);
+            break;
+        }
+    }
+    
+    if (!options) {
+        options = { mimeType: 'video/mp4' };
     }
     
     const mediaRecorder = new MediaRecorder(combinedStream, options);
@@ -365,13 +460,30 @@ async function startRecording() {
         const blob = new Blob(chunks, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+        
+        const fileName = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}`;
+        
+        let extension = '.mp4';
+        if (options.mimeType.includes('mp4')) {
+            extension = '.mp4';
+        } else if (options.mimeType.includes('webm')) {
+            extension = '.webm';
+        } else {
+            extension = '.mov';
+        }
+        
         a.href = url;
-        a.download = 'ZenGen-' + document.getElementById('themeSelect').value + '-' + Date.now() + '.mp4';
+        a.download = fileName + extension;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         
-        URL.revokeObjectURL(url);
+        alert(`Video downloaded as ${fileName}${extension}\nFormat: ${options.mimeType}\nSize: ${Math.round(blob.size / 1024 / 1024 * 10) / 10} MB`);
+        
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
+        
         clearInterval(frameInterval);
         clearInterval(timerInterval);
         
@@ -414,7 +526,7 @@ async function startRecording() {
         statusPill.innerHTML = '<div class="dot"></div> Recording';
     }
     
-    mediaRecorder.start();
+    mediaRecorder.start(1000);
     
     setTimeout(() => {
         if (mediaRecorder.state === 'recording') {
@@ -443,8 +555,9 @@ async function fetchMontagePlaylist(query, count) {
             
             fresh.forEach(v => {
                 seen.add(v.id);
-                const hdFile = v.video_files.find(f => f.width === 1280) ||
-                               v.video_files.find(f => f.width >= 1280) ||
+                const hdFile = v.video_files.find(f => f.file_type === 'video/mp4' && f.width === 1280) ||
+                               v.video_files.find(f => f.file_type === 'video/mp4') ||
+                               v.video_files.find(f => f.width === 1280) ||
                                v.video_files[0];
                 if (hdFile) list.push(hdFile.link);
             });
@@ -478,7 +591,6 @@ async function fetchMontagePlaylist(query, count) {
 
 function generateViralSEO(theme) {
     const hooks = ["Secret", "Enchanted", "Deep", "Cozy", "Midnight", "Ancient", "Dreamy", "Magical"];
-    const benefits = ["Relieve Anxiety", "Cure Insomnia", "Instant Calm", "Focus", "Stop Overthinking"];
     
     const h = hooks[Math.floor(Math.random() * hooks.length)];
     
