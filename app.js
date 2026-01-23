@@ -2,28 +2,40 @@
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// Metadata Templates
+// 1. THE OPEN AUDIO LIBRARY (CORS-Friendly Online Sources)
+// These links are from Wikimedia Commons, which allows direct recording.
+const ONLINE_AUDIO_LIBRARY = {
+    forest: [
+        "https://upload.wikimedia.org/wikipedia/commons/6/66/Summer_Nature_Sounds.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/a/a2/Bird_Singing_in_Forest.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/3/36/Forest_ambience.ogg"
+    ],
+    snow: [
+        "https://upload.wikimedia.org/wikipedia/commons/0/07/Wind_in_trees.ogg", // Winter wind
+        "https://upload.wikimedia.org/wikipedia/commons/8/82/Wind_Howling.ogg"
+    ],
+    ocean: [
+        "https://upload.wikimedia.org/wikipedia/commons/7/7b/Ocean_Waves.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/b/be/Ocean_waves_lapping.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/f/f3/Gentle_Waves.ogg"
+    ],
+    rain: [
+        "https://upload.wikimedia.org/wikipedia/commons/4/4b/Rain_on_windowsill.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/8/8f/Rain_falling_on_leaves.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/2/29/Thunder_storm.ogg"
+    ],
+    fireplace: [
+        "https://upload.wikimedia.org/wikipedia/commons/d/d4/Fire_burning_in_a_fireplace.ogg",
+        "https://upload.wikimedia.org/wikipedia/commons/9/9b/Fireplace_sound.ogg"
+    ]
+};
+
 const META_TEMPLATES = {
-    forest: {
-        titles: ["Mystic Forest Relaxation", "Deep Woods Peace", "Green Nature Escape"],
-        tags: "#forest #nature #relaxation #meditation #green #peaceful"
-    },
-    snow: {
-        titles: ["Winter Wonderland Ambience", "Falling Snow Sleep", "Arctic Calm"],
-        tags: "#snow #winter #cozy #sleep #white #cold"
-    },
-    ocean: {
-        titles: ["Deep Blue Ocean Waves", "Sea Shore Calm", "Tropical Beach Vibe"],
-        tags: "#ocean #waves #beach #summer #water #sleepsounds"
-    },
-    rain: {
-        titles: ["Heavy Rain on Window", "Thunderstorm Sleep", "Rainy Day Mood"],
-        tags: "#rain #rainsound #storm #cozy #reading #focus"
-    },
-    fireplace: {
-        titles: ["Cozy Crackling Fire", "Warm Fireplace Jazz", "Winter Cabin Ambience"],
-        tags: "#fireplace #fire #cozy #warmth #relaxing #home"
-    }
+    forest: { query: "forest+trees+nature", titles: ["Mystic Forest Relaxation", "Deep Woods Peace"], tags: "#forest #nature #calm" },
+    snow: { query: "snow+winter+falling", titles: ["Winter Wonderland", "Arctic Calm"], tags: "#snow #winter #cozy" },
+    ocean: { query: "ocean+waves+beach", titles: ["Blue Ocean Waves", "Sea Shore Calm"], tags: "#ocean #sea #waves" },
+    rain: { query: "rain+window+storm", titles: ["Rain on Window", "Heavy Storm Sleep"], tags: "#rain #storm #sleep" },
+    fireplace: { query: "fireplace+fire+burning", titles: ["Cozy Crackling Fire", "Warm Cabin"], tags: "#fireplace #fire #warmth" }
 };
 
 const videoEl = document.getElementById('mainVideo');
@@ -31,196 +43,162 @@ const audioEl = document.getElementById('bgAudio');
 const loadingEl = document.getElementById('loading');
 const recordBtn = document.getElementById('recordBtn');
 
-// 1. Content Generation
+// A. Content Generation
 async function generateContent() {
     const theme = document.getElementById('themeSelect').value;
     loadingEl.style.display = 'block';
-    loadingEl.innerText = 'Searching for perfect clips...';
+    loadingEl.innerText = 'Fetching online content...';
     recordBtn.disabled = true;
 
     try {
-        // A. Fetch Video (Try Pexels first for high quality, fallback to Pixabay)
-        let videoUrl = await fetchPexelsVideo(theme);
-        if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
+        // 1. Fetch Video (Pexels -> Pixabay Fallback)
+        let videoUrl = await fetchPexelsVideo(META_TEMPLATES[theme].query);
+        if (!videoUrl) videoUrl = await fetchPixabayVideo(META_TEMPLATES[theme].query);
 
-        // B. Fetch Audio (Pixabay Audio)
-        let audioUrl = await fetchPixabayAudio(theme);
+        // 2. Fetch Audio (Random Pick from Online Library)
+        // We add '?nocache' to ensure the browser requests a fresh permission check
+        const soundList = ONLINE_AUDIO_LIBRARY[theme];
+        const randomSound = soundList[Math.floor(Math.random() * soundList.length)];
+        const audioUrl = randomSound + "?nocache=" + Date.now();
 
         if (videoUrl && audioUrl) {
+            // Setup Media
+            videoEl.crossOrigin = "anonymous"; // CRITICAL for recording
+            audioEl.crossOrigin = "anonymous"; // CRITICAL for recording
+            
             videoEl.src = videoUrl;
             audioEl.src = audioUrl;
-            
+
             // Wait for both to be ready
             await Promise.all([
-                new Promise(r => videoEl.onloadeddata = r),
-                new Promise(r => audioEl.onloadeddata = r)
+                new Promise(resolve => videoEl.onloadeddata = resolve),
+                new Promise(resolve => audioEl.onloadeddata = resolve)
             ]);
 
+            loadingEl.style.display = 'none';
             videoEl.play();
             audioEl.play();
-            loadingEl.style.display = 'none';
             recordBtn.disabled = false;
-            
             generateMetadata(theme);
         } else {
-            loadingEl.innerText = 'Could not find media. Try again.';
+            throw new Error("Missing media");
         }
     } catch (error) {
         console.error(error);
-        loadingEl.innerText = 'Error fetching media.';
+        loadingEl.innerText = 'Error fetching content. Please try again.';
     }
 }
 
-// API Functions
+// B. API Fetchers
 async function fetchPexelsVideo(query) {
     try {
-        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=5&orientation=landscape`, {
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=8&orientation=landscape`, {
             headers: { Authorization: PEXELS_KEY }
         });
         const data = await res.json();
-        if (data.videos.length > 0) {
-            // Get a random video from the top 5
+        if (data.videos && data.videos.length > 0) {
             const rand = Math.floor(Math.random() * data.videos.length);
-            // Return highest quality link
-            return data.videos[rand].video_files.find(f => f.quality === 'hd')?.link || data.videos[rand].video_files[0].link;
+            const video = data.videos[rand];
+            // Prefer HD (1280w) for balance of quality/speed
+            const bestFile = video.video_files.find(f => f.width >= 1280 && f.width <= 1920) || video.video_files[0];
+            return bestFile.link;
         }
-    } catch (e) { console.log('Pexels error', e); }
+    } catch (e) { console.log('Pexels skipped', e); }
     return null;
 }
 
 async function fetchPixabayVideo(query) {
-    const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=5`);
-    const data = await res.json();
-    if (data.hits.length > 0) {
-        const rand = Math.floor(Math.random() * data.hits.length);
-        return data.hits[rand].videos.large.url;
-    }
+    try {
+        const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=8`);
+        const data = await res.json();
+        if (data.hits.length > 0) {
+            const rand = Math.floor(Math.random() * data.hits.length);
+            return data.hits[rand].videos.large.url;
+        }
+    } catch (e) { console.log('Pixabay skipped', e); }
     return null;
 }
 
-async function fetchPixabayAudio(query) {
-    // Pixabay doesn't strictly separate audio in the main API, but we can search specifically using category
-    // Note: The public Pixabay API endpoint for audio is currently in Beta or limited, 
-    // but often 'nature' videos have sound. 
-    // *Workaround for consistent Natural Audio:*
-    // Since Pixabay Audio API is separate, let's use a reliable logic or default sounds if API fails.
-    // For this prototype, we'll try to find a video with sound OR use a specific query.
-    // Actually, Pixabay allows &category=nature.
-    // To ensure "Natural sounds only", we often need a dedicated audio library.
-    // For now, let's assume we pull a video that might have sound, 
-    // or we use a fallback array of royalty-free mp3 urls if you have them.
-    // *Better approach for automation:*
-    // Let's use the Pixabay URL logic if available, otherwise, we might need to manually map sounds 
-    // or use a generic "Nature" sound API. 
-    // For this code, I will map the theme to a generic royalty-free search or placeholder 
-    // to ensure the code works immediately.
-    
-    // Using a reliable royalty-free source query structure or direct MP3s is safest.
-    // Here is a fallback logic using generic Pixabay audio search if you had the Audio endpoint, 
-    // but standard Pixabay Video API returns videos.
-    // Let's stick to the prompt's API keys.
-    
-    // *Simulated Audio Fetch (Since Pixabay Audio API is separate from Video API)*
-    // We will use a "silent" search to getting the audio from the Pexels/Pixabay video if it exists,
-    // OR (Preferred) simply play the video sound if available.
-    // BUT the prompt requested "Natural sounds only (no instrumental music)".
-    // Many stock videos have no sound. 
-    // *Strategy:* I will mute the video (`muted` in HTML) and play a separate audio track.
-    // Since I cannot browse Pixabay Audio with the Video API key reliably without the specific Audio endpoint documentation (which changes),
-    // I will use a placeholder logic here that you can replace with direct URLs or the correct endpoint if you have it.
-    
-    // *MOCKING Audio for stability:*
-    const audioMap = {
-        forest: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-        rain: "https://cdn.pixabay.com/download/audio/2022/02/16/audio_f0e8f22030.mp3",
-        ocean: "https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a22a94.mp3",
-        fireplace: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_c1e6e5a401.mp3",
-        snow: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_82236d3119.mp3" // wind
-    };
-    return audioMap[query] || audioMap.forest;
-}
-
-// 2. Metadata Generator
+// C. Metadata
 function generateMetadata(theme) {
     const data = META_TEMPLATES[theme];
     const randTitle = data.titles[Math.floor(Math.random() * data.titles.length)];
-    
     document.getElementById('metaPanel').style.display = 'block';
     document.getElementById('videoTitle').value = `${randTitle} - 1 Minute Relaxation`;
-    document.getElementById('videoDesc').value = `Enjoy 1 minute of pure ${theme} ambience. No music, just natural sounds. #relax #${theme}`;
+    document.getElementById('videoDesc').value = `Enjoy pure ${theme} ambience. Natural sounds only. #relax #${theme}`;
     document.getElementById('videoTags').value = data.tags;
-
-    // Update Social Links
-    const currentUrl = encodeURIComponent(window.location.href);
-    document.getElementById('shareFb').href = `https://www.facebook.com/sharer/sharer.php?u=${currentUrl}`;
-    document.getElementById('shareTw').href = `https://twitter.com/intent/tweet?text=Relax+with+this+${theme}+video&url=${currentUrl}`;
 }
 
 function copyToClip(id) {
     const copyText = document.getElementById(id);
     copyText.select();
     document.execCommand("copy");
-    alert("Copied!");
 }
 
-// 3. Recording Logic (Canvas + AudioStream)
+// D. Recording (The "Merger")
 function startRecording() {
     const canvas = document.createElement('canvas');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
     const ctx = canvas.getContext('2d');
     
-    // Create a stream from the canvas
+    // 1. Create Audio Context to Capture Sound
+    // We must use a Web Audio Context to mix the stream properly
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaElementSource(audioEl);
+    const dest = audioCtx.createMediaStreamDestination();
+    
+    source.connect(dest);
+    source.connect(audioCtx.destination); // Let user hear it too
+
+    // 2. Capture Video Stream from Canvas
     const canvasStream = canvas.captureStream(30); // 30 FPS
     
-    // Capture Audio Stream
-    // Note: To capture cross-origin audio, the server must send correct CORS headers.
-    // Pixabay/Pexels usually do. If not, this might be silent.
-    let audioStream;
-    try {
-        const audioCtx = new AudioContext();
-        const source = audioCtx.createMediaElementSource(audioEl);
-        const dest = audioCtx.createMediaStreamDestination();
-        source.connect(dest);
-        source.connect(audioCtx.destination); // Keep playing through speakers
-        audioStream = dest.stream;
-    } catch(e) {
-        console.log("Audio context error (CORS likely):", e);
-    }
+    // 3. Combine Video + Audio Tracks
+    const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...dest.stream.getAudioTracks()
+    ];
+    const combinedStream = new MediaStream(combinedTracks);
 
-    // Combine streams
-    const tracks = [...canvasStream.getTracks()];
-    if(audioStream) tracks.push(...audioStream.getAudioTracks());
-    const combinedStream = new MediaStream(tracks);
-
-    const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' });
+    // 4. Start Recording
+    const mediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType: 'video/webm; codecs=vp9'
+    });
     const chunks = [];
 
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+    };
+
     mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = url;
-        a.download = `relax-${Date.now()}.webm`;
+        a.download = `ZenGen-${Date.now()}.webm`;
+        document.body.appendChild(a);
         a.click();
+        window.URL.revokeObjectURL(url);
+        
+        // Reset UI
         recordBtn.innerText = "🔴 Record 1-Min Clip";
         recordBtn.disabled = false;
         clearInterval(drawInterval);
     };
 
-    // Draw video to canvas loop
+    // Animation Loop (Draw video to canvas)
     const drawInterval = setInterval(() => {
         ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
     }, 1000 / 30);
 
-    // Start
     mediaRecorder.start();
     recordBtn.innerText = "Recording... (Wait 60s)";
     recordBtn.disabled = true;
 
-    // Stop after 60 seconds
+    // Auto-stop after 60 seconds
     setTimeout(() => {
         mediaRecorder.stop();
-    }, 60000); // 1 minute
+    }, 60000); 
 }
