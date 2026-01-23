@@ -1,14 +1,15 @@
 /**
- * ZenGen - "No Duplicates" Edition
- * - Video: Uses LocalStorage to remember seen videos forever (persists after refresh).
- * - Audio: Procedural Engine with Randomization Seeds (No two sounds are identical).
+ * ZenGen - "Montage" Edition
+ * - Video: Fetches a playlist of 3-4 clips and plays them sequentially.
+ * - Audio: Procedural Nature Sounds (Non-repetitive).
+ * - Recording: Captures the scene changes into a single seamless MP4/WebM.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ENGINE (Randomized) ---
+// --- 1. PROCEDURAL AUDIO ENGINE ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -30,17 +31,13 @@ class NatureSynth {
         this.activeNodes = [];
     }
 
-    // --- SOUND GENERATORS (With Random Variation) ---
-
+    // --- SOUND GENERATORS ---
     playRain() {
         this.stop();
         const noise = this.createPinkNoise(0.8);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        // Randomize: 400Hz (Muffled) to 1200Hz (Bright/Hard Rain)
-        const randFreq = 400 + Math.random() * 800; 
-        filter.frequency.value = randFreq; 
-        
+        filter.frequency.value = 400 + Math.random() * 800; 
         noise.connect(filter);
         filter.connect(this.master);
         this.activeNodes.push(noise);
@@ -51,9 +48,7 @@ class NatureSynth {
         const noise = this.createPinkNoise(0.5);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        // Randomize: Wind tone varies
         filter.frequency.value = 200 + Math.random() * 300; 
-        
         noise.connect(filter);
         filter.connect(this.master);
         this.activeNodes.push(noise);
@@ -63,18 +58,13 @@ class NatureSynth {
         this.stop();
         const noise = this.createPinkNoise(0.4);
         const gain = this.ctx.createGain();
-        
         const lfo = this.ctx.createOscillator();
         lfo.type = 'sine';
-        // Randomize: Wave speed (0.1 = Slow swell, 0.3 = Choppy)
         lfo.frequency.value = 0.1 + Math.random() * 0.2; 
-        
         const lfoGain = this.ctx.createGain();
         lfoGain.gain.value = 0.3; 
-        
         lfo.connect(lfoGain);
         lfoGain.connect(gain.gain);
-        
         noise.connect(gain);
         gain.connect(this.master);
         lfo.start();
@@ -88,7 +78,6 @@ class NatureSynth {
         crackle.onaudioprocess = (e) => {
             const output = e.outputBuffer.getChannelData(0);
             for (let i = 0; i < output.length; i++) {
-                // Randomize crackle density
                 const threshold = 0.990 + (Math.random() * 0.009);
                 output[i] = (Math.random() > threshold) ? (Math.random() * 0.5) : 0;
             }
@@ -100,8 +89,6 @@ class NatureSynth {
 
     playForest() {
         this.stop(); 
-        
-        // 1. Base Wind (Randomized)
         const noise = this.createPinkNoise(0.3);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
@@ -110,28 +97,20 @@ class NatureSynth {
         filter.connect(this.master);
         this.activeNodes.push(noise);
 
-        // 2. Bird Loop (Randomized Intervals)
         const playChirp = () => {
             if(this.ctx.state === 'suspended') return;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            
-            // Random pitch
             const startFreq = 1500 + Math.random() * 1500;
             osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(startFreq/2, this.ctx.currentTime + 0.1);
-            
             gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-            
             osc.connect(gain);
             gain.connect(this.master);
             osc.start();
             osc.stop(this.ctx.currentTime + 0.2);
-            
-            // Randomize next chirp delay (1s to 5s)
-            const nextTime = 1000 + Math.random() * 4000;
-            this.loopTimer = setTimeout(playChirp, nextTime);
+            this.loopTimer = setTimeout(playChirp, 1000 + Math.random() * 4000);
         };
         playChirp();
     }
@@ -178,7 +157,17 @@ class NatureSynth {
 
 const synth = new NatureSynth();
 
-// --- 2. SEO DATA ---
+// --- 2. GLOBAL VARIABLES & STATE ---
+const videoEl = document.getElementById('mainVideo');
+const statusPill = document.getElementById('statusPill');
+const statusText = statusPill ? (statusPill.querySelector('div') || statusPill) : null; 
+const recordBtn = document.getElementById('recordBtn');
+
+// Playlist State
+let currentPlaylist = [];
+let currentVideoIndex = 0;
+
+// SEO DATA
 const SEO_DATA = {
     titles: {
         adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil", "Dreamy"],
@@ -195,8 +184,7 @@ const SEO_DATA = {
     }
 };
 
-// --- 3. PERSISTENT HISTORY (LocalStorage) ---
-// This ensures we NEVER show the same video twice, even after refresh.
+// --- 3. PERSISTENT HISTORY ---
 const HISTORY_KEY = 'zenGen_seen_videos';
 function getSeenVideos() {
     const saved = localStorage.getItem(HISTORY_KEY);
@@ -208,13 +196,7 @@ function markVideoAsSeen(id) {
     localStorage.setItem(HISTORY_KEY, JSON.stringify([...seen]));
 }
 
-// --- 4. DOM ELEMENTS ---
-const videoEl = document.getElementById('mainVideo');
-const statusPill = document.getElementById('statusPill');
-const statusText = statusPill ? (statusPill.querySelector('div') || statusPill) : null; 
-const recordBtn = document.getElementById('recordBtn');
-
-// --- 5. INITIALIZATION ---
+// --- 4. INITIALIZATION ---
 async function initStudio() {
     try {
         await synth.resume();
@@ -224,32 +206,36 @@ async function initStudio() {
             splash.style.display = 'none';
             document.getElementById('workspace').style.display = 'flex';
         }, 500);
+        
+        // Setup Video End Listener for Playlist
+        videoEl.onended = playNextInQueue;
+        
     } catch(e) {
         alert("Audio Engine Failed. Refresh.");
     }
 }
 
-// --- 6. MAIN LOGIC ---
+// --- 5. MAIN LOGIC (MONTAGE GENERATOR) ---
 async function generateContent() {
     synth.stop(); 
-    
     const theme = document.getElementById('themeSelect').value;
     
+    // UI Updates
     if(statusPill) statusPill.className = 'status-pill active';
-    if(statusText) statusText.textContent = 'Curating Unique Content...';
+    if(statusText) statusText.textContent = 'Curating Montage...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
     try {
-        // Fetch Video with Duplicate Protection
-        let videoUrl = await fetchPexelsVideo(theme);
-        if (!videoUrl) videoUrl = await fetchPixabayVideo(theme);
+        // Fetch 4 Videos for the Playlist
+        currentPlaylist = await fetchMontagePlaylist(theme, 4);
+        currentVideoIndex = 0;
 
-        if (videoUrl) {
-            videoEl.crossOrigin = "anonymous";
-            videoEl.src = videoUrl;
+        if (currentPlaylist.length > 0) {
+            // Setup First Video
+            playVideoAtIndex(0);
 
-            // Play Random Audio Variation
+            // Start Audio
             synth.resume();
             if(theme === 'rain') synth.playRain();
             else if(theme === 'snow') synth.playSnow();
@@ -258,63 +244,88 @@ async function generateContent() {
             else if(theme === 'forest') synth.playForest();
             
             document.getElementById('audioVisualizer').classList.add('active');
-
-            videoEl.onloadeddata = () => {
-                videoEl.play();
-                generateSEO(theme);
-                recordBtn.disabled = false;
-                if(statusPill) statusText.textContent = 'Live (Unique Seed)';
-            };
+            generateSEO(theme);
 
         } else {
-            alert("No new unique videos found for this theme. Try clearing cache or picking another theme.");
+            alert("Not enough new videos found. Try another theme.");
         }
     } catch (error) {
         console.error("App Error:", error);
     }
 }
 
-// --- 7. FETCHERS (With History Check) ---
-async function fetchPexelsVideo(query) {
+// Helper: Play specific video from playlist
+function playVideoAtIndex(index) {
+    if (index >= currentPlaylist.length) {
+        index = 0; // Loop back to start if we run out
+    }
+    currentVideoIndex = index;
+    
+    const url = currentPlaylist[index];
+    videoEl.crossOrigin = "anonymous";
+    videoEl.src = url;
+    videoEl.loop = false; // Important: Don't loop individual clips, let them finish so onended fires
+    videoEl.muted = true;
+    
+    videoEl.play().catch(e => console.log("Play interrupted"));
+    
+    if(statusPill) statusText.textContent = `Playing Clip ${index + 1}/${currentPlaylist.length}`;
+    recordBtn.disabled = false;
+}
+
+// Helper: Triggered automatically when a video ends
+function playNextInQueue() {
+    playVideoAtIndex(currentVideoIndex + 1);
+}
+
+// --- 6. FETCHERS (Montage Logic) ---
+async function fetchMontagePlaylist(query, count) {
+    let playlist = [];
+    const seen = getSeenVideos();
+    
+    // Try Pexels First (Higher Quality)
     try {
-        const seen = getSeenVideos();
-        // Request deep into the library (random page 1-20)
         const page = Math.floor(Math.random() * 20) + 1;
-        
         const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, {
             headers: { Authorization: PEXELS_KEY }
         });
         const data = await res.json();
         
         if (data.videos?.length > 0) {
-            // Filter out ANY video ID we have EVER seen
+            // Filter unseen videos
             const fresh = data.videos.filter(v => !seen.has(v.id));
             
-            if (fresh.length > 0) {
-                const vid = fresh[Math.floor(Math.random() * fresh.length)];
-                markVideoAsSeen(vid.id); // Save to permanent history
-                return vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
-            } else {
-                console.log("All videos on this page seen, retrying...");
-                // Note: In a full app, we'd recurse here, but for now we fallback to Pixabay
+            // Shuffle and pick 'count' videos
+            const shuffled = fresh.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, count);
+            
+            selected.forEach(vid => {
+                markVideoAsSeen(vid.id);
+                const url = vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
+                playlist.push(url);
+            });
+        }
+    } catch (e) {}
+
+    // Fill gaps with Pixabay if Pexels didn't provide enough
+    if (playlist.length < count) {
+        try {
+            const page = Math.floor(Math.random() * 10) + 1;
+            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15&page=${page}`);
+            const data = await res.json();
+            if (data.hits.length) {
+                 const shuffled = data.hits.sort(() => 0.5 - Math.random());
+                 const needed = count - playlist.length;
+                 const selected = shuffled.slice(0, needed);
+                 selected.forEach(vid => playlist.push(vid.videos.medium.url));
             }
-        }
-    } catch (e) {} return null;
+        } catch (e) {}
+    }
+
+    return playlist;
 }
 
-async function fetchPixabayVideo(query) {
-    try {
-        const page = Math.floor(Math.random() * 10) + 1;
-        const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15&page=${page}`);
-        const data = await res.json();
-        if (data.hits.length) {
-             const vid = data.hits[Math.floor(Math.random() * data.hits.length)];
-             return vid.videos.medium.url;
-        }
-    } catch (e) {} return null;
-}
-
-// --- 8. SEO ---
+// --- 7. SEO ---
 function generateSEO(theme) {
     const t = SEO_DATA.titles;
     const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
@@ -332,10 +343,11 @@ function copyToClip(id) {
     document.execCommand("copy");
 }
 
-// --- 9. RECORDER ---
+// --- 8. RECORDER ---
 function startRecording() {
     synth.resume();
-    
+    if (videoEl.paused) videoEl.play();
+
     const canvas = document.createElement('canvas');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
@@ -357,6 +369,7 @@ function startRecording() {
     const chunks = [];
 
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    
     mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: options.mimeType });
         const url = URL.createObjectURL(blob);
@@ -369,12 +382,22 @@ function startRecording() {
         recordBtn.disabled = false;
         if(statusPill) statusText.textContent = 'Live';
         clearInterval(drawInterval);
+        clearInterval(timerInterval);
     };
 
-    const drawInterval = setInterval(() => ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height), 1000/30);
+    const drawInterval = setInterval(() => {
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    }, 1000 / 30);
+
+    // Countdown
+    let timeLeft = 60;
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        recordBtn.innerText = `Recording... ${timeLeft}s`;
+        if (timeLeft <= 0) clearInterval(timerInterval);
+    }, 1000);
 
     mediaRecorder.start();
-    recordBtn.innerText = "Recording... (Wait 60s)";
     recordBtn.disabled = true;
     if(statusPill) statusText.textContent = 'Recording';
     
