@@ -1,15 +1,15 @@
 /**
- * ZenGen - "Montage" Edition
- * - Video: Fetches a playlist of 3-4 clips and plays them sequentially.
- * - Audio: Procedural Nature Sounds (Non-repetitive).
- * - Recording: Captures the scene changes into a single seamless MP4/WebM.
+ * ZenGen - "Ping-Pong" Montage Edition
+ * - Video: Dual players (Active/Standby) for instant, seamless cuts.
+ * - Audio: Procedural Nature Sounds.
+ * - Recording: Smart Canvas Recorder captures the 'Active' video.
  */
 
 // --- CONFIGURATION ---
 const PIXABAY_KEY = '54284475-952e0862a6663b417341781ba'; 
 const PEXELS_KEY = 'Cm88tWtNiJ0nIf9Mz4YGRYdIDjWQvMKkiJIgAqS7yoNBPNJb5SHxOMXr';
 
-// --- 1. PROCEDURAL AUDIO ENGINE ---
+// --- 1. PROCEDURAL AUDIO ---
 class NatureSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -18,352 +18,197 @@ class NatureSynth {
         this.activeNodes = [];
         this.loopTimer = null; 
     }
-
-    async resume() {
-        if (this.ctx.state === 'suspended') await this.ctx.resume();
-    }
-
+    async resume() { if (this.ctx.state === 'suspended') await this.ctx.resume(); }
     stop() {
         if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
-        this.activeNodes.forEach(n => {
-            try { if(n.stop) n.stop(); n.disconnect(); } catch(e){}
-        });
+        this.activeNodes.forEach(n => { try { if(n.stop) n.stop(); n.disconnect(); } catch(e){} });
         this.activeNodes = [];
     }
-
-    // --- SOUND GENERATORS ---
-    playRain() {
-        this.stop();
-        const noise = this.createPinkNoise(0.8);
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 400 + Math.random() * 800; 
-        noise.connect(filter);
-        filter.connect(this.master);
-        this.activeNodes.push(noise);
-    }
-
-    playSnow() {
-        this.stop();
-        const noise = this.createPinkNoise(0.5);
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 200 + Math.random() * 300; 
-        noise.connect(filter);
-        filter.connect(this.master);
-        this.activeNodes.push(noise);
-    }
-
+    
+    // Generators
+    playRain() { this.runNoise(0.8, 400 + Math.random()*800); }
+    playSnow() { this.runNoise(0.5, 200 + Math.random()*300); }
+    playForest() { this.runNoise(0.3, 500 + Math.random()*300); this.birdLoop(); }
+    
     playOcean() {
         this.stop();
         const noise = this.createPinkNoise(0.4);
         const gain = this.ctx.createGain();
         const lfo = this.ctx.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 0.1 + Math.random() * 0.2; 
+        lfo.type = 'sine'; lfo.frequency.value = 0.1 + Math.random()*0.2;
         const lfoGain = this.ctx.createGain();
         lfoGain.gain.value = 0.3; 
-        lfo.connect(lfoGain);
-        lfoGain.connect(gain.gain);
-        noise.connect(gain);
-        gain.connect(this.master);
-        lfo.start();
+        lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+        noise.connect(gain); gain.connect(this.master); lfo.start();
         this.activeNodes.push(noise, lfo);
     }
-
+    
     playFire() {
         this.stop();
         const noise = this.createBrownNoise(0.7);
         const crackle = this.ctx.createScriptProcessor(4096, 1, 1);
         crackle.onaudioprocess = (e) => {
-            const output = e.outputBuffer.getChannelData(0);
-            for (let i = 0; i < output.length; i++) {
-                const threshold = 0.990 + (Math.random() * 0.009);
-                output[i] = (Math.random() > threshold) ? (Math.random() * 0.5) : 0;
-            }
+            const out = e.outputBuffer.getChannelData(0);
+            for(let i=0; i<out.length; i++) out[i] = (Math.random() > 0.992) ? Math.random()*0.5 : 0;
         };
-        crackle.connect(this.master);
-        noise.connect(this.master);
+        crackle.connect(this.master); noise.connect(this.master);
         this.activeNodes.push(noise, crackle);
     }
 
-    playForest() {
-        this.stop(); 
-        const noise = this.createPinkNoise(0.3);
+    // Shared Helper
+    runNoise(vol, freq) {
+        this.stop();
+        const noise = this.createPinkNoise(vol);
         const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 500 + Math.random() * 300; 
-        noise.connect(filter);
-        filter.connect(this.master);
+        filter.type = 'lowpass'; filter.frequency.value = freq;
+        noise.connect(filter); filter.connect(this.master);
         this.activeNodes.push(noise);
-
-        const playChirp = () => {
-            if(this.ctx.state === 'suspended') return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            const startFreq = 1500 + Math.random() * 1500;
-            osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(startFreq/2, this.ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(this.master);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.2);
-            this.loopTimer = setTimeout(playChirp, 1000 + Math.random() * 4000);
-        };
-        playChirp();
     }
-
-    // Helpers
-    createPinkNoise(vol) {
-        const bufferSize = 4096;
-        const node = this.ctx.createScriptProcessor(bufferSize, 1, 1);
-        let lastOut = 0;
-        node.onaudioprocess = (e) => {
-            const output = e.outputBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                output[i] = (lastOut + (0.02 * white)) / 1.02;
-                lastOut = output[i];
-                output[i] *= 3.5; 
-            }
-        };
-        const gain = this.ctx.createGain();
-        gain.gain.value = vol;
-        node.connect(gain);
-        return node;
+    birdLoop() {
+        const chirp = () => {
+            if(this.ctx.state === 'suspended') return;
+            const osc = this.ctx.createOscillator(); const g = this.ctx.createGain();
+            const f = 1500+Math.random()*1500;
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(f/2, this.ctx.currentTime+0.1);
+            g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
+            osc.connect(g); g.connect(this.master);
+            osc.start(); osc.stop(this.ctx.currentTime+0.2);
+            this.loopTimer = setTimeout(chirp, 1000+Math.random()*4000);
+        }; chirp();
     }
     
-    createBrownNoise(vol) {
-        const bufferSize = 4096;
-        const node = this.ctx.createScriptProcessor(bufferSize, 1, 1);
-        let lastBrown = 0;
-        node.onaudioprocess = (e) => {
-            const output = e.outputBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                output[i] = (lastBrown + (0.02 * white)) / 1.02;
-                lastBrown = output[i];
-                output[i] *= 3.5; 
-            }
+    createPinkNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
+    createBrownNoise(v) { return this.noiseNode(v, 4096, (l,w)=> (l+(0.02*w))/1.02); }
+    noiseNode(vol, size, algo) {
+        const n = this.ctx.createScriptProcessor(size, 1, 1);
+        let last = 0;
+        n.onaudioprocess = e => {
+            const o = e.outputBuffer.getChannelData(0);
+            for(let i=0; i<size; i++) { const w = Math.random()*2-1; o[i] = algo(last, w); last = o[i]; o[i]*=3.5; }
         };
-        const gain = this.ctx.createGain();
-        gain.gain.value = vol;
-        node.connect(gain);
-        return node;
+        const g = this.ctx.createGain(); g.gain.value = vol; n.connect(g); return n;
     }
 }
-
 const synth = new NatureSynth();
 
-// --- 2. GLOBAL VARIABLES & STATE ---
-const videoEl = document.getElementById('mainVideo');
+// --- 2. GLOBAL STATE ---
+const playerA = document.getElementById('vid1');
+const playerB = document.getElementById('vid2');
 const statusPill = document.getElementById('statusPill');
-const statusText = statusPill ? (statusPill.querySelector('div') || statusPill) : null; 
+const statusText = statusPill.querySelector('div') ? statusPill : document.getElementById('statusPill'); 
 const recordBtn = document.getElementById('recordBtn');
 
-// Playlist State
 let currentPlaylist = [];
-let currentVideoIndex = 0;
+let currentIndex = 0;
+let currentPlayer = playerA; // Start with A
 
-// SEO DATA
-const SEO_DATA = {
-    titles: {
-        adjectives: ["Relaxing", "Deep", "Peaceful", "Soothing", "Pure", "Tranquil", "Dreamy"],
-        nouns: ["Ambience", "Atmosphere", "Meditation", "Escape", "Therapy", "Soundscape"],
-        actions: ["for Sleep", "for Focus", "to Relieve Anxiety", "for Studying"]
-    },
-    tags: {
-        common: ["#shorts", "#relaxation", "#meditation", "#sleep", "#asmr", "#nature", "#peace"],
-        forest: ["#forest", "#woods", "#birds", "#nature", "#green"],
-        rain: ["#rain", "#rainstorm", "#thunder", "#rainyday", "#sleepsounds"],
-        fireplace: ["#fireplace", "#fire", "#burning", "#warmth", "#cozy"],
-        ocean: ["#ocean", "#sea", "#waves", "#beach", "#summer"],
-        snow: ["#snow", "#winter", "#blizzard", "#cold", "#white"]
-    }
-};
-
-// --- 3. PERSISTENT HISTORY ---
-const HISTORY_KEY = 'zenGen_seen_videos';
-function getSeenVideos() {
-    const saved = localStorage.getItem(HISTORY_KEY);
-    return new Set(saved ? JSON.parse(saved) : []);
-}
-function markVideoAsSeen(id) {
-    const seen = getSeenVideos();
-    seen.add(id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify([...seen]));
-}
-
-// --- 4. INITIALIZATION ---
+// --- 3. INIT ---
 async function initStudio() {
     try {
         await synth.resume();
-        const splash = document.getElementById('startScreen');
-        splash.style.opacity = '0';
-        setTimeout(() => {
-            splash.style.display = 'none';
-            document.getElementById('workspace').style.display = 'flex';
-        }, 500);
+        document.getElementById('startScreen').style.opacity = '0';
+        setTimeout(() => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('workspace').style.display = 'flex'; }, 500);
         
-        // Setup Video End Listener for Playlist
-        videoEl.onended = playNextInQueue;
+        // Setup Ping-Pong Listeners
+        playerA.onended = () => swapPlayers(playerA, playerB);
+        playerB.onended = () => swapPlayers(playerB, playerA);
         
-    } catch(e) {
-        alert("Audio Engine Failed. Refresh.");
-    }
+    } catch(e) { alert("Audio Engine Failed. Refresh."); }
 }
 
-// --- 5. MAIN LOGIC (MONTAGE GENERATOR) ---
+// --- 4. GENERATE MONTAGE ---
 async function generateContent() {
-    synth.stop(); 
+    synth.stop();
     const theme = document.getElementById('themeSelect').value;
     
-    // UI Updates
-    if(statusPill) statusPill.className = 'status-pill active';
-    if(statusText) statusText.textContent = 'Curating Montage...';
+    // UI
+    statusPill.className = 'status-pill active';
+    statusText.textContent = 'Building Playlist...';
     recordBtn.disabled = true;
     document.getElementById('audioVisualizer').classList.remove('active');
 
-    try {
-        // Fetch 4 Videos for the Playlist
-        currentPlaylist = await fetchMontagePlaylist(theme, 4);
-        currentVideoIndex = 0;
-
-        if (currentPlaylist.length > 0) {
-            // Setup First Video
-            playVideoAtIndex(0);
-
-            // Start Audio
-            synth.resume();
-            if(theme === 'rain') synth.playRain();
-            else if(theme === 'snow') synth.playSnow();
-            else if(theme === 'ocean') synth.playOcean();
-            else if(theme === 'fireplace') synth.playFire();
-            else if(theme === 'forest') synth.playForest();
-            
-            document.getElementById('audioVisualizer').classList.add('active');
-            generateSEO(theme);
-
-        } else {
-            alert("Not enough new videos found. Try another theme.");
-        }
-    } catch (error) {
-        console.error("App Error:", error);
+    // Fetch 4 Videos
+    currentPlaylist = await fetchMontagePlaylist(theme, 4);
+    
+    if (currentPlaylist.length > 0) {
+        // Start Audio
+        synth.resume();
+        if(theme==='rain') synth.playRain();
+        else if(theme==='snow') synth.playSnow();
+        else if(theme==='ocean') synth.playOcean();
+        else if(theme==='fireplace') synth.playFire();
+        else if(theme==='forest') synth.playForest();
+        
+        document.getElementById('audioVisualizer').classList.add('active');
+        generateSEO(theme);
+        
+        // Start Video Sequence
+        currentIndex = 0;
+        startVideoSequence();
+        
+    } else {
+        alert("Not enough new videos found.");
     }
 }
 
-// Helper: Play specific video from playlist
-function playVideoAtIndex(index) {
-    if (index >= currentPlaylist.length) {
-        index = 0; // Loop back to start if we run out
+// --- 5. PING-PONG LOGIC ---
+function startVideoSequence() {
+    // 1. Reset Players
+    playerA.className = 'active';
+    playerB.className = 'standby';
+    currentPlayer = playerA;
+
+    // 2. Load Clip 0 into A
+    loadClip(playerA, 0);
+    playerA.play();
+
+    // 3. Preload Clip 1 into B
+    if (currentPlaylist.length > 1) {
+        loadClip(playerB, 1);
     }
-    currentVideoIndex = index;
     
-    const url = currentPlaylist[index];
-    videoEl.crossOrigin = "anonymous";
-    videoEl.src = url;
-    videoEl.loop = false; // Important: Don't loop individual clips, let them finish so onended fires
-    videoEl.muted = true;
-    
-    videoEl.play().catch(e => console.log("Play interrupted"));
-    
-    if(statusPill) statusText.textContent = `Playing Clip ${index + 1}/${currentPlaylist.length}`;
+    statusText.textContent = 'Playing Sequence';
     recordBtn.disabled = false;
 }
 
-// Helper: Triggered automatically when a video ends
-function playNextInQueue() {
-    playVideoAtIndex(currentVideoIndex + 1);
+function loadClip(videoEl, index) {
+    // Wrap around playlist
+    const safeIndex = index % currentPlaylist.length;
+    videoEl.src = currentPlaylist[safeIndex];
+    videoEl.load();
 }
 
-// --- 6. FETCHERS (Montage Logic) ---
-async function fetchMontagePlaylist(query, count) {
-    let playlist = [];
-    const seen = getSeenVideos();
-    
-    // Try Pexels First (Higher Quality)
-    try {
-        const page = Math.floor(Math.random() * 20) + 1;
-        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, {
-            headers: { Authorization: PEXELS_KEY }
-        });
-        const data = await res.json();
-        
-        if (data.videos?.length > 0) {
-            // Filter unseen videos
-            const fresh = data.videos.filter(v => !seen.has(v.id));
-            
-            // Shuffle and pick 'count' videos
-            const shuffled = fresh.sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, count);
-            
-            selected.forEach(vid => {
-                markVideoAsSeen(vid.id);
-                const url = vid.video_files.find(f => f.width === 1280)?.link || vid.video_files[0].link;
-                playlist.push(url);
-            });
-        }
-    } catch (e) {}
+function swapPlayers(endingPlayer, nextPlayer) {
+    // 1. Cut to Next Player
+    endingPlayer.className = 'standby';
+    nextPlayer.className = 'active';
+    currentPlayer = nextPlayer;
+    nextPlayer.play();
 
-    // Fill gaps with Pixabay if Pexels didn't provide enough
-    if (playlist.length < count) {
-        try {
-            const page = Math.floor(Math.random() * 10) + 1;
-            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15&page=${page}`);
-            const data = await res.json();
-            if (data.hits.length) {
-                 const shuffled = data.hits.sort(() => 0.5 - Math.random());
-                 const needed = count - playlist.length;
-                 const selected = shuffled.slice(0, needed);
-                 selected.forEach(vid => playlist.push(vid.videos.medium.url));
-            }
-        } catch (e) {}
-    }
-
-    return playlist;
+    // 2. Increment Index and Preload the *next* clip into the old player
+    currentIndex++;
+    loadClip(endingPlayer, currentIndex + 1);
 }
 
-// --- 7. SEO ---
-function generateSEO(theme) {
-    const t = SEO_DATA.titles;
-    const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
-    const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
-    const action = t.actions[Math.floor(Math.random() * t.actions.length)];
-    
-    document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase() + theme.slice(1)} ${noun} ${action}`;
-    document.getElementById('videoDesc').value = `Pure ${theme} ambience. No music. #${theme}`;
-    const tags = [...SEO_DATA.tags[theme], ...SEO_DATA.tags.common];
-    document.getElementById('videoTags').value = [...new Set(tags.sort(() => .5 - Math.random()))].slice(0, 15).join(' ');
-}
-
-function copyToClip(id) {
-    document.getElementById(id).select();
-    document.execCommand("copy");
-}
-
-// --- 8. RECORDER ---
+// --- 6. RECORDER (Smart) ---
 function startRecording() {
     synth.resume();
-    if (videoEl.paused) videoEl.play();
+    if (currentPlayer.paused) currentPlayer.play();
 
     const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
+    canvas.width = 1280; canvas.height = 720; // Fixed HD
     const ctx = canvas.getContext('2d');
     const canvasStream = canvas.captureStream(30);
 
     const audioDest = synth.ctx.createMediaStreamDestination();
     synth.master.connect(audioDest);
     
-    const tracks = [...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()];
-    const combinedStream = new MediaStream(tracks);
+    const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioDest.stream.getAudioTracks()]);
     
     let options = { mimeType: 'video/webm; codecs=vp9' };
-    let ext = 'webm';
-    if (MediaRecorder.isTypeSupported('video/mp4')) { options = { mimeType: 'video/mp4' }; ext = 'mp4'; }
-    else if (MediaRecorder.isTypeSupported('video/webm; codecs=h264')) { options = { mimeType: 'video/webm; codecs=h264' }; ext = 'mp4'; }
+    if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
 
     const mediaRecorder = new MediaRecorder(combinedStream, options);
     const chunks = [];
@@ -375,18 +220,19 @@ function startRecording() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.${ext}`;
+        a.download = `ZenGen-${document.getElementById('themeSelect').value}-${Date.now()}.mp4`;
         a.click();
         
         recordBtn.innerHTML = '<div class="rec-icon"></div> Record (1 Min)';
         recordBtn.disabled = false;
-        if(statusPill) statusText.textContent = 'Live';
         clearInterval(drawInterval);
         clearInterval(timerInterval);
     };
 
+    // SMART DRAW LOOP: Always draws whichever video is '.active'
     const drawInterval = setInterval(() => {
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        const activeEl = playerA.classList.contains('active') ? playerA : playerB;
+        ctx.drawImage(activeEl, 0, 0, canvas.width, canvas.height);
     }, 1000 / 30);
 
     // Countdown
@@ -399,7 +245,54 @@ function startRecording() {
 
     mediaRecorder.start();
     recordBtn.disabled = true;
-    if(statusPill) statusText.textContent = 'Recording';
     
     setTimeout(() => mediaRecorder.stop(), 60000);
 }
+
+// --- 7. FETCHERS & SEO ---
+async function fetchMontagePlaylist(query, count) {
+    let list = [];
+    const seen = new Set(JSON.parse(localStorage.getItem('zenGen_seen') || '[]'));
+    
+    try {
+        const page = Math.floor(Math.random() * 20) + 1;
+        const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15&page=${page}&orientation=landscape`, { headers: { Authorization: PEXELS_KEY } });
+        const data = await res.json();
+        
+        if (data.videos) {
+            const fresh = data.videos.filter(v => !seen.has(v.id)).sort(()=>0.5-Math.random()).slice(0, count);
+            fresh.forEach(v => {
+                seen.add(v.id);
+                list.push(v.video_files.find(f=>f.width===1280)?.link || v.video_files[0].link);
+            });
+            localStorage.setItem('zenGen_seen', JSON.stringify([...seen]));
+        }
+    } catch(e){}
+    
+    // Fallback if needed
+    if (list.length < count) {
+        try {
+            const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${query}&per_page=15`);
+            const data = await res.json();
+            if(data.hits) data.hits.slice(0, count-list.length).forEach(v => list.push(v.videos.medium.url));
+        } catch(e){}
+    }
+    return list;
+}
+
+const SEO_DATA = {
+    titles: { adj: ["Relaxing","Deep","Peaceful"], noun: ["Ambience","Atmosphere","Escape"], act: ["for Sleep","for Focus"] },
+    tags: { common: ["#shorts","#nature","#peace"], themes: { forest:["#forest"], rain:["#rain"], ocean:["#ocean"], snow:["#snow"], fireplace:["#fire"] } }
+};
+
+function generateSEO(theme) {
+    const t = SEO_DATA.titles;
+    const adj = t.adj[Math.floor(Math.random()*t.adj.length)];
+    const noun = t.noun[Math.floor(Math.random()*t.noun.length)];
+    const act = t.act[Math.floor(Math.random()*t.act.length)];
+    document.getElementById('videoTitle').value = `${adj} ${theme.charAt(0).toUpperCase()+theme.slice(1)} ${noun} ${act}`;
+    document.getElementById('videoDesc').value = `Pure ${theme} ambience. No music. #${theme}`;
+    const tags = [...(SEO_DATA.tags.themes[theme]||[]), ...SEO_DATA.tags.common];
+    document.getElementById('videoTags').value = [...new Set(tags.sort(()=>.5-Math.random()))].slice(0,15).join(' ');
+}
+function copyToClip(id) { document.getElementById(id).select(); document.execCommand("copy"); }
