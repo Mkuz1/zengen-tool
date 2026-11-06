@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # needed to publish the APK as a GitHub Release (direct download link)
 
 jobs:
   apk:
@@ -81,3 +81,15 @@ jobs:
             SAB-Passw-*.apk
             SAB-Passw-*.apk.sha256
           retention-days: 30
+
+      - name: Publish release (direct download link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="1.0.${{ github.run_number }}"
+          cp "SAB-Passw-$VER.apk" SAB-Passw.apk
+          gh release create "sab-passw-v$VER" SAB-Passw.apk "SAB-Passw-$VER.apk" "SAB-Passw-$VER.apk.sha256" \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
+            --title "SAB Passw $VER (Android)" \
+            --notes "Offline-only Android build of SAB Passw. No internet permission; cloud backup disabled. Install SAB-Passw.apk on Android 8 or newer. SHA-256 is in the .sha256 file."
+          echo "Direct download: https://github.com/${{ github.repository }}/releases/latest/download/SAB-Passw.apk" >> "$GITHUB_STEP_SUMMARY"
