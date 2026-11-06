@@ -305,8 +305,20 @@
     });
   }
 
+  // Present when running inside the Android app (see sab-passw-android). It has no network access at all.
+  const NATIVE = window.SABNative || null;
+
   let clipTimer;
   async function copy(text, label, secret) {
+    if (NATIVE) {
+      NATIVE.copy(text, !!secret);
+      clearTimeout(clipTimer);
+      if (secret && settings.clip > 0) {
+        toast(`${label} copied · clears in ${settings.clip}s`);
+        clipTimer = setTimeout(() => NATIVE.clearClipboard(), settings.clip * 1000);
+      } else toast(label + ' copied');
+      return;
+    }
     try { await navigator.clipboard.writeText(text); }
     catch {
       const ta = el('textarea', { style: { position: 'fixed', opacity: '0' } }); ta.value = text; document.body.append(ta); ta.select();
@@ -395,8 +407,10 @@
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => addEventListener(ev, resetIdle, { passive: true }));
   let filePicking = false;
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && session && settings.lockHidden && !filePicking) lock();
+    if (document.hidden && session && settings.lockHidden && !filePicking && !NATIVE) lock();
   });
+  // Called by the Android app when it goes to the background (it skips the call while a file picker is open).
+  window.sabOnBackground = () => { if (session && settings.lockHidden) lock(); };
 
   // ---------------------------------------------------------------- vault list
   let filter = { q: '', chip: 'all' };
@@ -624,11 +638,14 @@
   $('#genUse').addEventListener('click', () => { const pw = $('#genOut').dataset.pw; if (pw && genCallback) genCallback(pw); $('#genSheet').close(); });
 
   // ---------------------------------------------------------------- export
-  function download(name, text, type) {
+  /** Saves a file. Returns true when the Android app took over (it shows its own result message). */
+  function download(name, text, type, doneMsg) {
+    if (NATIVE) { NATIVE.saveFile(name, type, text, doneMsg); return true; }
     const blob = new Blob([text], { type });
     const a = el('a', { href: URL.createObjectURL(blob), download: name });
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return false;
   }
   const stamp = () => new Date().toISOString().slice(0, 10);
 
@@ -649,9 +666,10 @@
     const kdf = newKdf();
     const env = await seal(await keyFor(res.values.a, kdf), { records: session.records }, BACKUP_AAD);
     const file = { format: 'sab-passw-backup', version: 1, app: 'SAB Passw', exportedAt: now(), count: session.records.length, kdf, ...env };
-    download(`SAB-Passw-backup-${stamp()}.sabpw`, JSON.stringify(file), 'application/json');
+    const msg = `Exported ${session.records.length} items (encrypted)`;
+    const native = download(`SAB-Passw-backup-${stamp()}.sabpw`, JSON.stringify(file), 'application/octet-stream', msg);
     settings.lastExport = now(); saveSettings(); buildSettingsUI();
-    toast(`Exported ${session.records.length} items (encrypted)`);
+    if (!native) toast(msg);
   });
 
   const csvCell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
@@ -667,9 +685,10 @@
     const head = ['title', 'username', 'password', 'url', 'notes', 'tags', 'favorite', 'custom_fields', 'created', 'updated'];
     const lines = [head.join(',')].concat(session.records.map((r) => [r.title, r.username, r.password, r.url, r.notes, r.tags.join(', '),
       r.favorite ? 'true' : 'false', r.fields.length ? JSON.stringify(r.fields) : '', r.createdAt, r.updatedAt].map(csvCell).join(',')));
-    download(`SAB-Passw-export-${stamp()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv');
+    const msg = `Exported ${session.records.length} items to CSV`;
+    const native = download(`SAB-Passw-export-${stamp()}.csv`, '\ufeff' + lines.join('\r\n'), 'text/csv', msg);
     settings.lastExport = now(); saveSettings(); buildSettingsUI();
-    toast(`Exported ${session.records.length} items to CSV`);
+    if (!native) toast(msg);
   });
 
   // ---------------------------------------------------------------- import
@@ -754,9 +773,10 @@
     const input = $('#fileInput'); input.value = '';
     filePicking = true;
     return new Promise((resolve) => {
-      const done = (f) => { input.onchange = null; window.removeEventListener('focus', onFocus); setTimeout(() => { filePicking = false; }, 500); resolve(f); };
+      const done = (f) => { input.onchange = null; input.oncancel = null; window.removeEventListener('focus', onFocus); setTimeout(() => { filePicking = false; }, 500); resolve(f); };
       const onFocus = () => setTimeout(() => { if (!input.files.length) done(null); }, 1200);
       input.onchange = () => done(input.files[0] || null);
+      input.oncancel = () => done(null);
       window.addEventListener('focus', onFocus);
       input.click();
     });
@@ -855,8 +875,18 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); lock(); }
   });
 
+  // Android back button: close the top sheet if one is open; returns false to let the app exit.
+  window.sabBack = () => {
+    const open = [...document.querySelectorAll('dialog[open]')];
+    if (!open.length) return false;
+    open[open.length - 1].close(); return true;
+  };
+  window.sabToast = (msg) => toast(String(msg));
+
   bindSettings();
   applySettings();
   showLock();
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (NATIVE) {
+    $('#privacyNote').textContent = 'SAB Passw stores your vault only on this phone, encrypted with AES-256-GCM. The app has no internet permission, and Android cloud backup is turned off, so nothing can leave the device.';
+  } else if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

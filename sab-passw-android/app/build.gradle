@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The web app in ../sab-passw is the single source of the UI; it is copied into the APK's assets at build time.
+def webSrc = rootProject.file('../sab-passw')
+def webOut = layout.buildDirectory.dir('generated/sabWeb').get().asFile
+
+def copyWebApp = tasks.register('copyWebApp', Sync) {
+    from(webSrc) {
+        include 'index.html', 'app.js', 'styles.css', 'icons/icon.svg'
+    }
+    into new File(webOut, 'www')
+}
+
+android {
+    namespace 'com.sab.passw'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.sab.passw'
+        minSdk 26
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('SAB_VERSION_CODE') ?: '1')
+        versionName '1.0.' + (System.getenv('SAB_VERSION_CODE') ?: '1')
+    }
+
+    signingConfigs {
+        release {
+            // Supplied by the CI workflow (from repository secrets, or a generated key when none are set).
+            def ks = System.getenv('SAB_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('SAB_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('SAB_KEY_ALIAS')
+                keyPassword System.getenv('SAB_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig System.getenv('SAB_KEYSTORE') ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    sourceSets {
+        main.assets.srcDirs += webOut
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    dependenciesInfo {
+        // Don't embed the Google Play dependency-metadata block; this APK is side-loaded.
+        includeInApk false
+        includeInBundle false
+    }
+}
+
+tasks.named('preBuild') { dependsOn copyWebApp }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

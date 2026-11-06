@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SabTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/sab_base</item>
+        <item name="android:statusBarColor">@color/sab_base</item>
+        <item name="android:navigationBarColor">@color/sab_base</item>
+        <item name="android:colorAccent">@color/sab_accent</item>
+    </style>
+    <color name="sab_base">#0B1020</color>
+    <color name="sab_accent">#6A5CFF</color>
+    <color name="ic_launcher_bg">#7A6CFF</color>
+</resources>
