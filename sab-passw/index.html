@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" data-theme="aurora">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#6a5cff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAB Passw">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>SAB Passw</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Animated colour field that the glass refracts -->
+  <div class="backdrop" aria-hidden="true">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>
+  </div>
+
+  <!-- ============ LOCK / SETUP ============ -->
+  <main id="lockScreen" class="lock-screen">
+    <section class="glass lock-card">
+      <img class="lock-logo" src="icons/icon.svg" alt="" width="88" height="88">
+      <h1>SAB Passw</h1>
+      <p id="lockSubtitle" class="muted">Your passwords, sealed in glass.</p>
+
+      <form id="setupForm" class="stack" hidden autocomplete="off">
+        <p class="muted small">Create a master password. It encrypts everything and can't be recovered, so keep it safe.</p>
+        <label class="field">
+          <span>Master password</span>
+          <input id="setupPw" type="password" minlength="8" required autocomplete="new-password">
+        </label>
+        <div class="meter" aria-hidden="true"><i id="setupMeter"></i></div>
+        <p id="setupStrength" class="muted small">At least 8 characters.</p>
+        <label class="field">
+          <span>Confirm password</span>
+          <input id="setupPw2" type="password" minlength="8" required autocomplete="new-password">
+        </label>
+        <button class="btn primary" type="submit">Create vault</button>
+        <button class="btn ghost" type="button" id="setupImportBtn">Restore from a backup file</button>
+      </form>
+
+      <form id="unlockForm" class="stack" hidden autocomplete="off">
+        <label class="field">
+          <span>Master password</span>
+          <input id="unlockPw" type="password" required autocomplete="current-password" autofocus>
+        </label>
+        <button class="btn primary" type="submit" id="unlockBtn">Unlock</button>
+        <p id="unlockError" class="error small" role="alert"></p>
+      </form>
+    </section>
+  </main>
+
+  <!-- ============ VAULT ============ -->
+  <div id="vault" class="vault" hidden>
+    <header class="glass topbar">
+      <div class="brand">
+        <img src="icons/icon.svg" alt="" width="34" height="34">
+        <div>
+          <strong>SAB Passw</strong>
+          <span id="countLabel" class="muted small">0 items</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="genBtn" title="Password generator" aria-label="Password generator">
+          <svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn" title="Settings and themes" aria-label="Settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+        <button class="icon-btn" id="lockBtn" title="Lock now" aria-label="Lock">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="glass searchbar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Search titles, usernames, websites, tags" autocomplete="off" aria-label="Search">
+      <select id="sortSel" aria-label="Sort">
+        <option value="title">A–Z</option>
+        <option value="recent">Recent</option>
+        <option value="weak">Weakest first</option>
+      </select>
+    </div>
+
+    <nav id="chips" class="chips" aria-label="Filters"></nav>
+
+    <section id="list" class="list" aria-live="polite"></section>
+
+    <div id="emptyState" class="glass empty" hidden>
+      <h2>Nothing here yet</h2>
+      <p class="muted">Add your first login, or import a backup or CSV file from Settings.</p>
+      <button class="btn primary" id="emptyAdd">Add a password</button>
+    </div>
+
+    <button id="addBtn" class="fab" aria-label="Add record">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <!-- ============ SHEETS ============ -->
+  <dialog id="viewSheet" class="sheet glass-strong"></dialog>
+
+  <dialog id="editSheet" class="sheet glass-strong">
+    <form id="editForm" class="stack" autocomplete="off">
+      <div class="sheet-head">
+        <button type="button" class="btn ghost sm" data-close>Cancel</button>
+        <h2 id="editTitle">New record</h2>
+        <button type="submit" class="btn primary sm">Save</button>
+      </div>
+      <label class="field"><span>Title</span><input name="title" required maxlength="200"></label>
+      <label class="field"><span>Username or email</span><input name="username" maxlength="500" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Password</span>
+        <div class="input-row">
+          <input name="password" type="password" maxlength="500" autocomplete="new-password" spellcheck="false">
+          <button type="button" class="icon-btn sm" data-toggle-pw aria-label="Show password">
+            <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button type="button" class="icon-btn sm" id="editGen" aria-label="Generate password">
+            <svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
+          </button>
+        </div>
+      </label>
+      <div class="meter" aria-hidden="true"><i id="editMeter"></i></div>
+      <p id="editStrength" class="muted small"></p>
+      <label class="field"><span>Website</span><input name="url" maxlength="1000" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="example.com"></label>
+      <label class="field"><span>Tags (comma separated)</span><input name="tags" maxlength="300" placeholder="Work, Banking"></label>
+      <label class="field"><span>Notes</span><textarea name="notes" rows="3" maxlength="10000"></textarea></label>
+      <div id="customFields" class="stack"></div>
+      <div class="row wrap">
+        <button type="button" class="btn ghost sm" id="addFieldBtn">+ Custom field</button>
+        <button type="button" class="btn ghost sm" id="addQaBtn">+ Security question</button>
+        <label class="toggle"><input type="checkbox" name="favorite"><span></span>Favorite</label>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="genSheet" class="sheet glass-strong">
+    <div class="stack">
+      <div class="sheet-head">
+        <span></span><h2>Generator</h2>
+        <button type="button" class="btn ghost sm" data-close>Done</button>
+      </div>
+      <div class="gen-output glass" id="genOut" aria-live="polite"></div>
+      <div class="meter" aria-hidden="true"><i id="genMeter"></i></div>
+      <p id="genStrength" class="muted small"></p>
+      <div class="row">
+        <button class="btn primary" id="genCopy">Copy</button>
+        <button class="btn ghost" id="genNew">Regenerate</button>
+        <button class="btn ghost" id="genUse" hidden>Use password</button>
+      </div>
+      <label class="field"><span>Length: <b id="genLenLabel">20</b></span><input type="range" id="genLen" min="6" max="64" value="20"></label>
+      <div class="grid2">
+        <label class="toggle"><input type="checkbox" id="genLower" checked><span></span>Lowercase</label>
+        <label class="toggle"><input type="checkbox" id="genUpper" checked><span></span>Uppercase</label>
+        <label class="toggle"><input type="checkbox" id="genDigits" checked><span></span>Numbers</label>
+        <label class="toggle"><input type="checkbox" id="genSymbols" checked><span></span>Symbols</label>
+        <label class="toggle"><input type="checkbox" id="genSimilar"><span></span>Avoid look-alikes</label>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="settingsSheet" class="sheet glass-strong">
+    <div class="stack">
+      <div class="sheet-head">
+        <span></span><h2>Settings</h2>
+        <button type="button" class="btn ghost sm" data-close>Done</button>
+      </div>
+
+      <h3>App style</h3>
+      <div id="themeGrid" class="theme-grid" role="radiogroup" aria-label="Theme"></div>
+      <label class="field"><span>Accent colour</span>
+        <div id="accentRow" class="accent-row"></div>
+      </label>
+      <label class="field"><span>Glass blur: <b id="blurLabel"></b></span><input type="range" id="blurRange" min="4" max="48" step="2"></label>
+      <label class="field"><span>Glass opacity: <b id="opacityLabel"></b></span><input type="range" id="opacityRange" min="4" max="60" step="2"></label>
+      <label class="field"><span>Corner style</span>
+        <select id="radiusSel">
+          <option value="28">Round (default)</option>
+          <option value="40">Extra round</option>
+          <option value="16">Subtle</option>
+        </select>
+      </label>
+      <label class="toggle"><input type="checkbox" id="motionToggle"><span></span>Animated background</label>
+
+      <h3>Security</h3>
+      <label class="field"><span>Auto-lock after inactivity</span>
+        <select id="autoLockSel">
+          <option value="1">1 minute</option><option value="2">2 minutes</option><option value="5">5 minutes</option>
+          <option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option>
+          <option value="0">Never</option>
+        </select>
+      </label>
+      <label class="toggle"><input type="checkbox" id="lockHiddenToggle"><span></span>Lock when the app is minimised</label>
+      <label class="field"><span>Clear copied passwords after</span>
+        <select id="clipSel">
+          <option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">1 minute</option><option value="0">Never</option>
+        </select>
+      </label>
+      <button class="btn ghost" id="changePwBtn">Change master password</button>
+
+      <h3>Export &amp; import</h3>
+      <p class="muted small">Encrypted backups (.sabpw) are protected by a password you choose. CSV files are plain text: anyone who opens them can read every password.</p>
+      <div class="row wrap">
+        <button class="btn primary" id="exportEncBtn">Export encrypted backup</button>
+        <button class="btn ghost" id="exportCsvBtn">Export CSV</button>
+        <button class="btn ghost" id="importBtn">Import file</button>
+      </div>
+      <p id="lastExport" class="muted small"></p>
+
+      <h3>Danger zone</h3>
+      <button class="btn danger" id="wipeBtn">Erase vault on this device</button>
+      <p class="muted small">SAB Passw stores your vault only on this device, encrypted with AES-256-GCM. Nothing is sent anywhere.</p>
+    </div>
+  </dialog>
+
+  <!-- Generic prompt dialog (password entry, confirmations, choices) -->
+  <dialog id="promptSheet" class="sheet glass-strong small-sheet">
+    <form id="promptForm" class="stack" method="dialog" autocomplete="off">
+      <h2 id="promptTitle"></h2>
+      <p id="promptText" class="muted small"></p>
+      <div id="promptFields" class="stack"></div>
+      <p id="promptError" class="error small" role="alert"></p>
+      <div id="promptButtons" class="row end"></div>
+    </form>
+  </dialog>
+
+  <input type="file" id="fileInput" accept=".sabpw,.json,.csv,text/csv,application/json" hidden>
+  <div id="toast" class="toast glass" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
