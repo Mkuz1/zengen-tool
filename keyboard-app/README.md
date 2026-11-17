@@ -12,14 +12,14 @@ One app, two separate system keyboards, each with its own settings, languages an
 <img src="docs/screenshots/bb_classic_letters.png" width="49%" alt="BlackBerry style">
 
 ## Download
-Get the latest APK from **[Releases](../../releases/latest)** (Android 9 or newer).
+Get the latest APK from **[MK-Board-releases](https://github.com/Mkuz1/MK-Board-releases/releases/latest)** (Android 9 or newer). This source repo is private; APKs and release notes are published to that public repo.
 
 1. Open the APK on your phone (allow "install unknown apps" when asked).
 2. Open **MK Board** → *Open keyboard settings* → turn on one or both keyboards.
 3. *Switch keyboard…* → pick **MK Board · iPhone** or **MK Board · BlackBerry**.
 
 ### Automatic updates
-MK Board checks this repository's releases a few times a day. When a new version is out it shows a notification. Tap it, then **Update now**, and Android installs the update after one confirmation. You can also check by hand on the app's main screen, under *Updates*.
+MK Board checks the public [MK-Board-releases](https://github.com/Mkuz1/MK-Board-releases) repo a few times a day. When a new version is out it shows a notification. Tap it, then **Update now**, and Android installs the update after one confirmation. You can also check by hand on the app's main screen, under *Updates*.
 
 > Upgrading from 2.0 or older? Those builds used a temporary signing key. Uninstall once and install 2.1.0. Every update after that installs in place.
 
@@ -52,9 +52,14 @@ Release builds are signed with the MK Board key from `keystore.properties` or th
 2. Optionally add `release-notes/<version>.md`.
 3. Push a tag: `git tag v2.2.0 && git push origin v2.2.0`.
 
-The **Release** workflow builds a signed APK and publishes the GitHub release. Every installed copy of MK Board will then offer the update.
+The **Release** workflow builds the signed APK and publishes it as a release on **Mkuz1/MK-Board-releases**. Every installed copy of MK Board will then offer the update.
 
-The workflow signs in CI when these repository secrets are set: `MKBOARD_KEYSTORE_BASE64`, `MKBOARD_KEYSTORE_PASSWORD`, `MKBOARD_KEY_ALIAS`, `MKBOARD_KEY_PASSWORD`. Without them, it publishes the prebuilt, already-signed `dist/MKBoard-<version>.apk` instead.
+Repository secrets:
+
+| Secret | Purpose |
+|---|---|
+| `RELEASES_TOKEN` | Fine-grained personal access token with **Contents: read and write** on `Mkuz1/MK-Board-releases`. Needed to publish. |
+| `MKBOARD_KEYSTORE_BASE64`, `MKBOARD_KEYSTORE_PASSWORD`, `MKBOARD_KEY_ALIAS`, `MKBOARD_KEY_PASSWORD` | Sign the APK in CI. If these aren't set, the prebuilt, already-signed `dist/MKBoard-<version>.apk` is used. |
 
 ---
 The keyboards are drawn from scratch in code. MK Board does not use Apple or BlackBerry fonts, icons or artwork, and is not affiliated with either company.

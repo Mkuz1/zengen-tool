@@ -1,19 +1,25 @@
 name: Release
 
-# Push a tag like v2.2.0 (matching versionName in app/build.gradle) to publish a release.
-# The app's in-app updater picks up the newest non-draft, non-prerelease release and its .apk asset.
+# Push a tag like v2.2.0 (matching versionName in app/build.gradle) to build the signed APK and publish it to
+# the public Mkuz1/MK-Board-releases repo, where the app's in-app updater looks for new versions.
+#
+# Repository secrets used:
+#   MKBOARD_KEYSTORE_BASE64, MKBOARD_KEYSTORE_PASSWORD, MKBOARD_KEY_ALIAS, MKBOARD_KEY_PASSWORD  (signing; optional —
+#     without them the prebuilt dist/MKBoard-<version>.apk is used)
+#   RELEASES_TOKEN  fine-grained token with "Contents: read and write" on Mkuz1/MK-Board-releases
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write
+env:
+  RELEASES_REPO: Mkuz1/MK-Board-releases
 
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
       HAS_KEY: ${{ secrets.MKBOARD_KEYSTORE_BASE64 != '' }}
+      HAS_TOKEN: ${{ secrets.RELEASES_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,13 +59,22 @@ jobs:
           echo "APK versionName: $APK_VERSION"
           test "$APK_VERSION" = "$VERSION" || { echo "::error::APK is $APK_VERSION but tag is $VERSION"; exit 1; }
 
-      - name: Publish GitHub release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MKBoard-${{ env.VERSION }}
+          path: MKBoard-${{ env.VERSION }}.apk
+
+      - name: Publish to the public releases repo
+        if: env.HAS_TOKEN == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           NOTES="release-notes/$VERSION.md"
-          if [ -f "$NOTES" ]; then
-            gh release create "$GITHUB_REF_NAME" "MKBoard-$VERSION.apk" --title "MK Board $VERSION" --notes-file "$NOTES"
-          else
-            gh release create "$GITHUB_REF_NAME" "MKBoard-$VERSION.apk" --title "MK Board $VERSION" --generate-notes
-          fi
+          [ -f "$NOTES" ] || { echo "MK Board $VERSION" > "$NOTES"; }
+          gh release create "$GITHUB_REF_NAME" "MKBoard-$VERSION.apk" -R "$RELEASES_REPO" \
+            --title "MK Board $VERSION" --notes-file "$NOTES"
+
+      - name: Explain how to publish without a token
+        if: env.HAS_TOKEN != 'true'
+        run: |
+          echo "::warning::RELEASES_TOKEN is not set, so nothing was published. Download the APK artifact from this run and add it to $RELEASES_REPO (apk/ folder + tag), or add the secret and re-run."

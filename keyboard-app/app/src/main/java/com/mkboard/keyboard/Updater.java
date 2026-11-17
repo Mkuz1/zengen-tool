@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
  * the keyboard is ever sent anywhere.
  */
 public final class Updater {
-    public static final String REPO = "mkuz1/MK-Board";
+    public static final String REPO = "Mkuz1/MK-Board-releases";
     public static final String RELEASES_PAGE = "https://github.com/" + REPO + "/releases";
     private static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
     private static final String PREFS = "updater";
