@@ -1,7 +1,8 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
@@ -39,6 +40,8 @@ public class KeyboardView extends View {
         void onCursorMove(int dir);
 
         void onSuggestion(int index);
+
+        void onFlick(Key k);
     }
 
     public static final int IOS = 0, BB = 1;
@@ -55,6 +58,20 @@ public class KeyboardView extends View {
     public boolean previewOnly;
     public boolean enterAction;
     public String spaceLabel = "";
+    /** Liquid Glass rendering (iPhone style). */
+    public boolean glass;
+    /** Draw the glass panel tint inside the view (settings preview); in the IME the window background does it. */
+    public boolean drawPanel = true;
+    /** Whether the system blurs what is behind the keyboard. */
+    public boolean blurAvailable = true;
+    /** 0 = frosted, 1 = clear. */
+    public float glassT = 0.55f;
+    /** Max width for keys (centred) on wide screens; 0 = full width. */
+    public float maxContentWidth;
+    private float contentLeft, contentW;
+    private float downY;
+    private boolean flick;
+    private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
     public java.util.Locale locale = java.util.Locale.getDefault();
     private String[] suggestions = new String[3];
 
@@ -111,34 +128,56 @@ public class KeyboardView extends View {
 
     // ------------------------------------------------------------------ geometry
 
+    private float rowUnits() {
+        float rows = 0;
+        if (layout != null) for (KeyboardLayout.Row r : layout.rows) rows += r.h;
+        else rows = 4;
+        return rows;
+    }
+
+    /** Sizes adapt to phone / landscape / tablet / unfolded foldable, and never exceed ~half the screen. */
     private void metrics() {
+        Configuration cfg = getResources().getConfiguration();
+        boolean land = cfg.orientation == Configuration.ORIENTATION_LANDSCAPE;
+        boolean tablet = cfg.smallestScreenWidthDp >= 600;
         if (style == IOS) {
-            rowH = dp * 54 * scale;
-            vgap = dp * 11 * scale;
-            hgap = dp * 6;
-            side = dp * 3;
-            topPad = dp * 6 * scale;
-            bottomPad = dp * 2;
-            suggestH = showSuggest ? dp * 42 * scale : dp * 4;
+            float base = tablet ? (land ? 66 : 60) : (land ? 42 : 54);
+            float k = base / 54f;
+            rowH = dp * base * scale;
+            vgap = dp * 11 * k * scale;
+            hgap = dp * (tablet ? 8 : 6);
+            side = dp * (tablet ? 6 : 3);
+            topPad = dp * (glass ? 10 : 6) * scale;
+            bottomPad = dp * (glass ? 4 : 2);
+            suggestH = showSuggest ? dp * (land && !tablet ? 36 : 42) * scale : dp * 4;
             radius = dp * 5.5f;
         } else {
-            rowH = dp * 50 * scale;
-            vgap = dp * 8 * scale;
+            float base = tablet ? (land ? 58 : 56) : (land ? 40 : 50);
+            float k = base / 50f;
+            rowH = dp * base * scale;
+            vgap = dp * 8 * k * scale;
             hgap = dp * 5;
             side = dp * 4;
             topPad = dp * 4;
             bottomPad = dp * 4;
-            suggestH = showSuggest ? dp * 38 * scale : 0;
+            suggestH = showSuggest ? dp * (land && !tablet ? 34 : 38) * scale : 0;
             radius = dp * 5;
+        }
+        if (cfg.screenHeightDp > 0) {
+            float cap = cfg.screenHeightDp * dp * (land ? 0.56f : 0.46f);
+            float rows = rowUnits();
+            float total = suggestH + topPad + rows * rowH + bottomPad;
+            if (total > cap) {
+                float f = Math.max(0.6f, (cap - suggestH - topPad - bottomPad) / (rows * rowH));
+                rowH *= f;
+                vgap *= f;
+            }
         }
     }
 
     private int desiredHeight() {
         metrics();
-        float rows = 0;
-        if (layout != null) for (KeyboardLayout.Row r : layout.rows) rows += r.h;
-        else rows = 4;
-        return (int) (suggestH + topPad + rows * rowH + bottomPad);
+        return (int) (suggestH + topPad + rowUnits() * rowH + bottomPad);
     }
 
     @Override
@@ -156,7 +195,9 @@ public class KeyboardView extends View {
         int W = getWidth();
         if (W == 0 || layout == null) return;
         float cols = layout.columns;
-        float u = (W - 2 * side) / cols;
+        contentW = maxContentWidth > 0 ? Math.min(W, maxContentWidth) : W;
+        contentLeft = (W - contentW) / 2f;
+        float u = (contentW - 2 * side) / cols;
         float y = suggestH + topPad;
         for (KeyboardLayout.Row row : layout.rows) {
             float rh = rowH * row.h;
@@ -170,7 +211,7 @@ public class KeyboardView extends View {
             if (fixed > cols) sc = cols / fixed;
             else if (flexN > 0) fw = (cols - fixed) / flexN;
             float total = fixed * sc + fw * flexN;
-            float x = side + (cols - total) / 2f * u;
+            float x = contentLeft + side + (cols - total) / 2f * u;
             for (Key k : row.keys) {
                 float w = (k.flex ? fw : k.weight * sc) * u;
                 k.cell.set(x, y, x + w, y + rh);
@@ -211,7 +252,12 @@ public class KeyboardView extends View {
 
     @Override
     protected void onDraw(Canvas c) {
-        c.drawColor(theme.bg);
+        if (glass) {
+            if (drawPanel) drawGlassPanel(c);
+            drawGlassRim(c);
+        } else {
+            c.drawColor(theme.bg);
+        }
         if (layout == null) return;
         if (showSuggest) drawSuggest(c);
         if (style == BB) drawFrets(c);
@@ -239,32 +285,35 @@ public class KeyboardView extends View {
     }
 
     private void drawSuggest(Canvas c) {
-        float w = getWidth();
+        float w = contentW > 0 ? contentW : getWidth();
         float h = suggestH;
+        c.save();
+        c.translate(contentLeft, 0);
         if (style == IOS) {
             float cw = w / 3f;
             for (int i = 0; i < 3; i++) {
                 String s = suggestions.length > i ? suggestions[i] : null;
                 if (s == null) continue;
                 if (suggestDown && suggestIdx == i) {
-                    fill.setColor(theme.special);
-                    c.drawRoundRect(cw * i + dp * 4, dp * 4, cw * (i + 1) - dp * 4, h - dp * 2, radius, radius, fill);
+                    fill.setColor(glass ? KbTheme.withAlpha(theme.key, 150) : theme.special);
+                    float rr = glass ? (h - dp * 6) / 2 : radius;
+                    c.drawRoundRect(cw * i + dp * 4, dp * 4, cw * (i + 1) - dp * 4, h - dp * 2, rr, rr, fill);
                 }
                 drawText(c, s, cw * i + cw / 2, h / 2 + dp, dp * 16.5f * Math.min(scale, 1.15f), theme.text,
                         regular, cw - dp * 12);
             }
-            fill.setColor(KbTheme.withAlpha(theme.special, 255));
+            fill.setColor(glass ? KbTheme.withAlpha(theme.text, 40) : KbTheme.withAlpha(theme.special, 255));
             for (int i = 1; i < 3; i++) {
                 String a = suggestions.length > i - 1 ? suggestions[i - 1] : null;
                 String b = suggestions.length > i ? suggestions[i] : null;
-                if (a != null && b != null)
+                if (a != null && b != null && !glass)
                     c.drawRect(cw * i - dp * 0.5f, h * 0.28f, cw * i + dp * 0.5f, h * 0.78f, fill);
             }
         } else {
             fill.setColor(0xFF000000);
             fill.setShader(new LinearGradient(0, 0, 0, h, KbTheme.lighten(theme.special, 0.08f),
                     KbTheme.darken(theme.special, 0.2f), Shader.TileMode.CLAMP));
-            c.drawRect(0, 0, w, h, fill);
+            c.drawRect(-contentLeft, 0, getWidth(), h, fill);
             fill.setShader(null);
             float cw = w / 3f;
             for (int i = 0; i < 3; i++) {
@@ -279,6 +328,104 @@ public class KeyboardView extends View {
                         hl ? KbTheme.contrast(theme.accent) : theme.text, i == 0 ? bold : regular, cw - dp * 14);
             }
         }
+        c.restore();
+    }
+
+    // ------------------------------------------------------------------ Liquid Glass
+
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
+
+    private float effT() {
+        return blurAvailable ? glassT : glassT * 0.45f;
+    }
+
+    /** Alpha of the frosted panel tint. */
+    public static int panelAlpha(float t, boolean blur) {
+        return (int) (255 * (blur ? lerp(0.9f, 0.32f, t) : lerp(0.97f, 0.8f, t)));
+    }
+
+    private final Path panelPath = new Path();
+
+    private void panelPath() {
+        float R = dp * 26;
+        panelPath.reset();
+        panelPath.addRoundRect(new RectF(0, 0, getWidth(), getHeight() + R), new float[]{R, R, R, R, 0, 0, 0, 0},
+                Path.Direction.CW);
+    }
+
+    private void drawGlassPanel(Canvas c) {
+        panelPath();
+        int a = panelAlpha(glassT, blurAvailable);
+        fill.setColor(0xFF000000);
+        fill.setShader(new LinearGradient(0, 0, 0, getHeight(), KbTheme.withAlpha(KbTheme.lighten(theme.bg, 0.12f), a),
+                KbTheme.withAlpha(theme.bg, a), Shader.TileMode.CLAMP));
+        c.drawPath(panelPath, fill);
+        fill.setShader(null);
+    }
+
+    private void drawGlassRim(Canvas c) {
+        panelPath();
+        boolean light = KbTheme.luminance(theme.bg) > 0.5f;
+        // soft sheen across the top of the glass sheet
+        fill.setColor(0xFF000000);
+        fill.setShader(new LinearGradient(0, 0, 0, dp * 30, light ? 0x55FFFFFF : 0x22FFFFFF, 0x00FFFFFF,
+                Shader.TileMode.CLAMP));
+        c.save();
+        c.clipPath(panelPath);
+        c.drawRect(0, 0, getWidth(), dp * 30, fill);
+        c.restore();
+        fill.setShader(null);
+        // specular edge
+        rim.setStyle(Paint.Style.STROKE);
+        rim.setStrokeWidth(dp);
+        rim.setColor(0xFF000000);
+        rim.setShader(new LinearGradient(0, 0, getWidth(), 0,
+                new int[]{0xCCFFFFFF, light ? 0x88FFFFFF : 0x40FFFFFF, 0xCCFFFFFF}, null, Shader.TileMode.CLAMP));
+        c.save();
+        c.translate(0, dp * 0.5f);
+        c.drawPath(panelPath, rim);
+        c.restore();
+        rim.setShader(null);
+    }
+
+    /** A translucent, refractive glass key with specular rim light. */
+    private void drawGlassKey(Canvas c, RectF r, int base, boolean pressed, boolean action) {
+        float gr = Math.min(r.height() * 0.3f, dp * 13);
+        boolean darkKey = KbTheme.luminance(base) < 0.5f;
+        float t = effT();
+        float alpha = action ? 0.92f : (darkKey ? lerp(0.85f, 0.32f, t) : lerp(0.96f, 0.5f, t));
+        if (pressed && !action) alpha = Math.min(1f, alpha + 0.3f);
+        int a = (int) (255 * alpha);
+        if (shadows) {
+            fill.setShader(null);
+            fill.setColor(KbTheme.withAlpha(0xFF000000, darkKey ? 55 : 22));
+            c.drawRoundRect(r.left, r.top + dp * 1.2f, r.right, r.bottom + dp * 1.8f, gr, gr, fill);
+        }
+        int body = pressed && !action ? KbTheme.lighten(base, darkKey ? 0.3f : 0f) : base;
+        if (pressed && action) body = KbTheme.darken(base, 0.15f);
+        fill.setColor(0xFF000000);
+        fill.setShader(new LinearGradient(0, r.top, 0, r.bottom,
+                KbTheme.withAlpha(KbTheme.lighten(body, darkKey ? 0.16f : 0.5f), a), KbTheme.withAlpha(body, a),
+                Shader.TileMode.CLAMP));
+        c.drawRoundRect(r, gr, gr, fill);
+        // lensing: light gathers at the lower edge of the glass
+        fill.setShader(new LinearGradient(0, r.centerY(), 0, r.bottom, 0x00FFFFFF,
+                darkKey ? 0x26FFFFFF : 0x66FFFFFF, Shader.TileMode.CLAMP));
+        c.drawRoundRect(r, gr, gr, fill);
+        fill.setShader(null);
+        // specular rim (bright top-left & bottom-right)
+        rim.setStyle(Paint.Style.STROKE);
+        rim.setStrokeWidth(dp * 1.1f);
+        rim.setColor(0xFF000000);
+        rim.setShader(new LinearGradient(r.left, r.top, r.right, r.bottom,
+                darkKey ? new int[]{0xA0FFFFFF, 0x26FFFFFF, 0x10FFFFFF, 0x70FFFFFF}
+                        : new int[]{0xF0FFFFFF, 0x55FFFFFF, 0x33FFFFFF, 0xC0FFFFFF},
+                new float[]{0f, 0.35f, 0.65f, 1f}, Shader.TileMode.CLAMP));
+        float h = dp * 0.55f;
+        c.drawRoundRect(r.left + h, r.top + h, r.right - h, r.bottom - h, gr, gr, rim);
+        rim.setShader(null);
     }
 
     private void drawFrets(Canvas c) {
@@ -307,15 +454,15 @@ public class KeyboardView extends View {
         float sw = dp * 1.6f;
         if (k.bare) {
             if (pressed) {
-                fill.setColor(theme.special);
-                if (layout.emoji && k.isChar()) c.drawRoundRect(r, radius, radius, fill);
+                fill.setColor(glass ? KbTheme.withAlpha(theme.key, 140) : theme.special);
+                if (layout.emoji && k.isChar()) c.drawRoundRect(r, radius * 2, radius * 2, fill);
                 else c.drawCircle(cx, cy, Math.min(r.width(), r.height()) * 0.55f, fill);
             }
             if (k.isChar()) {
                 drawText(c, k.label, cx, cy, rowH * 0.55f, theme.text, regular, 0);
                 return;
             }
-            int ic = KbTheme.blend(theme.text, theme.bg, 0.35f);
+            int ic = glass ? KbTheme.withAlpha(theme.text, 200) : KbTheme.blend(theme.text, theme.bg, 0.35f);
             iconPaint(ic);
             float s = rowH * 0.44f;
             if (k.type == Key.T.GLOBE) Icons.globe(c, cx, cy, s, icon, sw);
@@ -332,18 +479,33 @@ public class KeyboardView extends View {
             else if (fn) col = theme.key;
             else if (!(showPreview && k.isChar())) col = theme.special;
         }
-        if (shadows) {
-            fill.setColor(theme.shadow);
-            c.drawRoundRect(r.left, r.top + dp, r.right, r.bottom + dp, radius, radius, fill);
+        if (glass) {
+            int gb = fn ? theme.special : theme.key;
+            if (action) gb = theme.accent;
+            if (k.type == Key.T.SHIFT && (shifted || capsLock)) gb = KbTheme.luminance(theme.key) < 0.5f
+                    ? KbTheme.lighten(theme.key, 0.7f) : theme.key;
+            drawGlassKey(c, r, gb, pressed && !(showPreview && k.isChar()), action);
+        } else {
+            if (shadows) {
+                fill.setColor(theme.shadow);
+                c.drawRoundRect(r.left, r.top + dp, r.right, r.bottom + dp, radius, radius, fill);
+            }
+            fill.setColor(col);
+            c.drawRoundRect(r, radius, radius, fill);
         }
-        fill.setColor(col);
-        c.drawRoundRect(r, radius, radius, fill);
 
         int tc = action ? KbTheme.contrast(theme.accent) : theme.text;
         float maxW = r.width() - dp * 6;
         switch (k.type) {
             case CHAR: {
                 String s = label(k);
+                if (layout.flick && k.alt != null) {
+                    drawText(c, k.alt, cx, r.top + r.height() * 0.28f, rowH * 0.22f, KbTheme.withAlpha(tc, 130),
+                            regular, maxW);
+                    drawText(c, k.shiftText != null ? k.label : s, cx, r.top + r.height() * 0.64f, rowH * 0.36f,
+                            tc, regular, maxW);
+                    break;
+                }
                 boolean single = s.codePointCount(0, s.length()) == 1;
                 float size = rowH * (single ? (layout.letters ? 0.46f : 0.42f) : 0.32f);
                 drawText(c, s, cx, cy - (layout.letters && k.caseable && !(shifted || capsLock) ? dp * 2 : dp),
@@ -356,7 +518,7 @@ public class KeyboardView extends View {
                 break;
             case DELETE:
                 iconPaint(tc);
-                Icons.delete(c, cx, cy, rowH * 0.34f, icon, sw, pressed, col);
+                Icons.delete(c, cx, cy, rowH * 0.34f, icon, sw, pressed, glass ? theme.special : col);
                 break;
             case EMOJI:
                 iconPaint(tc);
@@ -365,6 +527,14 @@ public class KeyboardView extends View {
             case GLOBE:
                 iconPaint(tc);
                 Icons.globe(c, cx, cy, rowH * 0.42f, icon, sw);
+                break;
+            case MIC:
+                iconPaint(tc);
+                Icons.mic(c, cx, cy, rowH * 0.42f, icon, sw);
+                break;
+            case HIDE:
+                iconPaint(tc);
+                Icons.hide(c, cx, cy, rowH * 0.42f, icon, sw);
                 break;
             case SPACE:
                 drawText(c, spaceLabel, cx, cy, rowH * 0.30f, tc, regular, maxW);
@@ -533,7 +703,8 @@ public class KeyboardView extends View {
         repeatCount = 0;
         if (showSuggest && y < suggestH) {
             suggestDown = true;
-            suggestIdx = Math.max(0, Math.min(2, (int) (x / (getWidth() / 3f))));
+            float cw = (contentW > 0 ? contentW : getWidth()) / 3f;
+            suggestIdx = Math.max(0, Math.min(2, (int) ((x - contentLeft) / cw)));
             cur = null;
             invalidate();
             return;
@@ -542,6 +713,8 @@ public class KeyboardView extends View {
         if (k == null) return;
         cur = k;
         downX = x;
+        downY = y;
+        flick = false;
         lastDragX = x;
         if (listener != null) listener.onPress(k);
         if (k.type == Key.T.DELETE) {
@@ -587,6 +760,19 @@ public class KeyboardView extends View {
             return;
         }
         if (longFired) return;
+        if (layout.flick && cur.isChar() && cur.alt != null) {
+            // iPad: swipe down on a key types the small character printed on it
+            if (!flick && y - downY > rowH * 0.32f) {
+                flick = true;
+                handler.removeCallbacks(longPress);
+                showKeyPreview(cur);
+                invalidate();
+            } else if (flick && y - downY < rowH * 0.15f) {
+                flick = false;
+                showKeyPreview(cur);
+            }
+            if (flick) return;
+        }
         if (cur.isChar()) {
             Key k = hit(x, y);
             if (k != null && k != cur && k.isChar()) {
@@ -616,9 +802,12 @@ public class KeyboardView extends View {
         if (altsMode) {
             altsMode = false;
             if (commit && listener != null) listener.onAltSelected(k, altSel);
+        } else if (commit && flick && listener != null) {
+            listener.onFlick(k);
         } else if (commit && !longFired && !spaceDrag && k.type != Key.T.DELETE && listener != null) {
             listener.onKey(k);
         }
+        flick = false;
         invalidate();
     }
 
@@ -675,7 +864,7 @@ public class KeyboardView extends View {
         RectF kr = k.draw;
         float kw = kr.width(), kh = kr.height();
         pop.alts = false;
-        pop.label = k.alt != null && altOn && style == BB ? k.alt : (style == BB && k.caseable
+        pop.label = flick && k.alt != null ? k.alt : k.alt != null && altOn && style == BB ? k.alt : (style == BB && k.caseable
                 ? ((shifted || capsLock) ? k.label.toUpperCase(locale) : k.label.toLowerCase(locale)) : label(k));
         if (style == IOS) {
             float ext = Math.max(dp * 8, kw * 0.32f);
@@ -804,8 +993,20 @@ public class KeyboardView extends View {
                 c.drawPath(path, p);
                 c.restore();
             }
-            p.setColor(theme.key);
+            if (glass) {
+                int kc = KbTheme.luminance(theme.key) < 0.5f ? KbTheme.lighten(theme.key, 0.12f) : theme.key;
+                p.setColor(KbTheme.withAlpha(kc, 0xF5));
+            } else {
+                p.setColor(theme.key);
+            }
             c.drawPath(path, p);
+            if (glass) {
+                p.setStyle(Paint.Style.STROKE);
+                p.setStrokeWidth(dp);
+                p.setColor(0xB3FFFFFF);
+                c.drawPath(path, p);
+                p.setStyle(Paint.Style.FILL);
+            }
             if (!alts) {
                 drawPopText(c, label, bulbW / 2, bulbH * 0.55f, rowH * 0.66f, theme.text, regular);
             } else {

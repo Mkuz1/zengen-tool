@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -30,6 +30,7 @@ public abstract class KeyboardSettingsActivity extends Activity {
     private KbPrefs prefs;
     private Ui ui;
     private KeyboardView preview;
+    private Backdrop backdrop;
     private final List<Runnable> refreshers = new ArrayList<>();
 
     @Override
@@ -46,21 +47,18 @@ public abstract class KeyboardSettingsActivity extends Activity {
 
     private void build() {
         refreshers.clear();
-        ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(ui.bg);
-        sv.setFillViewport(true);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setPadding(ui.px(16), ui.px(8), ui.px(16), ui.px(40));
-        sv.addView(col);
+        ScrollView sv = ui.scroll(col);
 
-        TextView back = ui.tv("‹ Zen Keyboards", 17, ui.accent, false);
+        TextView back = ui.tv("‹ MK Board", 17, ui.accent, false);
         back.setPadding(0, ui.px(10), 0, 0);
         back.setOnClickListener(v -> finish());
         col.addView(back);
         col.addView(ui.title(ios() ? "iPhone Style" : "BlackBerry Style"));
-        TextView sub = ui.tv(ios() ? "Zen Glass keyboard · settings apply instantly"
-                : "Zen Classic keyboard · settings apply instantly", 14, ui.sub, false);
+        TextView sub = ui.tv(ios() ? "Liquid Glass keyboard · changes apply instantly"
+                : "Classic keyboard · changes apply instantly", 14, ui.sub, false);
         sub.setPadding(ui.px(4), 0, 0, ui.px(6));
         col.addView(sub);
 
@@ -70,18 +68,27 @@ public abstract class KeyboardSettingsActivity extends Activity {
         pf.setClipToOutline(true);
         preview = new KeyboardView(this, ios() ? KeyboardView.IOS : KeyboardView.BB);
         preview.previewOnly = true;
-        pf.addView(preview, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (ios()) {
+            backdrop = new Backdrop();
+            pf.addView(backdrop, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        FrameLayout.LayoutParams kp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        kp.topMargin = ios() ? ui.px(36) : 0;
+        pf.addView(preview, kp);
         LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         plp.topMargin = ui.px(10);
         col.addView(pf, plp);
         refreshPreview();
 
+        if (ios()) buildGlass(col);
         buildLanguages(col);
         buildThemes(col);
         buildColours(col);
         buildSize(col);
+        buildLargeScreens(col);
         buildTyping(col);
         buildSound(col);
 
@@ -109,14 +116,23 @@ public abstract class KeyboardSettingsActivity extends Activity {
 
     private void refreshPreview() {
         if (preview == null) return;
+        Layouts.Opts o = new Layouts.Opts();
         preview.setTheme(prefs.theme());
         preview.scale = prefs.height();
         preview.showSuggest = prefs.b(KbPrefs.K_PREDICT);
         preview.showAltLabels = prefs.b(KbPrefs.K_SHOWALT);
         preview.shadows = prefs.b(KbPrefs.K_SHADOW);
+        boolean glass = ios() && prefs.b(KbPrefs.K_GLASS);
+        preview.glass = glass;
+        preview.drawPanel = true;
+        preview.glassT = prefs.glassT();
+        preview.blurAvailable = true;
+        if (backdrop != null) backdrop.setVisibility(glass ? View.VISIBLE : View.GONE);
+        boolean wide = ios() && getResources().getConfiguration().smallestScreenWidthDp >= 600
+                && prefs.b(KbPrefs.K_WIDE);
+        o.wide = wide;
         Languages.Lang l = Languages.get(prefs.curLang());
         preview.locale = l.locale;
-        Layouts.Opts o = new Layouts.Opts();
         o.multiLang = prefs.langs().size() > 1;
         preview.setLayout(ios() ? Layouts.ios(l, Layouts.LETTERS, o) : Layouts.bb(l, Layouts.LETTERS, o));
         preview.shifted = ios() && l.hasCase;
@@ -124,6 +140,86 @@ public abstract class KeyboardSettingsActivity extends Activity {
         preview.setSuggestions(new Suggest(this, kind()).starters(l.code).clone());
         preview.requestLayout();
         preview.invalidate();
+    }
+
+    // ------------------------------------------------------------------ Liquid Glass
+
+    private void buildGlass(LinearLayout col) {
+        LinearLayout card = ui.section(col, "Design", "Liquid Glass makes the keyboard a frosted, see-through "
+                + "sheet that blurs your app behind it (Android 12+ devices with blur enabled; otherwise a frosted "
+                + "tint is used).");
+        toggle(card, "Liquid Glass", "Translucent glass keys with light-catching edges", KbPrefs.K_GLASS);
+        TextView val = ui.tv("", 15, ui.sub, false);
+        ui.row(card, "Glass transparency", "Frosted ↔ Clear", val, null);
+        SeekBar sb = new SeekBar(this);
+        sb.setMax(100);
+        sb.setProgress((int) (prefs.glassT() * 100));
+        val.setText((int) (prefs.glassT() * 100) + "%");
+        LinearLayout holder = new LinearLayout(this);
+        holder.setPadding(ui.px(8), 0, ui.px(8), ui.px(10));
+        holder.addView(sb, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ui.px(36)));
+        card.addView(holder);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
+                val.setText(p + "%");
+                if (u) {
+                    prefs.sp.edit().putInt(KbPrefs.K_GLASS_T, p).apply();
+                    refreshPreview();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
+        });
+    }
+
+    /** Colourful, blurred "app content" behind the preview so the glass effect is visible. */
+    private final class Backdrop extends View {
+        final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        Backdrop() {
+            super(KeyboardSettingsActivity.this);
+            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                setRenderEffect(android.graphics.RenderEffect.createBlurEffect(ui.dp * 18, ui.dp * 18,
+                        android.graphics.Shader.TileMode.CLAMP));
+            }
+        }
+
+        @Override
+        protected void onDraw(Canvas c) {
+            float w = getWidth(), h = getHeight(), d = ui.dp;
+            p.setShader(new android.graphics.LinearGradient(0, 0, w, h, new int[]{0xFF3A7BFF, 0xFF7A4DFF, 0xFFFF4FA0,
+                    0xFFFFB347}, null, android.graphics.Shader.TileMode.CLAMP));
+            c.drawRect(0, 0, w, h, p);
+            p.setShader(null);
+            p.setColor(0xCCFFFFFF);
+            c.drawCircle(w * 0.18f, h * 0.35f, 46 * d, p);
+            p.setColor(0xCC00E0B0);
+            c.drawCircle(w * 0.62f, h * 0.55f, 64 * d, p);
+            p.setColor(0xCCFFE14D);
+            c.drawCircle(w * 0.9f, h * 0.2f, 38 * d, p);
+            p.setColor(0xFFFFFFFF);
+            p.setTextSize(15 * d);
+            c.drawText("Your app shows through the glass", 16 * d, 24 * d, p);
+        }
+    }
+
+    // ------------------------------------------------------------------ large screens
+
+    private void buildLargeScreens(LinearLayout col) {
+        LinearLayout card = ui.section(col, "Tablets & foldables", ios()
+                ? "When your foldable is opened or you use a tablet, the keyboard switches automatically. "
+                + "Swipe down on a key to type the small character shown on it."
+                : "Phones keep the full-width keyboard. On tablets, unfolded foldables and landscape the keys can "
+                + "stay centred like a real BlackBerry keyboard.");
+        toggle(card, ios() ? "iPad-style layout on large screens" : "Stretch to full width on large screens",
+                ios() ? "Off: phone layout, centred" : "Off: centred, compact", KbPrefs.K_WIDE);
     }
 
     // ------------------------------------------------------------------ languages

@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -16,7 +16,8 @@ public final class KbPrefs {
             K_FRET = "c_fret", K_ALT = "c_alt", K_HEIGHT = "height",
             K_AUTOCAP = "autocap", K_CAPSLOCK = "capslock", K_DOUBLESPACE = "dblspace", K_PREVIEW = "preview",
             K_PREDICT = "predict", K_SOUND = "sound", K_VIBRATE = "vibrate", K_SHOWALT = "showalt",
-            K_SHADOW = "shadow", K_SPACE_CURSOR = "space_cursor", K_SYM_RETURN = "sym_return";
+            K_SHADOW = "shadow", K_SPACE_CURSOR = "space_cursor", K_SYM_RETURN = "sym_return",
+            K_GLASS = "glass", K_GLASS_T = "glass_t", K_WIDE = "wide";
 
     public final String kind;
     public final SharedPreferences sp;
@@ -69,6 +70,8 @@ public final class KbPrefs {
         switch (k) {
             case K_VIBRATE:
                 return !isIos();
+            case K_WIDE:
+                return isIos();
             default:
                 return true;
         }
@@ -109,6 +112,11 @@ public final class KbPrefs {
     public KbTheme theme() {
         return new KbTheme(color(K_BG), color(K_KEY), color(K_SPECIAL), color(K_TEXT), color(K_ACCENT),
                 color(K_FRET), color(K_ALT));
+    }
+
+    /** Liquid Glass transparency 0 (frosted) – 1 (clear). */
+    public float glassT() {
+        return sp.getInt(K_GLASS_T, 55) / 100f;
     }
 
     /** Height scale 0.8 – 1.3. */

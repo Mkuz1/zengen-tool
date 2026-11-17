@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.app.Activity;
 import android.content.Context;
@@ -22,21 +22,20 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         ui = new Ui(this);
-        ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(ui.bg);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setPadding(ui.px(16), ui.px(8), ui.px(16), ui.px(40));
-        sv.addView(col);
+        ScrollView sv = ui.scroll(col);
 
-        col.addView(ui.title("Zen Keyboards"));
-        TextView intro = ui.tv("Two keyboards in one app — an iPhone-style keyboard and a BlackBerry-style "
-                + "keyboard — each with its own languages, colours and settings.", 15, ui.sub, false);
+        col.addView(ui.title("MK Board"));
+        TextView intro = ui.tv("Two keyboards in one app — an iPhone-style Liquid Glass keyboard and a "
+                + "BlackBerry-style keyboard — each with its own languages, colours and settings. "
+                + "Works on phones, tablets and foldables.", 15, ui.sub, false);
         intro.setPadding(ui.px(4), ui.px(2), ui.px(4), 0);
         col.addView(intro);
 
         LinearLayout step1 = ui.section(col, "Step 1 · Turn on", "Android will show a standard warning that "
-                + "keyboards can see what you type. Zen Keyboards has no internet permission, so nothing ever "
+                + "keyboards can see what you type. MK Board has no internet permission, so nothing ever "
                 + "leaves your phone.");
         iosStatus = ui.tv("", 15, ui.sub, false);
         bbStatus = ui.tv("", 15, ui.sub, false);
@@ -50,7 +49,7 @@ public class MainActivity extends Activity {
         ui.row(step2, "Switch keyboard…", "Pick which keyboard to type with", arrow(), v -> pick());
 
         LinearLayout step3 = ui.section(col, "Step 3 · Customise", null);
-        ui.row(step3, "iPhone-style settings", "Languages, colours, predictive, sounds", arrow(),
+        ui.row(step3, "iPhone-style settings", "Liquid Glass, languages, colours, iPad layout", arrow(),
                 v -> startActivity(new Intent(this, IosSettingsActivity.class)));
         ui.row(step3, "BlackBerry-style settings", "Languages, colours, alt symbols, frets", arrow(),
                 v -> startActivity(new Intent(this, BbSettingsActivity.class)));

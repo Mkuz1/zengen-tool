@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 public class BbSettingsActivity extends KeyboardSettingsActivity {
     @Override

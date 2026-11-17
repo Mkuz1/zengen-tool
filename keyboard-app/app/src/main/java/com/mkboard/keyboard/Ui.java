@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.app.Activity;
 import android.content.res.Configuration;
@@ -10,7 +10,9 @@ import android.content.res.ColorStateList;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 /** Small helper for building grouped, iOS-Settings-like screens in code. */
@@ -37,6 +39,20 @@ final class Ui {
             a.getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         }
+    }
+
+    /** Scrolling page; on tablets / unfolded foldables the column is centred at a readable width. */
+    ScrollView scroll(LinearLayout col) {
+        ScrollView sv = new ScrollView(a);
+        sv.setBackgroundColor(bg);
+        sv.setFillViewport(true);
+        FrameLayout f = new FrameLayout(a);
+        sv.addView(f);
+        int sw = a.getResources().getConfiguration().screenWidthDp;
+        int w = sw > 760 ? px(720) : ViewGroup.LayoutParams.MATCH_PARENT;
+        f.addView(col, new FrameLayout.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER_HORIZONTAL));
+        return sv;
     }
 
     int px(float v) {

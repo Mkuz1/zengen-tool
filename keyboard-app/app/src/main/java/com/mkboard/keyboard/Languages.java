@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import java.util.HashMap;
 import java.util.Locale;

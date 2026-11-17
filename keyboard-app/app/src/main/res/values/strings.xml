@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Zen Keyboards</string>
-    <string name="ios_kb_name">Zen Glass (iPhone style)</string>
-    <string name="bb_kb_name">Zen Classic (BlackBerry style)</string>
-    <string name="ios_settings">iPhone-style keyboard</string>
-    <string name="bb_settings">BlackBerry-style keyboard</string>
+    <string name="app_name">MK Board</string>
+    <string name="ios_kb_name">MK Board · iPhone</string>
+    <string name="bb_kb_name">MK Board · BlackBerry</string>
+    <string name="ios_settings">MK Board · iPhone</string>
+    <string name="bb_settings">MK Board · BlackBerry</string>
 </resources>

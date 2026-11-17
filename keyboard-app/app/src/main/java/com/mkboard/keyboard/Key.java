@@ -1,11 +1,11 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.graphics.RectF;
 
 /** A single key on a soft keyboard. */
 public final class Key {
     public enum T {
-        CHAR, SHIFT, DELETE, SPACE, ENTER, NUM, LETTERS, MORESYM, EMOJI, GLOBE, MIC, ALT, SYM, PREV, NEXT, SPACER
+        CHAR, SHIFT, DELETE, SPACE, ENTER, NUM, LETTERS, MORESYM, EMOJI, GLOBE, MIC, ALT, SYM, PREV, NEXT, HIDE, SPACER
     }
 
     public final T type;
@@ -17,6 +17,8 @@ public final class Key {
     public String alt;
     /** Long-press alternates (accents etc). */
     public String[] alts;
+    /** Character typed instead when shift is on (iPad , ! and . ? keys). */
+    public String shiftText;
     public float weight = 1f;
     public boolean flex;
     /** Letter that changes with shift. */

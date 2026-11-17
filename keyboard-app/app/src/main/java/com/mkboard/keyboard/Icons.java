@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -92,6 +92,21 @@ final class Icons {
         c.drawArc(R, 0, 180, false, p);
         c.drawLine(cx, cy + s * 0.22f, cx, cy + s * 0.44f, p);
         c.drawLine(cx - s * 0.18f, cy + s * 0.46f, cx + s * 0.18f, cy + s * 0.46f, p);
+    }
+
+    static void hide(Canvas c, float cx, float cy, float s, Paint p, float sw) {
+        float w = s * 1.2f, h = s * 0.62f, top = cy - s * 0.5f;
+        stroke(p, sw * 0.9f);
+        R.set(cx - w / 2, top, cx + w / 2, top + h);
+        c.drawRoundRect(R, sw * 1.5f, sw * 1.5f, p);
+        p.setStyle(Paint.Style.FILL);
+        float dot = sw * 0.6f;
+        for (int i = 0; i < 4; i++) c.drawCircle(cx - w * 0.3f + i * w * 0.2f, top + h * 0.33f, dot, p);
+        c.drawRect(cx - w * 0.22f, top + h * 0.62f, cx + w * 0.22f, top + h * 0.62f + sw * 0.9f, p);
+        stroke(p, sw);
+        float cy2 = top + h + s * 0.18f;
+        c.drawLine(cx - s * 0.16f, cy2, cx, cy2 + s * 0.13f, p);
+        c.drawLine(cx, cy2 + s * 0.13f, cx + s * 0.16f, cy2, p);
     }
 
     static void enter(Canvas c, float cx, float cy, float s, Paint p, float sw) {

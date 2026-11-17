@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 /** iPhone-style keyboard. */
 public class IosKeyboardService extends BaseKeyboardService {

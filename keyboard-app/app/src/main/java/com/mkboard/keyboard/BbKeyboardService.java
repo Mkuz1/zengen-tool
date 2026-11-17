@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 /** BlackBerry-style keyboard. */
 public class BbKeyboardService extends BaseKeyboardService {

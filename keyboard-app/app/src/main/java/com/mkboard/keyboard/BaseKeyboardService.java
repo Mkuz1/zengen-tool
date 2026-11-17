@@ -1,7 +1,15 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.view.Window;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.inputmethodservice.InputMethodService;
 import android.media.AudioManager;
 import android.os.Handler;
@@ -58,6 +66,76 @@ public abstract class BaseKeyboardService extends InputMethodService
         return style() == KeyboardView.IOS;
     }
 
+    private boolean tablet() {
+        return getResources().getConfiguration().smallestScreenWidthDp >= 600;
+    }
+
+    /** iPad-style layout on tablets and unfolded foldables. */
+    private boolean wide() {
+        return ios() && tablet() && prefs.b(KbPrefs.K_WIDE);
+    }
+
+    /** Centre the keys (compact) on wide screens unless the user wants full width. */
+    private float maxContentWidth() {
+        Configuration c = getResources().getConfiguration();
+        float dp = getResources().getDisplayMetrics().density;
+        if (prefs.b(KbPrefs.K_WIDE)) return 0;
+        if (ios()) return tablet() ? 640 * dp : 0;
+        return c.screenWidthDp > 680 ? 640 * dp : 0;
+    }
+
+    private boolean glass() {
+        return ios() && prefs.b(KbPrefs.K_GLASS);
+    }
+
+    private boolean blurAvailable() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false;
+        WindowManager wm = getSystemService(WindowManager.class);
+        return wm != null && wm.isCrossWindowBlurEnabled();
+    }
+
+    private java.util.function.Consumer<Boolean> blurListener;
+
+    /** Makes the keyboard window a frosted, see-through glass sheet (or opaque for the classic looks). */
+    private void configureWindow() {
+        if (getWindow() == null) return;
+        Window w = getWindow().getWindow();
+        if (w == null) return;
+        KbTheme t = prefs.theme();
+        float dp = getResources().getDisplayMetrics().density;
+        boolean glass = glass();
+        boolean blur = glass && blurAvailable();
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, null);
+        if (glass) {
+            int a = KeyboardView.panelAlpha(prefs.glassT(), blur);
+            g.setColors(new int[]{KbTheme.withAlpha(KbTheme.lighten(t.bg, 0.12f), a), KbTheme.withAlpha(t.bg, a)});
+            float R = 26 * dp;
+            g.setCornerRadii(new float[]{R, R, R, R, 0, 0, 0, 0});
+        } else {
+            g.setColor(t.bg);
+        }
+        w.setFormat(PixelFormat.TRANSLUCENT);
+        w.setBackgroundDrawable(g);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) w.setBackgroundBlurRadius(blur ? (int) (30 * dp) : 0);
+        w.setNavigationBarColor(Color.TRANSPARENT);
+        w.setNavigationBarContrastEnforced(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController ic = w.getInsetsController();
+            if (ic != null) {
+                ic.setSystemBarsAppearance(KbTheme.luminance(t.bg) > 0.5f
+                                ? WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS : 0,
+                        WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+            }
+        }
+        if (view != null) {
+            view.glass = glass;
+            view.drawPanel = false;
+            view.blurAvailable = blur;
+            view.glassT = prefs.glassT();
+            view.invalidate();
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -65,10 +143,33 @@ public abstract class BaseKeyboardService extends InputMethodService
         prefs.sp.registerOnSharedPreferenceChangeListener(this);
         suggest = new Suggest(this, kind());
         lang = Languages.get(prefs.curLang());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            WindowManager wm = getSystemService(WindowManager.class);
+            if (wm != null) {
+                blurListener = enabled -> configureWindow();
+                wm.addCrossWindowBlurEnabledListener(getMainExecutor(), blurListener);
+            }
+        }
+        configureWindow();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // folding / unfolding, rotation, tablet multi-window: re-pick the layout for the new size
+        if (view != null) {
+            applyPrefs();
+            rebuild();
+            updateShift();
+        }
     }
 
     @Override
     public void onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurListener != null) {
+            WindowManager wm = getSystemService(WindowManager.class);
+            if (wm != null) wm.removeCrossWindowBlurEnabledListener(blurListener);
+        }
         prefs.sp.unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
@@ -156,6 +257,7 @@ public abstract class BaseKeyboardService extends InputMethodService
         view.showSuggest = prefs.b(KbPrefs.K_PREDICT);
         view.showAltLabels = prefs.b(KbPrefs.K_SHOWALT);
         view.shadows = prefs.b(KbPrefs.K_SHADOW);
+        configureWindow();
         view.requestLayout();
     }
 
@@ -185,6 +287,8 @@ public abstract class BaseKeyboardService extends InputMethodService
         o.multiLang = prefs.langs().size() > 1;
         o.enterLabel = enterLabel;
         o.page = page;
+        o.wide = wide();
+        view.maxContentWidth = maxContentWidth();
         view.setLayout(ios() ? Layouts.ios(lang, layer, o) : Layouts.bb(lang, layer, o));
         view.enterAction = enterAction;
         refresh();
@@ -203,7 +307,7 @@ public abstract class BaseKeyboardService extends InputMethodService
 
     private String spaceLabel() {
         if (flashLang) return lang.nativeName;
-        int pages = Layouts.pages(ios(), layer);
+        int pages = Layouts.pages(ios(), layer, wide());
         if (pages > 1) return (page + 1) + " / " + pages;
         if (ios()) return lang.space;
         return prefs.langs().size() > 1 ? lang.nativeName : "";
@@ -426,7 +530,7 @@ public abstract class BaseKeyboardService extends InputMethodService
                 break;
             case PREV:
             case NEXT: {
-                int pages = Layouts.pages(ios(), layer);
+                int pages = Layouts.pages(ios(), layer, wide());
                 page = (page + (k.type == Key.T.NEXT ? 1 : -1) + pages) % pages;
                 rebuild();
                 break;
@@ -436,6 +540,9 @@ public abstract class BaseKeyboardService extends InputMethodService
                 break;
             case MIC:
                 voice();
+                break;
+            case HIDE:
+                requestHideSelf(0);
                 break;
             default:
                 break;
@@ -458,7 +565,8 @@ public abstract class BaseKeyboardService extends InputMethodService
             refresh();
             return;
         }
-        if (k.caseable && (shifted || capsLock)) s = s.toUpperCase(lang.locale);
+        if (k.shiftText != null && (shifted || capsLock)) s = k.shiftText;
+        else if (k.caseable && (shifted || capsLock)) s = s.toUpperCase(lang.locale);
         commit(s);
         afterChar(s);
     }
@@ -526,6 +634,13 @@ public abstract class BaseKeyboardService extends InputMethodService
         while (i > 0 && !Character.isWhitespace(b.charAt(i - 1))) i--;
         int n = b.length() - i;
         ic.deleteSurroundingText(Math.max(1, n), 0);
+    }
+
+    @Override
+    public void onFlick(Key k) {
+        if (k.alt == null) return;
+        commit(k.alt);
+        afterChar(k.alt);
     }
 
     @Override

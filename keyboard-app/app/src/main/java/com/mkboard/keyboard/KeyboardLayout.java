@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +21,8 @@ public final class KeyboardLayout {
     public float columns = 10f;
     public boolean letters;
     public boolean emoji;
+    /** iPad style: secondary character printed on the key, typed by swiping down. */
+    public boolean flick;
 
     public Row row() {
         Row r = new Row();

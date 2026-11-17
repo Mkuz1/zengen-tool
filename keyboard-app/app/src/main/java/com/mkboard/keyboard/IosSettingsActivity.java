@@ -1,4 +1,4 @@
-package com.zengen.keyboards;
+package com.mkboard.keyboard;
 
 public class IosSettingsActivity extends KeyboardSettingsActivity {
     @Override
