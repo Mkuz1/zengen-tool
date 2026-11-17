@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- keyboard body -->
+    <path android:fillColor="#D1D4DB" android:pathData="M28,38h52a5,5 0,0 1,5 5v24a5,5 0,0 1,-5 5h-52a5,5 0,0 1,-5 -5v-24a5,5 0,0 1,5 -5z" />
+    <!-- row 1 -->
+    <path android:fillColor="#FFFFFF" android:pathData="M28,42h7v7h-7z M37,42h7v7h-7z M46,42h7v7h-7z M55,42h7v7h-7z M64,42h7v7h-7z M73,42h7v7h-7z" />
+    <!-- row 2 -->
+    <path android:fillColor="#FFFFFF" android:pathData="M32,51h7v7h-7z M41,51h7v7h-7z M50,51h7v7h-7z M59,51h7v7h-7z M68,51h7v7h-7z" />
+    <!-- space bar + accent key -->
+    <path android:fillColor="#FFFFFF" android:pathData="M37,61h30v7h-30z" />
+    <path android:fillColor="#007AFF" android:pathData="M69,61h11v7h-11z" />
+    <path android:fillColor="#ACB1BB" android:pathData="M28,61h7v7h-7z" />
+</vector>
