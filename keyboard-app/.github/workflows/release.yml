@@ -1,0 +1,65 @@
+name: Release
+
+# Push a tag like v2.2.0 (matching versionName in app/build.gradle) to publish a release.
+# The app's in-app updater picks up the newest non-draft, non-prerelease release and its .apk asset.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.MKBOARD_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build signed APK
+        if: env.HAS_KEY == 'true'
+        env:
+          MKBOARD_KEYSTORE_BASE64: ${{ secrets.MKBOARD_KEYSTORE_BASE64 }}
+          MKBOARD_KEYSTORE_PASSWORD: ${{ secrets.MKBOARD_KEYSTORE_PASSWORD }}
+          MKBOARD_KEY_ALIAS: ${{ secrets.MKBOARD_KEY_ALIAS }}
+          MKBOARD_KEY_PASSWORD: ${{ secrets.MKBOARD_KEY_PASSWORD }}
+        run: |
+          echo "$MKBOARD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/mkboard.jks"
+          export MKBOARD_KEYSTORE="$RUNNER_TEMP/mkboard.jks"
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "MKBoard-$VERSION.apk"
+
+      - name: Use the prebuilt APK from dist/ (no signing secrets configured)
+        if: env.HAS_KEY != 'true'
+        run: |
+          test -f "dist/MKBoard-$VERSION.apk" || { echo "::error::dist/MKBoard-$VERSION.apk not found and no signing secrets set"; exit 1; }
+          cp "dist/MKBoard-$VERSION.apk" "MKBoard-$VERSION.apk"
+
+      - name: Check the APK version matches the tag
+        run: |
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          APK_VERSION=$("$AAPT" dump badging "MKBoard-$VERSION.apk" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+          echo "APK versionName: $APK_VERSION"
+          test "$APK_VERSION" = "$VERSION" || { echo "::error::APK is $APK_VERSION but tag is $VERSION"; exit 1; }
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="release-notes/$VERSION.md"
+          if [ -f "$NOTES" ]; then
+            gh release create "$GITHUB_REF_NAME" "MKBoard-$VERSION.apk" --title "MK Board $VERSION" --notes-file "$NOTES"
+          else
+            gh release create "$GITHUB_REF_NAME" "MKBoard-$VERSION.apk" --title "MK Board $VERSION" --generate-notes
+          fi

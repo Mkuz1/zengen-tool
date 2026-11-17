@@ -5,3 +5,6 @@ local.properties
 *.iml
 .idea/
 shots/
+keystore.properties
+*.jks
+*.keystore

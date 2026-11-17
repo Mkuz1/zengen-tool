@@ -151,6 +151,7 @@ public abstract class BaseKeyboardService extends InputMethodService
             }
         }
         configureWindow();
+        Updater.backgroundCheck(this);
     }
 
     @Override
